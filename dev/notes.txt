@@ -1,0 +1,10 @@
+- Modified /usr/lib/systemd/system/tomcat10.service:
+  Line 12:
+  From:
+  Environment=CATALINA_OPTS=
+  To:
+  Environment=CATALINA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+
+- journalctl -u tomcat10.service --since "3 min ago"
+
+- . /home/dev/Documents/commander/dev/deploy.sh && sudo systemctl restart tomcat10

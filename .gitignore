@@ -33,6 +33,3 @@ build/
 
 ### Mac OS ###
 .DS_Store
-
-notes.txt
-deploy.sh
