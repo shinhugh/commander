@@ -1,0 +1,60 @@
+{
+    "id": 0,
+    "players": {
+        "0": {
+            "userId": 0
+        },
+        "1": {
+            "userId": 1
+        }
+    },
+    "playerOrder": [ 0, 1 ],
+    "currentTurn": 0,
+    "world": {
+        "board": [
+            [
+                {
+                    "terrain": {
+                        "type": "meadow"
+                    },
+                    "unit": {
+                        "type": "grunt",
+                        "playerId": 0,
+                        "hp": 100,
+                        "available": true
+                    }
+                },
+                {
+                    "terrain": {
+                        "type": "hq",
+                        "playerId": 0,
+                        "hp": 100
+                    }
+                }
+            ],
+            [
+                {
+                    "terrain": {
+                        "type": "hq",
+                        "playerId": 1,
+                        "hp": 100
+                    }
+                },
+                {
+                    "terrain": {
+                        "type": "barracks",
+                        "playerId": 1,
+                        "hp": 100,
+                        "available": true
+                    },
+                    "unit": {
+                        "type": "attackHelicopter",
+                        "playerId": 1,
+                        "hp": 100,
+                        "available": true
+                    }
+                }
+            ]
+        ]
+    }
+}
