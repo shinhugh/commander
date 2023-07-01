@@ -1,6 +1,7 @@
 package org.dev.commander.service;
 
 import org.dev.commander.model.Account;
+import org.dev.commander.model.Credentials;
 import org.dev.commander.repository.AccountRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
@@ -20,7 +21,7 @@ import java.util.Set;
 
 // TODO: Handle concurrency
 @Service
-public class AccountManager implements AccountService, UserDetailsService, AuthorityVerificationService {
+public class AccountManager implements AccountService, UserDetailsService, AuthorityVerificationService, AuthenticationService {
     private static final List<GrantedAuthority> AUTHORITIES_IN_ORDER = Arrays.asList(
             new SimpleGrantedAuthority("USER"),
             new SimpleGrantedAuthority("ADMIN")
@@ -90,6 +91,7 @@ public class AccountManager implements AccountService, UserDetailsService, Autho
         catch (DataIntegrityViolationException ex) {
             throw new ConflictException();
         }
+        // TODO: Purge all sessions for this account
         account.setPassword(null);
         return account;
     }
@@ -107,6 +109,7 @@ public class AccountManager implements AccountService, UserDetailsService, Autho
             throw new ForbiddenException();
         }
         accountRepository.deleteById(id);
+        // TODO: Purge all sessions for this account
     }
 
     @Override
@@ -133,6 +136,17 @@ public class AccountManager implements AccountService, UserDetailsService, Autho
                 .anyMatch(a -> authorities.contains(a.getAuthority()));
     }
 
+    @Override
+    public String login(Authentication authentication, Credentials credentials) {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public void logout(Authentication authentication, boolean all) {
+        // TODO
+    }
+
     private Account deepCopyAccount(Account account) {
         Account accountCopy = new Account();
         accountCopy.setId(account.getId());
@@ -144,6 +158,9 @@ public class AccountManager implements AccountService, UserDetailsService, Autho
     }
 
     private boolean validateAccount(Account account, boolean validateAuthorities) {
+        if (account == null) {
+            return false;
+        }
         String loginName = account.getLoginName();
         String password = account.getPassword();
         String publicName = account.getPublicName();

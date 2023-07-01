@@ -30,6 +30,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // TODO: Use token authentication instead of basic username-password authentication
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider(PasswordEncoder passwordEncoder, UserDetailsService userDetailsService) {
         DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(passwordEncoder);

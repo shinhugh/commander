@@ -20,12 +20,12 @@ public class AccountController {
     }
 
     @PostMapping
-    public Account createAccount(Authentication authentication, @RequestBody(required = false) Account account) {
+    public Account createAccount(Authentication authentication, @RequestBody Account account) {
         return accountService.createAccount(authentication, account);
     }
 
     @PutMapping
-    public Account updateAccount(Authentication authentication, @RequestParam("id") long id, @RequestBody(required = false) Account account) {
+    public Account updateAccount(Authentication authentication, @RequestParam("id") long id, @RequestBody Account account) {
         return accountService.updateAccountById(authentication, id, account);
     }
 
