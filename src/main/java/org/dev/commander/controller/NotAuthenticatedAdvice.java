@@ -1,6 +1,6 @@
 package org.dev.commander.controller;
 
-import org.dev.commander.service.ForbiddenException;
+import org.dev.commander.service.NotAuthenticatedException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class ForbiddenAdvice {
+public class NotAuthenticatedAdvice {
     @ResponseBody
-    @ExceptionHandler(ForbiddenException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    String handleException(ForbiddenException ex) {
+    @ExceptionHandler(NotAuthenticatedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    String handleException(NotAuthenticatedException ex) {
         return ex.getMessage();
     }
 }

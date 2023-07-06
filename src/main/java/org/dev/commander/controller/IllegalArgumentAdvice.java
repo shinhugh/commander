@@ -1,6 +1,6 @@
 package org.dev.commander.controller;
 
-import org.dev.commander.service.BadRequestException;
+import org.dev.commander.service.IllegalArgumentException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class BadRequestAdvice {
+public class IllegalArgumentAdvice {
     @ResponseBody
-    @ExceptionHandler(BadRequestException.class)
+    @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    String handleException(BadRequestException ex) {
+    String handleException(IllegalArgumentException ex) {
         return ex.getMessage();
     }
 }
