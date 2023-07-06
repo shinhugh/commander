@@ -16,6 +16,6 @@ public class MissingServletRequestParameterAdvice {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     String handleException(MissingServletRequestParameterException ex) {
-        return "Bad request";
+        return "Illegal argument";
     }
 }

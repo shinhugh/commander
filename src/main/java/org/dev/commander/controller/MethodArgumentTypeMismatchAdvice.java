@@ -16,6 +16,6 @@ public class MethodArgumentTypeMismatchAdvice {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     String handleException(MethodArgumentTypeMismatchException ex) {
-        return "Bad request";
+        return "Illegal argument";
     }
 }
