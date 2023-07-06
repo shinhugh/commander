@@ -2,11 +2,14 @@ package org.dev.commander.controller;
 
 import org.dev.commander.model.Account;
 import org.dev.commander.service.AccountService;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/account")
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class AccountController {
     private final AccountService accountService;
 

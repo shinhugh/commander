@@ -2,6 +2,8 @@ package org.dev.commander.controller;
 
 import org.dev.commander.model.Credentials;
 import org.dev.commander.service.SessionService;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,6 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class AuthenticationController {
     private final SessionService sessionService;
 
