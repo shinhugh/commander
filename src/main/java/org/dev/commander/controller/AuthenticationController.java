@@ -1,7 +1,7 @@
 package org.dev.commander.controller;
 
 import org.dev.commander.model.Credentials;
-import org.dev.commander.service.AuthenticationService;
+import org.dev.commander.service.SessionService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,15 +10,15 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthenticationController {
-    private final AuthenticationService authenticationService;
+    private final SessionService sessionService;
 
-    public AuthenticationController(AuthenticationService authenticationService) {
-        this.authenticationService = authenticationService;
+    public AuthenticationController(SessionService sessionService) {
+        this.sessionService = sessionService;
     }
 
     @PostMapping
     public String login(Authentication authentication, @RequestBody Credentials credentials) {
-        return authenticationService.login(authentication, credentials);
+        return sessionService.login(authentication, credentials);
     }
 
     @DeleteMapping
@@ -30,6 +30,6 @@ public class AuthenticationController {
                 all = true;
             }
         }
-        authenticationService.logout(authentication, all);
+        sessionService.logout(authentication, all);
     }
 }

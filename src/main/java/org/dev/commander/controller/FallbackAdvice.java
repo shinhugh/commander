@@ -14,5 +14,4 @@ public class FallbackAdvice {
     String handleException(Exception ex) {
         return "Internal server error";
     }
-
 }

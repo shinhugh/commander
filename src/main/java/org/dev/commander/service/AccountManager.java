@@ -2,43 +2,45 @@ package org.dev.commander.service;
 
 import org.dev.commander.model.Account;
 import org.dev.commander.model.Credentials;
+import org.dev.commander.model.Session;
 import org.dev.commander.repository.AccountRepository;
+import org.dev.commander.repository.SessionRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+
+import static java.lang.System.currentTimeMillis;
 
 // TODO: Handle concurrency
 @Service
-public class AccountManager implements AccountService, UserDetailsService, AuthorityVerificationService, AuthenticationService {
-    private static final List<GrantedAuthority> AUTHORITIES_IN_ORDER = Arrays.asList(
-            new SimpleGrantedAuthority("USER"),
-            new SimpleGrantedAuthority("ADMIN")
-    );
-    private static final int LOGIN_NAME_LENGTH_MIN = 5;
+public class AccountManager implements AccountService, SessionService, AuthenticationService, AuthorityVerificationService {
+    private static final long SESSION_DURATION = 86400000L;
+    private static final int SESSION_TOKEN_LENGTH = 64;
+    private static final String SESSION_TOKEN_ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    private static final int LOGIN_NAME_LENGTH_MIN = 4;
+    private static final int LOGIN_NAME_LENGTH_MAX = 16;
+    private static final String LOGIN_NAME_ALLOWED_CHARS = "-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
     private static final int PASSWORD_LENGTH_MIN = 8;
+    private static final int PASSWORD_LENGTH_MAX = 32;
+    private static final String PASSWORD_ALLOWED_CHARS = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
     private static final int PUBLIC_NAME_LENGTH_MIN = 2;
+    private static final int PUBLIC_NAME_LENGTH_MAX = 16;
+    private static final String PUBLIC_NAME_ALLOWED_CHARS = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
     private final AccountRepository accountRepository;
+    private final SessionRepository sessionRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public AccountManager(AccountRepository accountRepository, PasswordEncoder passwordEncoder) {
+    public AccountManager(AccountRepository accountRepository, SessionRepository sessionRepository, PasswordEncoder passwordEncoder) {
         this.accountRepository = accountRepository;
+        this.sessionRepository = sessionRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
-    public Account readAccountById(Authentication authentication, long id) {
+    public Account readAccountById(Authentication authentication, long id) throws BadRequestException {
         if (id <= 0) {
             throw new BadRequestException();
         }
@@ -52,7 +54,7 @@ public class AccountManager implements AccountService, UserDetailsService, Autho
     }
 
     @Override
-    public Account createAccount(Authentication authentication, Account account) {
+    public Account createAccount(Authentication authentication, Account account) throws BadRequestException, ConflictException {
         if (!validateAccount(account, false)) {
             throw new BadRequestException();
         }
@@ -71,7 +73,9 @@ public class AccountManager implements AccountService, UserDetailsService, Autho
     }
 
     @Override
-    public Account updateAccountById(Authentication authentication, long id, Account account) {
+    // TODO: Strip password from return value but not persisted value
+    // TODO: Use manual transaction (not @Transactional)
+    public Account updateAccountById(Authentication authentication, long id, Account account) throws UnauthorizedException, BadRequestException, ForbiddenException, ConflictException {
         if (authentication == null) {
             throw new UnauthorizedException();
         }
@@ -82,22 +86,31 @@ public class AccountManager implements AccountService, UserDetailsService, Autho
         if (!verifyClientIsOwnerOrAdmin(authentication, existingAccount)) {
             throw new ForbiddenException();
         }
-        account = deepCopyAccount(account);
-        account.setId(id);
-        account.setPassword(passwordEncoder.encode(account.getPassword()));
-        try {
-            account = accountRepository.save(account);
-        }
-        catch (DataIntegrityViolationException ex) {
-            throw new ConflictException();
-        }
-        // TODO: Purge all sessions for this account
-        account.setPassword(null);
-        return account;
+
+        existingAccount.setLoginName(account.getLoginName());
+        existingAccount.setPassword(passwordEncoder.encode(account.getPassword()));
+        existingAccount.setAuthorities(account.getAuthorities());
+        existingAccount.setPublicName(account.getPublicName());
+        sessionRepository.deleteByAccountId(existingAccount.getId());
+        return existingAccount;
+
+//        account = deepCopyAccount(account);
+//        account.setId(id);
+//        account.setPassword(passwordEncoder.encode(account.getPassword()));
+//        try {
+//            account = accountRepository.save(account);
+//        }
+//        catch (DataIntegrityViolationException ex) {
+//            throw new ConflictException();
+//        }
+//        sessionRepository.deleteByAccountId(account.getId());
+//        account.setPassword(null);
+//        return account;
     }
 
     @Override
-    public void deleteAccountById(Authentication authentication, long id) {
+    // TODO: Use manual transaction (not @Transactional)
+    public void deleteAccountById(Authentication authentication, long id) throws UnauthorizedException, BadRequestException, ForbiddenException {
         if (authentication == null) {
             throw new UnauthorizedException();
         }
@@ -109,17 +122,62 @@ public class AccountManager implements AccountService, UserDetailsService, Autho
             throw new ForbiddenException();
         }
         accountRepository.deleteById(id);
-        // TODO: Purge all sessions for this account
+        sessionRepository.deleteByAccountId(id);
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Account account = accountRepository.findByLoginName(username).orElse(null);
-        if (account == null) {
-            throw new UsernameNotFoundException(String.format("No user found with username: %s", username));
+    public String login(Authentication authentication, Credentials credentials) throws BadRequestException, UnauthorizedException {
+        if (authentication != null) {
+            return (String) authentication.getCredentials();
         }
-        Set<GrantedAuthority> authorities = translateAuthoritiesFlagToSet(account.getAuthorities());
-        return User.builder().username(account.getLoginName()).password(account.getPassword()).authorities(authorities).build();
+        if (credentials == null || credentials.getUsername() == null || credentials.getPassword() == null) {
+            throw new BadRequestException();
+        }
+        Account account = accountRepository.findByLoginName(credentials.getUsername()).orElseThrow(UnauthorizedException::new);
+        if (!passwordEncoder.matches(credentials.getPassword(), account.getPassword())) {
+            throw new UnauthorizedException();
+        }
+        String token;
+        do {
+            token = generateSessionToken();
+        } while (sessionRepository.existsById(token));
+        long creationTime = currentTimeMillis();
+        long expirationTime = creationTime + SESSION_DURATION;
+        Session session = new Session();
+        session.setToken(token);
+        session.setAccountId(account.getId());
+        session.setAuthorities(account.getAuthorities());
+        session.setCreationTime(creationTime);
+        session.setExpirationTime(expirationTime);
+        sessionRepository.save(session);
+        return token;
+    }
+
+    @Override
+    public void logout(Authentication authentication, boolean all) {
+        if (authentication == null) {
+            return;
+        }
+        if (all) {
+            sessionRepository.deleteByAccountId(((Account) authentication.getPrincipal()).getId());
+        } else {
+            sessionRepository.deleteById((String) authentication.getCredentials());
+        }
+    }
+
+    @Override
+    public Session getSession(String token) throws NotFoundException {
+        Session session = sessionRepository.findById(token).orElseThrow(NotFoundException::new);
+        if (session.getExpirationTime() <= currentTimeMillis()) {
+            sessionRepository.deleteById(token);
+            throw new NotFoundException();
+        }
+        return session;
+    }
+
+    @Override
+    public Account getSessionOwner(Session session) throws NotFoundException {
+        return accountRepository.findById(session.getAccountId()).orElseThrow(NotFoundException::new);
     }
 
     @Override
@@ -134,17 +192,6 @@ public class AccountManager implements AccountService, UserDetailsService, Autho
                 .getAuthorities()
                 .stream()
                 .anyMatch(a -> authorities.contains(a.getAuthority()));
-    }
-
-    @Override
-    public String login(Authentication authentication, Credentials credentials) {
-        // TODO
-        return null;
-    }
-
-    @Override
-    public void logout(Authentication authentication, boolean all) {
-        // TODO
     }
 
     private Account deepCopyAccount(Account account) {
@@ -165,13 +212,13 @@ public class AccountManager implements AccountService, UserDetailsService, Autho
         String password = account.getPassword();
         String publicName = account.getPublicName();
         int authorities = account.getAuthorities();
-        if (loginName == null || loginName.length() < LOGIN_NAME_LENGTH_MIN) {
+        if (loginName == null || loginName.length() < LOGIN_NAME_LENGTH_MIN || loginName.length() > LOGIN_NAME_LENGTH_MAX || !verifyAllowedChars(loginName, LOGIN_NAME_ALLOWED_CHARS)) {
             return false;
         }
-        if (password == null || password.length() < PASSWORD_LENGTH_MIN) {
+        if (password == null || password.length() < PASSWORD_LENGTH_MIN || password.length() > PASSWORD_LENGTH_MAX || !verifyAllowedChars(password, PASSWORD_ALLOWED_CHARS)) {
             return false;
         }
-        if (publicName == null || publicName.length() < PUBLIC_NAME_LENGTH_MIN) {
+        if (publicName == null || publicName.length() < PUBLIC_NAME_LENGTH_MIN || publicName.length() > PUBLIC_NAME_LENGTH_MAX || !verifyAllowedChars(publicName, PUBLIC_NAME_ALLOWED_CHARS)) {
             return false;
         }
         if (validateAuthorities) {
@@ -190,16 +237,20 @@ public class AccountManager implements AccountService, UserDetailsService, Autho
         return verifyAuthenticationContainsAtLeastOneAuthority(authentication, Set.of("ADMIN"));
     }
 
-    private Set<GrantedAuthority> translateAuthoritiesFlagToSet(int flag) {
-        Set<GrantedAuthority> set = new HashSet<>();
-        int order = 0;
-        while (flag > 0 && order < AUTHORITIES_IN_ORDER.size()) {
-            if (flag % 2 > 0) {
-                set.add(AUTHORITIES_IN_ORDER.get(order));
-            }
-            flag /= 2;
-            order++;
+    private String generateSessionToken() {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < SESSION_TOKEN_LENGTH; i++) {
+            result.append(SESSION_TOKEN_ALLOWED_CHARS.charAt((int) (Math.random() * SESSION_TOKEN_ALLOWED_CHARS.length())));
         }
-        return set;
+        return result.toString();
+    }
+
+    private boolean verifyAllowedChars(String subject, String allowedChars) {
+        for (char c : subject.toCharArray()) {
+            if (!allowedChars.contains(String.valueOf(c))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -1,9 +1,9 @@
 package org.dev.commander.service;
 
-import org.dev.commander.model.Credentials;
-import org.springframework.security.core.Authentication;
+import org.dev.commander.model.Account;
+import org.dev.commander.model.Session;
 
 public interface AuthenticationService {
-    String login(Authentication authentication, Credentials credentials);
-    void logout(Authentication authentication, boolean all);
+    Session getSession(String token) throws NotFoundException;
+    Account getSessionOwner(Session session) throws NotFoundException;
 }

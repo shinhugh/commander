@@ -34,7 +34,7 @@ public class RepositoryConfig {
         entityManagerFactory.setPackagesToScan("org.dev.commander.model");
         entityManagerFactory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         Properties jpaProperties = new Properties();
-        jpaProperties.setProperty("hibernate.hbm2ddl.auto", "validate");
+        jpaProperties.setProperty("hibernate.hbm2ddl.auto", "create-drop");
         entityManagerFactory.setJpaProperties(jpaProperties);
         return entityManagerFactory;
     }
