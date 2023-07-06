@@ -3,7 +3,7 @@ package org.dev.commander.security;
 import org.dev.commander.model.Account;
 import org.dev.commander.model.Session;
 import org.dev.commander.service.AuthenticationService;
-import org.dev.commander.service.NotFoundException;
+import org.dev.commander.service.exception.NotFoundException;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;

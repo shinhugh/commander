@@ -1,6 +1,6 @@
 package org.dev.commander.controller;
 
-import org.dev.commander.service.NotAuthenticatedException;
+import org.dev.commander.service.exception.NotAuthenticatedException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;

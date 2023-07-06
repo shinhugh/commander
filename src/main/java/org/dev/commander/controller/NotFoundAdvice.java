@@ -1,6 +1,6 @@
 package org.dev.commander.controller;
 
-import org.dev.commander.service.NotFoundException;
+import org.dev.commander.service.exception.NotFoundException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;

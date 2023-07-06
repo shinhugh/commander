@@ -1,4 +1,4 @@
-package org.dev.commander.service;
+package org.dev.commander.service.exception;
 
 public class NotFoundException extends RuntimeException {
     public NotFoundException() {
