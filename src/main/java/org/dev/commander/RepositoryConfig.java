@@ -1,7 +1,6 @@
 package org.dev.commander;
 
 import jakarta.persistence.EntityManagerFactory;
-import org.dev.commander.repository.GameMongoRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -44,10 +43,5 @@ public class RepositoryConfig {
         JpaTransactionManager transactionManager = new JpaTransactionManager();
         transactionManager.setEntityManagerFactory(entityManagerFactory);
         return transactionManager;
-    }
-
-    @Bean
-    public GameMongoRepository gameMongoRepository() {
-        return new GameMongoRepository("mongodb://localhost");
     }
 }
