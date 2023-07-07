@@ -1,6 +1,6 @@
-package org.dev.commander.controller;
+package org.dev.commander.controller.advice;
 
-import org.dev.commander.service.exception.NotFoundException;
+import org.dev.commander.service.exception.NotAuthenticatedException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class NotFoundAdvice {
+public class NotAuthenticatedAdvice {
     @ResponseBody
-    @ExceptionHandler(NotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    String handleException(NotFoundException ex) {
+    @ExceptionHandler(NotAuthenticatedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    String handleException(NotAuthenticatedException ex) {
         return ex.getMessage();
     }
 }

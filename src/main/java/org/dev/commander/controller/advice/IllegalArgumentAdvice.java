@@ -1,6 +1,6 @@
-package org.dev.commander.controller;
+package org.dev.commander.controller.advice;
 
-import org.dev.commander.service.exception.NotAuthenticatedException;
+import org.dev.commander.service.exception.IllegalArgumentException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class NotAuthenticatedAdvice {
+public class IllegalArgumentAdvice {
     @ResponseBody
-    @ExceptionHandler(NotAuthenticatedException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    String handleException(NotAuthenticatedException ex) {
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    String handleException(IllegalArgumentException ex) {
         return ex.getMessage();
     }
 }
