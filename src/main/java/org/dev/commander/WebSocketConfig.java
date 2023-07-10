@@ -1,5 +1,6 @@
 package org.dev.commander;
 
+import org.dev.commander.websocket.SecurityHandshakeInterceptor;
 import org.dev.commander.websocket.TestWebSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
@@ -15,13 +16,17 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
     @Autowired
-    TestWebSocketHandler testWebSocketHandler;
+    private TestWebSocketHandler testWebSocketHandler;
+    @Autowired
+    private SecurityHandshakeInterceptor securityHandshakeInterceptor;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         if (registry.getClass() == ServletWebSocketHandlerRegistry.class) {
             ((ServletWebSocketHandlerRegistry) registry).setOrder(Ordered.HIGHEST_PRECEDENCE);
         }
-        registry.addHandler(testWebSocketHandler, "/api/test");
+        registry
+                .addHandler(testWebSocketHandler, "/api/test")
+                .addInterceptors(securityHandshakeInterceptor);
     }
 }
