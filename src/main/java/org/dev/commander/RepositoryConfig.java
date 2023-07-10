@@ -22,8 +22,8 @@ public class RepositoryConfig {
     @Bean
     public DriverManagerDataSource driverManagerDataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        dataSource.setUrl("jdbc:mysql://localhost:3306/commander");
+        dataSource.setDriverClassName("org.mariadb.jdbc.Driver");
+        dataSource.setUrl("jdbc:mariadb://localhost:3306/commander");
         dataSource.setUsername("root");
         return dataSource;
     }
@@ -36,6 +36,7 @@ public class RepositoryConfig {
         entityManagerFactory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         Properties jpaProperties = new Properties();
         jpaProperties.setProperty("hibernate.hbm2ddl.auto", "create-drop");
+        jpaProperties.setProperty("hibernate.dialect", "org.hibernate.dialect.MariaDBDialect");
         entityManagerFactory.setJpaProperties(jpaProperties);
         return entityManagerFactory;
     }

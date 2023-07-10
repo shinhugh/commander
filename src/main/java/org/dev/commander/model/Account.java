@@ -9,7 +9,7 @@ import jakarta.persistence.*;
 public class Account {
     @Column(name = "Id", nullable = false, unique = true)
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     @Column(name = "LoginName", nullable = false, unique = true)
     private String loginName;

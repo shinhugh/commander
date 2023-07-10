@@ -11,6 +11,7 @@ public class ServletInitializer extends AbstractAnnotationConfigDispatcherServle
                 RepositoryConfig.class,
                 ServiceConfig.class,
                 ControllerConfig.class,
+                WebSocketConfig.class,
                 WebMvcConfig.class,
                 SecurityConfig.class
         };
