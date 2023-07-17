@@ -113,7 +113,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
         private static final int PUBLIC_NAME_LENGTH_MIN = 2;
         private static final int PUBLIC_NAME_LENGTH_MAX = 16;
         private static final String PUBLIC_NAME_ALLOWED_CHARS = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-        private static final int SESSION_TOKEN_LENGTH = 64;
+        private static final int SESSION_TOKEN_LENGTH = 128;
         private static final String SESSION_TOKEN_ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         private static final long SESSION_DURATION = 86400000L;
         private final AccountRepository accountRepository;
@@ -155,10 +155,11 @@ public class AccountManager implements AccountService, SessionService, Authentic
             if (!verifyClientIsOwnerOrAdmin(authentication, existingAccount)) {
                 throw new NotAuthorizedException();
             }
-            // TODO: Only an admin can set the admin role
             existingAccount.setLoginName(account.getLoginName());
             existingAccount.setPassword(passwordEncoder.encode(account.getPassword()));
-            existingAccount.setAuthorities(account.getAuthorities());
+            if (verifyAuthenticationContainsAtLeastOneAuthority(authentication, Set.of("ADMIN"))) {
+                existingAccount.setAuthorities(account.getAuthorities());
+            }
             existingAccount.setPublicName(account.getPublicName());
             sessionRepository.deleteByAccountId(existingAccount.getId());
             return existingAccount;
