@@ -1,7 +1,7 @@
 package org.dev.commander;
 
-import org.dev.commander.websocket.SecurityHandshakeInterceptor;
 import org.dev.commander.websocket.MainWebSocketHandler;
+import org.dev.commander.websocket.SecurityHandshakeInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
