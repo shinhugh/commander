@@ -9,9 +9,7 @@ A multiplayer turn-based strategy game inspired by Nintendo's classic title
 
 The back-end is built with the Spring framework (Java).
 
-### APIs
-
-#### HTTP
+### HTTP
 
 ---
 
@@ -148,7 +146,7 @@ Authorization policy: Owner or admin
 
 ---
 
-#### WebSocket
+### WebSocket
 
 *This section will be populated soon.*
 
