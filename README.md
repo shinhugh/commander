@@ -147,6 +147,8 @@ DELETE /api/account?id=8
 
 Authorization policy: Owner or admin
 
+---
+
 ### WebSocket
 
 *This section will be populated soon.*
