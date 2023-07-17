@@ -11,8 +11,6 @@ The back-end is built with the Spring framework (Java).
 
 ### HTTP
 
----
-
 **Login via username and password**
 
 ```
@@ -36,6 +34,9 @@ If the client is already logged in, the token received via the request will be
 sent back unmodified via the response. This does not extend the lifetime of the
 token.
 
+The entirety of the response body is the token that should be sent in subsequent
+requests as the bearer token (authorization header).
+
 ---
 
 **Logout**
@@ -49,6 +50,8 @@ DELETE /api/auth
 ```
 
 Authorization policy: Public
+
+The server will unconditionally respond with status code 200.
 
 ---
 
@@ -143,8 +146,6 @@ DELETE /api/account?id=8
 ```
 
 Authorization policy: Owner or admin
-
----
 
 ### WebSocket
 
