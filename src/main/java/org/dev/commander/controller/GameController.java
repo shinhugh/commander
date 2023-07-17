@@ -20,13 +20,8 @@ public class GameController {
     }
 
     @GetMapping
-    public List<Long> readGameIds(Authentication authentication, @RequestParam("accountId") long accountId) {
-        return gameService.readGameIds(authentication, accountId);
-    }
-
-    @GetMapping
-    public Game readGame(Authentication authentication, @RequestParam("id") long id) {
-        return gameService.readGame(authentication, id);
+    public List<Game> readGames(Authentication authentication, @RequestParam(name = "accountId", required = false) Long accountId, @RequestParam(name = "id", required = false) Long id) {
+        return gameService.readGames(authentication, accountId, id);
     }
 
     @PostMapping

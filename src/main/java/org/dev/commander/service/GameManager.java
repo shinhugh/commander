@@ -9,13 +9,7 @@ import java.util.List;
 @Service
 public class GameManager implements GameService {
     @Override
-    public List<Long> readGameIds(Authentication authentication, long accountId) {
-        // TODO
-        throw new RuntimeException("Not implemented");
-    }
-
-    @Override
-    public Game readGame(Authentication authentication, long id) {
+    public List<Game> readGames(Authentication authentication, Long accountId, Long id) {
         // TODO
         throw new RuntimeException("Not implemented");
     }
