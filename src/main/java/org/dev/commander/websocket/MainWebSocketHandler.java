@@ -9,10 +9,10 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.io.IOException;
 
 @Component
-public class TestWebSocketHandler extends TextWebSocketHandler {
+public class MainWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
-        // TODO: Register session; map player to session
+        // TODO: Register session; map account to session
     }
 
     @Override
@@ -22,6 +22,8 @@ public class TestWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
-        // TODO: Parse message into game move data
+        // TODO: Close connection if not authenticated
+        // TODO: Close connection if existing authentication's token does not exist
+        // TODO: Parse message as JSON
     }
 }

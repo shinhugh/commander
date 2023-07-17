@@ -12,7 +12,7 @@ import java.util.Map;
 public class SecurityHandshakeInterceptor implements HandshakeInterceptor {
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
-        // TODO: Only return true if client is authenticated and corresponding account is in-game
+        // TODO: Only return true if client is authenticated
         return true;
     }
 

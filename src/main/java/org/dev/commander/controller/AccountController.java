@@ -34,6 +34,6 @@ public class AccountController {
 
     @DeleteMapping
     public void deleteAccount(Authentication authentication, @RequestParam("id") long id) {
-        this.accountService.deleteAccountById(authentication, id);
+        accountService.deleteAccountById(authentication, id);
     }
 }
