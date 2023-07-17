@@ -155,6 +155,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
             if (!verifyClientIsOwnerOrAdmin(authentication, existingAccount)) {
                 throw new NotAuthorizedException();
             }
+            // TODO: Only an admin can set the admin role
             existingAccount.setLoginName(account.getLoginName());
             existingAccount.setPassword(passwordEncoder.encode(account.getPassword()));
             existingAccount.setAuthorities(account.getAuthorities());
