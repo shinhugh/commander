@@ -87,6 +87,11 @@ public class AccountManager implements AccountService, SessionService, Authentic
     }
 
     @Override
+    public long getAccountId(Authentication authentication) {
+        return inner.getAccountId(authentication);
+    }
+
+    @Override
     public boolean verifyAuthenticationContainsAtLeastOneAuthority(Authentication authentication, Set<String> authorities) {
         return inner.verifyAuthenticationContainsAtLeastOneAuthority(authentication, authorities);
     }
@@ -229,6 +234,13 @@ public class AccountManager implements AccountService, SessionService, Authentic
             } else {
                 sessionRepository.deleteById((String) authentication.getCredentials());
             }
+        }
+
+        public long getAccountId(Authentication authentication) {
+            if (authentication == null) {
+                return 0;
+            }
+            return ((Account) authentication.getPrincipal()).getId();
         }
 
         public boolean verifyAuthenticationContainsAtLeastOneAuthority(Authentication authentication, Set<String> authorities) {

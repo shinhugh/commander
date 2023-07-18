@@ -1,6 +1,6 @@
 package org.dev.commander.controller;
 
-import org.dev.commander.model.Game;
+import org.dev.commander.model.GameEntry;
 import org.dev.commander.service.GameService;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -20,13 +20,13 @@ public class GameController {
     }
 
     @GetMapping
-    public List<Game> readGames(Authentication authentication, @RequestParam(name = "accountId", required = false) Long accountId, @RequestParam(name = "id", required = false) Long id) {
-        return gameService.readGames(authentication, accountId, id);
+    public List<GameEntry> readGameEntries(Authentication authentication, @RequestParam(name = "accountId", required = false) Long accountId, @RequestParam(name = "id", required = false) Long id) {
+        return gameService.readGameEntries(authentication, accountId, id);
     }
 
     @PostMapping
-    public Game createGame(Authentication authentication, @RequestBody Game game) {
-        return gameService.createGame(authentication, game);
+    public GameEntry createGame(Authentication authentication, @RequestBody GameEntry gameEntry) {
+        return gameService.createGame(authentication, gameEntry);
     }
 
     @DeleteMapping

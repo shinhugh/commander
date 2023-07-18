@@ -9,7 +9,7 @@ A multiplayer turn-based strategy game inspired by Nintendo's classic title
 
 The back-end is built with the Spring framework (Java).
 
-### HTTP
+### HTTP API
 
 **Login via username and password**
 
@@ -149,7 +149,9 @@ Authorization policy: Owner or admin
 
 ---
 
-### WebSocket
+*More entries will be added here soon.*
+
+### WebSocket API
 
 *This section will be populated soon.*
 
@@ -175,5 +177,8 @@ The back-end (server-side) is currently under development. The front-end
 
 - Authentication (custom bearer tokens) and account management (REST API) are
 fully implemented.
+- Game instance management is currently being implemented. This includes game
+creation, player invitation, etc. It does not include the actual gameplay or
+game state.
 - The WebSocket protocol is currently being integrated into a temporary test
 controller to serve as a proof of concept for real-time game state updates.
