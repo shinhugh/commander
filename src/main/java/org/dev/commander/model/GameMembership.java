@@ -5,9 +5,9 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 
 @Entity
-@Table(name = "GameParticipation")
-@IdClass(GameParticipation.Key.class)
-public class GameParticipation {
+@Table(name = "GameMemberships")
+@IdClass(GameMembership.Key.class)
+public class GameMembership {
     @Column(name = "GameEntryId", nullable = false)
     @Id
     private long gameEntryId;

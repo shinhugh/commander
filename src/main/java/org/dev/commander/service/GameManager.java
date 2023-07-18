@@ -2,10 +2,12 @@ package org.dev.commander.service;
 
 import jakarta.transaction.Transactional;
 import org.dev.commander.model.GameEntry;
-import org.dev.commander.model.GameParticipation;
+import org.dev.commander.model.GameInvitation;
+import org.dev.commander.model.GameMembership;
+import org.dev.commander.repository.AccountRepository;
 import org.dev.commander.repository.GameEntryRepository;
 import org.dev.commander.repository.GameInvitationRepository;
-import org.dev.commander.repository.GameParticipationRepository;
+import org.dev.commander.repository.GameMembershipRepository;
 import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.NotAuthenticatedException;
 import org.dev.commander.service.exception.NotAuthorizedException;
@@ -17,6 +19,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import static java.lang.System.currentTimeMillis;
 
 @Service
 public class GameManager implements GameService {
@@ -44,16 +48,19 @@ public class GameManager implements GameService {
     @Component
     @Transactional
     public static class Inner {
+        private static final long INVITATION_LIFETIME = 86400000L;
         private final GameEntryRepository gameEntryRepository;
         private final GameInvitationRepository gameInvitationRepository;
-        private final GameParticipationRepository gameParticipationRepository;
+        private final GameMembershipRepository gameMembershipRepository;
         private final AuthorityVerificationService authorityVerificationService;
+        private final AccountRepository accountRepository;
 
-        public Inner(GameEntryRepository gameEntryRepository, GameInvitationRepository gameInvitationRepository, GameParticipationRepository gameParticipationRepository, AuthorityVerificationService authorityVerificationService) {
+        public Inner(GameEntryRepository gameEntryRepository, GameInvitationRepository gameInvitationRepository, GameMembershipRepository gameMembershipRepository, AuthorityVerificationService authorityVerificationService, AccountRepository accountRepository) {
             this.gameEntryRepository = gameEntryRepository;
             this.gameInvitationRepository = gameInvitationRepository;
-            this.gameParticipationRepository = gameParticipationRepository;
+            this.gameMembershipRepository = gameMembershipRepository;
             this.authorityVerificationService = authorityVerificationService;
+            this.accountRepository = accountRepository;
         }
 
         public List<GameEntry> readGameEntries(Authentication authentication, Long accountId, Long id) {
@@ -65,8 +72,8 @@ public class GameManager implements GameService {
             if (id != null) {
                 GameEntry gameEntry = gameEntryRepository.findById(id).orElse(null);
                 if (accountId != null && gameEntry != null) {
-                    List<GameParticipation> participatingGames = gameParticipationRepository.findByGameEntryId(gameEntry.getId());
-                    if (participatingGames.stream().noneMatch(p -> p.getAccountId() == accountId)) {
+                    List<GameMembership> gameMemberships = gameMembershipRepository.findByGameEntryId(gameEntry.getId());
+                    if (gameMemberships.stream().noneMatch(p -> p.getAccountId() == accountId)) {
                         gameEntry = null;
                     }
                 }
@@ -76,9 +83,10 @@ public class GameManager implements GameService {
                     }
                     throw new NotAuthorizedException();
                 }
-                if (!isAdmin && gameParticipationRepository.findByGameEntryId(id).stream().noneMatch(p -> p.getAccountId() == clientAccountId)) {
+                if (!isAdmin && gameMembershipRepository.findByGameEntryId(id).stream().noneMatch(p -> p.getAccountId() == clientAccountId)) {
                     throw new NotAuthorizedException();
                 }
+                // TODO: Set transient fields
                 return List.of(gameEntry);
             }
             if (accountId != null) {
@@ -86,9 +94,10 @@ public class GameManager implements GameService {
                     throw new NotAuthorizedException();
                 }
                 List<GameEntry> gameEntries = new ArrayList<>();
-                List<GameParticipation> participatingGames = gameParticipationRepository.findByAccountId(accountId);
-                for (GameParticipation participatingGame : participatingGames) {
-                    gameEntryRepository.findById(participatingGame.getGameEntryId()).ifPresent(gameEntries::add);
+                List<GameMembership> gameMemberships = gameMembershipRepository.findByAccountId(accountId);
+                for (GameMembership gameMembership : gameMemberships) {
+                    // TODO: Set transient fields
+                    gameEntryRepository.findById(gameMembership.getGameEntryId()).ifPresent(gameEntries::add);
                 }
                 return gameEntries;
             }
@@ -96,8 +105,44 @@ public class GameManager implements GameService {
         }
 
         public GameEntry createGame(Authentication authentication, GameEntry gameEntry) {
-            // TODO: Implement
-            throw new RuntimeException("Not implemented");
+            if (authentication == null) {
+                throw new NotAuthenticatedException();
+            }
+            if (gameEntry.getInvitations() == null || gameEntry.getInvitations().isEmpty()) {
+                throw new IllegalArgumentException();
+            }
+            long clientAccountId = authorityVerificationService.getAccountId(authentication);
+            long creationTime = currentTimeMillis();
+            long invitationExpirationTime = creationTime + INVITATION_LIFETIME;
+            GameEntry newGameEntry = new GameEntry();
+            newGameEntry.setCreationTime(creationTime);
+            newGameEntry = gameEntryRepository.save(newGameEntry);
+            GameMembership newGameMembership = new GameMembership();
+            newGameMembership.setGameEntryId(newGameEntry.getId());
+            newGameMembership.setAccountId(clientAccountId);
+            gameMembershipRepository.save(newGameMembership);
+            List<Long> gameInvitations = new ArrayList<>();
+            for (Long accountId : gameEntry.getInvitations()) {
+                if (accountId == null) {
+                    continue;
+                }
+                if (!accountRepository.existsById(accountId)) {
+                    throw new IllegalArgumentException();
+                }
+                GameInvitation newGameInvitation = new GameInvitation();
+                newGameInvitation.setGameEntryId(newGameEntry.getId());
+                newGameInvitation.setAccountId(accountId);
+                newGameInvitation.setCreationTime(creationTime);
+                newGameInvitation.setExpirationTime(invitationExpirationTime);
+                gameInvitationRepository.save(newGameInvitation);
+                gameInvitations.add(accountId);
+            }
+            if (gameInvitations.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
+            newGameEntry.setInvitations(gameInvitations);
+            newGameEntry.setMembers(List.of(clientAccountId));
+            return newGameEntry;
         }
 
         public void leaveGame(Authentication authentication, long id) {

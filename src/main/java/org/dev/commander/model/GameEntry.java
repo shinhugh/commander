@@ -13,12 +13,12 @@ public class GameEntry {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    @Transient
-    private List<Long> invitedPlayers;
-    @Transient
-    private List<Long> participatingPlayers;
-    @Transient
+    @Column(name = "CreationTime", nullable = false)
     private long creationTime;
+    @Transient
+    private List<Long> invitations;
+    @Transient
+    private List<Long> members;
 
     public long getId() {
         return id;
@@ -28,27 +28,27 @@ public class GameEntry {
         this.id = id;
     }
 
-    public List<Long> getInvitedPlayers() {
-        return invitedPlayers;
-    }
-
-    public void setInvitedPlayers(List<Long> invitedPlayers) {
-        this.invitedPlayers = invitedPlayers;
-    }
-
-    public List<Long> getParticipatingPlayers() {
-        return participatingPlayers;
-    }
-
-    public void setParticipatingPlayers(List<Long> participatingPlayers) {
-        this.participatingPlayers = participatingPlayers;
-    }
-
     public long getCreationTime() {
         return creationTime;
     }
 
     public void setCreationTime(long creationTime) {
         this.creationTime = creationTime;
+    }
+
+    public List<Long> getInvitations() {
+        return invitations;
+    }
+
+    public void setInvitations(List<Long> invitations) {
+        this.invitations = invitations;
+    }
+
+    public List<Long> getMembers() {
+        return members;
+    }
+
+    public void setMembers(List<Long> members) {
+        this.members = members;
     }
 }
