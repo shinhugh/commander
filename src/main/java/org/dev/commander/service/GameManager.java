@@ -83,10 +83,21 @@ public class GameManager implements GameService {
                     }
                     throw new NotAuthorizedException();
                 }
-                if (!isAdmin && gameMembershipRepository.findByGameEntryId(id).stream().noneMatch(p -> p.getAccountId() == clientAccountId)) {
+                List<GameMembership> gameMemberships = gameMembershipRepository.findByGameEntryId(id);
+                if (!isAdmin && gameMemberships.stream().noneMatch(p -> p.getAccountId() == clientAccountId)) {
                     throw new NotAuthorizedException();
                 }
-                // TODO: Set transient fields
+                List<Long> invitations = new ArrayList<>();
+                List<GameInvitation> gameInvitations = gameInvitationRepository.findByGameEntryId(id);
+                for (GameInvitation gameInvitation : gameInvitations) {
+                    invitations.add(gameInvitation.getAccountId());
+                }
+                gameEntry.setInvitations(invitations);
+                List<Long> members = new ArrayList<>();
+                for (GameMembership gameMembership : gameMemberships) {
+                    members.add(gameMembership.getAccountId());
+                }
+                gameEntry.setMembers(members);
                 return List.of(gameEntry);
             }
             if (accountId != null) {
@@ -94,10 +105,25 @@ public class GameManager implements GameService {
                     throw new NotAuthorizedException();
                 }
                 List<GameEntry> gameEntries = new ArrayList<>();
-                List<GameMembership> gameMemberships = gameMembershipRepository.findByAccountId(accountId);
-                for (GameMembership gameMembership : gameMemberships) {
-                    // TODO: Set transient fields
-                    gameEntryRepository.findById(gameMembership.getGameEntryId()).ifPresent(gameEntries::add);
+                List<GameMembership> accountGameMemberships = gameMembershipRepository.findByAccountId(accountId);
+                for (GameMembership accountGameMembership : accountGameMemberships) {
+                    GameEntry gameEntry = gameEntryRepository.findById(accountGameMembership.getGameEntryId()).orElse(null);
+                    if (gameEntry == null) {
+                        continue;
+                    }
+                    List<Long> invitations = new ArrayList<>();
+                    List<GameInvitation> gameInvitations = gameInvitationRepository.findByGameEntryId(gameEntry.getId());
+                    for (GameInvitation gameInvitation : gameInvitations) {
+                        invitations.add(gameInvitation.getAccountId());
+                    }
+                    gameEntry.setInvitations(invitations);
+                    List<Long> members = new ArrayList<>();
+                    List<GameMembership> gameMemberships = gameMembershipRepository.findByGameEntryId(gameEntry.getId());
+                    for (GameMembership gameMembership : gameMemberships) {
+                        members.add(gameMembership.getAccountId());
+                    }
+                    gameEntry.setMembers(members);
+                    gameEntries.add(gameEntry);
                 }
                 return gameEntries;
             }
@@ -140,6 +166,7 @@ public class GameManager implements GameService {
             if (gameInvitations.isEmpty()) {
                 throw new IllegalArgumentException();
             }
+            // TODO: Notify relevant clients via WebSocket
             newGameEntry.setInvitations(gameInvitations);
             newGameEntry.setMembers(List.of(clientAccountId));
             return newGameEntry;
