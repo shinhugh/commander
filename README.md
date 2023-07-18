@@ -25,7 +25,7 @@ POST /api/auth
 ```
 200
 
-5IXhs9tmu3wVIKR1ACrrCbq4piF6xdttVNJIf74I3sdX8JbGNueLf1H7tIjcvs9u
+O2vIi4gkS1fDMDCM5IwGX2CM4UvFeFoVB5QTQ5k74tOE0YMIyNBbrW09GUAXTHnp0YKvGk3OiXuky5AkFv8sjdU5bgsxNSddiHQIcnHsrkx1aHJ8AzLhGetLBGB6BPri
 ```
 
 Authorization policy: Public
