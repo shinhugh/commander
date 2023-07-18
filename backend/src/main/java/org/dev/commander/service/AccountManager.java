@@ -8,6 +8,7 @@ import org.dev.commander.repository.AccountRepository;
 import org.dev.commander.repository.SessionRepository;
 import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.*;
+import org.dev.commander.websocket.WebSocketRegistrar;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -123,11 +124,13 @@ public class AccountManager implements AccountService, SessionService, Authentic
         private static final long SESSION_DURATION = 86400000L;
         private final AccountRepository accountRepository;
         private final SessionRepository sessionRepository;
+        private final WebSocketRegistrar webSocketRegistrar;
         private final PasswordEncoder passwordEncoder;
 
-        public Inner(AccountRepository accountRepository, SessionRepository sessionRepository, PasswordEncoder passwordEncoder) {
+        public Inner(AccountRepository accountRepository, SessionRepository sessionRepository, WebSocketRegistrar webSocketRegistrar, PasswordEncoder passwordEncoder) {
             this.accountRepository = accountRepository;
             this.sessionRepository = sessionRepository;
+            this.webSocketRegistrar = webSocketRegistrar;
             this.passwordEncoder = passwordEncoder;
         }
 
@@ -166,7 +169,8 @@ public class AccountManager implements AccountService, SessionService, Authentic
                 existingAccount.setAuthorities(account.getAuthorities());
             }
             existingAccount.setPublicName(account.getPublicName());
-            sessionRepository.deleteByAccountId(existingAccount.getId());
+            sessionRepository.deleteByAccountId(id);
+            webSocketRegistrar.closeConnectionsForAccount(id);
             return existingAccount;
         }
 
@@ -183,6 +187,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
             }
             accountRepository.deleteById(id);
             sessionRepository.deleteByAccountId(id);
+            webSocketRegistrar.closeConnectionsForAccount(id);
         }
 
         public Session getSession(String token) {
@@ -230,9 +235,13 @@ public class AccountManager implements AccountService, SessionService, Authentic
                 return;
             }
             if (all) {
-                sessionRepository.deleteByAccountId(((Account) authentication.getPrincipal()).getId());
+                long accountId = ((Account) authentication.getPrincipal()).getId();
+                sessionRepository.deleteByAccountId(accountId);
+                webSocketRegistrar.closeConnectionsForAccount(accountId);
             } else {
-                sessionRepository.deleteById((String) authentication.getCredentials());
+                String sessionToken = (String) authentication.getCredentials();
+                sessionRepository.deleteById(sessionToken);
+                webSocketRegistrar.closeConnectionForSession(sessionToken);
             }
         }
 

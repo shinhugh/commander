@@ -1,6 +1,7 @@
 package org.dev.commander.websocket;
 
-import org.dev.commander.model.Account;
+import org.dev.commander.service.AuthenticationService;
+import org.dev.commander.service.exception.NotFoundException;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.security.core.Authentication;
@@ -13,17 +14,29 @@ import java.util.Map;
 
 @Component
 public class SecurityHandshakeInterceptor implements HandshakeInterceptor {
+    private final AuthenticationService authenticationService;
+
+    public SecurityHandshakeInterceptor(AuthenticationService authenticationService) {
+        this.authenticationService = authenticationService;
+    }
+
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
             return false;
         }
-        Object principal = authentication.getPrincipal();
-        if (principal == null) {
+        Object credentials = authentication.getCredentials();
+        if (credentials == null || credentials.getClass() != String.class) {
             return false;
         }
-        return principal.getClass() == Account.class;
+        try {
+            authenticationService.getSession((String) credentials);
+        }
+        catch (NotFoundException ex) {
+            return false;
+        }
+        return true;
     }
 
     @Override
