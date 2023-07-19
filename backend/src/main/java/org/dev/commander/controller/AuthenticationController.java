@@ -19,11 +19,13 @@ public class AuthenticationController {
         this.sessionService = sessionService;
     }
 
+    // TODO: Set X-Authorization cookie
     @PostMapping
     public String login(Authentication authentication, @RequestBody Credentials credentials) {
         return sessionService.login(authentication, credentials);
     }
 
+    // TODO: Unset X-Authorization cookie
     @DeleteMapping
     public void logout(Authentication authentication, @RequestParam Map<String, String> parameters) {
         boolean all = false;
