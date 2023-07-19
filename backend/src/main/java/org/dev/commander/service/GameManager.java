@@ -12,6 +12,7 @@ import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.NotAuthenticatedException;
 import org.dev.commander.service.exception.NotAuthorizedException;
 import org.dev.commander.service.exception.NotFoundException;
+import org.dev.commander.websocket.ObjectDispatcher;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -52,15 +53,17 @@ public class GameManager implements GameService {
         private final GameEntryRepository gameEntryRepository;
         private final GameInvitationRepository gameInvitationRepository;
         private final GameMembershipRepository gameMembershipRepository;
-        private final AuthorityVerificationService authorityVerificationService;
         private final AccountRepository accountRepository;
+        private final AuthorityVerificationService authorityVerificationService;
+        private final ObjectDispatcher objectDispatcher;
 
-        public Inner(GameEntryRepository gameEntryRepository, GameInvitationRepository gameInvitationRepository, GameMembershipRepository gameMembershipRepository, AuthorityVerificationService authorityVerificationService, AccountRepository accountRepository) {
+        public Inner(GameEntryRepository gameEntryRepository, GameInvitationRepository gameInvitationRepository, GameMembershipRepository gameMembershipRepository, AccountRepository accountRepository, AuthorityVerificationService authorityVerificationService, ObjectDispatcher objectDispatcher) {
             this.gameEntryRepository = gameEntryRepository;
             this.gameInvitationRepository = gameInvitationRepository;
             this.gameMembershipRepository = gameMembershipRepository;
-            this.authorityVerificationService = authorityVerificationService;
             this.accountRepository = accountRepository;
+            this.authorityVerificationService = authorityVerificationService;
+            this.objectDispatcher = objectDispatcher;
         }
 
         public List<GameEntry> readGameEntries(Authentication authentication, Long accountId, Long id) {
@@ -166,9 +169,9 @@ public class GameManager implements GameService {
             if (gameInvitations.isEmpty()) {
                 throw new IllegalArgumentException();
             }
-            // TODO: Notify relevant clients via WebSocket
             newGameEntry.setInvitations(gameInvitations);
             newGameEntry.setMembers(List.of(clientAccountId));
+            // TODO: Notify invited players via WebSocket
             return newGameEntry;
         }
 

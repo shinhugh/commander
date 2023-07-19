@@ -2,20 +2,23 @@ package org.dev.commander.websocket;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.dev.commander.model.Account;
+import org.dev.commander.security.TokenAuthenticationToken;
+import org.dev.commander.websocket.exception.IllegalArgumentException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.security.Principal;
+import java.util.*;
 
+// TODO: Make thread-safe
 @Component
 public class WebSocketObjectDispatcher implements ObjectDispatcher, WebSocketRegistrar {
-    private final Map<Long, Set<String>> accountIdToSessionTokenMap = new HashMap<>();
     private final Map<String, WebSocketSession> sessionTokenToConnectionMap = new HashMap<>();
+    private final Map<Long, Set<String>> accountIdToSessionTokenMap = new HashMap<>();
+    private final Map<String, Long> sessionTokenToAccountIdMap = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -29,7 +32,7 @@ public class WebSocketObjectDispatcher implements ObjectDispatcher, WebSocketReg
             message = objectMapper.writeValueAsString(object);
         }
         catch (JsonProcessingException ex) {
-            return; // TODO: Throw exception
+            throw new IllegalArgumentException();
         }
         for (Iterator<String> it = sessionTokens.iterator(); it.hasNext();) {
             String sessionToken = it.next();
@@ -38,12 +41,13 @@ public class WebSocketObjectDispatcher implements ObjectDispatcher, WebSocketReg
                 connection.sendMessage(new TextMessage(message));
             }
             catch (IOException ex) {
+                sessionTokenToAccountIdMap.remove(sessionToken);
+                it.remove();
+                sessionTokenToConnectionMap.remove(sessionToken);
                 try {
                     connection.close();
                 }
                 catch (IOException ignored) { }
-                it.remove();
-                sessionTokenToConnectionMap.remove(sessionToken);
             }
         }
         if (sessionTokens.isEmpty()) {
@@ -53,25 +57,73 @@ public class WebSocketObjectDispatcher implements ObjectDispatcher, WebSocketReg
 
     @Override
     public void registerConnection(WebSocketSession connection) {
-        // TODO: Implement
-        throw new RuntimeException("Not implemented");
+        Principal principal = connection.getPrincipal();
+        if (principal == null || principal.getClass() != TokenAuthenticationToken.class) {
+            try {
+                connection.close();
+            }
+            catch (IOException ignored) { }
+            return;
+        }
+        TokenAuthenticationToken authenticationToken = (TokenAuthenticationToken) principal;
+        String sessionToken = (String) authenticationToken.getCredentials();
+        long accountId = ((Account) authenticationToken.getPrincipal()).getId();
+        sessionTokenToConnectionMap.put(sessionToken, connection);
+        accountIdToSessionTokenMap.putIfAbsent(accountId, new HashSet<>());
+        accountIdToSessionTokenMap.get(accountId).add(sessionToken);
+        sessionTokenToAccountIdMap.put(sessionToken, accountId);
     }
 
     @Override
     public void unregisterConnection(WebSocketSession connection) {
-        // TODO: Implement
-        throw new RuntimeException("Not implemented");
+        Principal principal = connection.getPrincipal();
+        if (principal == null || principal.getClass() != TokenAuthenticationToken.class) {
+            try {
+                connection.close();
+            }
+            catch (IOException ignored) { }
+            return;
+        }
+        TokenAuthenticationToken authenticationToken = (TokenAuthenticationToken) principal;
+        String sessionToken = (String) authenticationToken.getCredentials();
+        long accountId = ((Account) authenticationToken.getPrincipal()).getId();
+        sessionTokenToAccountIdMap.remove(sessionToken);
+        accountIdToSessionTokenMap.get(accountId).remove(sessionToken);
+        if (accountIdToSessionTokenMap.get(accountId).isEmpty()) {
+            accountIdToSessionTokenMap.remove(accountId);
+        }
+        sessionTokenToConnectionMap.remove(sessionToken);
     }
 
     @Override
     public void closeConnectionForSession(String sessionToken) {
-        // TODO: Implement
-        throw new RuntimeException("Not implemented");
+        Long accountId = sessionTokenToAccountIdMap.get(sessionToken);
+        if (accountId == null) {
+            return;
+        }
+        sessionTokenToAccountIdMap.remove(sessionToken);
+        accountIdToSessionTokenMap.get(accountId).remove(sessionToken);
+        WebSocketSession connection = sessionTokenToConnectionMap.remove(sessionToken);
+        try {
+            connection.close();
+        }
+        catch (IOException ignored) { }
     }
 
     @Override
     public void closeConnectionsForAccount(long accountId) {
-        // TODO: Implement
-        throw new RuntimeException("Not implemented");
+        Set<String> sessionTokens = accountIdToSessionTokenMap.get(accountId);
+        if (sessionTokens == null) {
+            return;
+        }
+        for (String sessionToken : sessionTokens) {
+            sessionTokenToAccountIdMap.remove(sessionToken);
+            WebSocketSession connection = sessionTokenToConnectionMap.remove(sessionToken);
+            try {
+                connection.close();
+            }
+            catch (IOException ignored) { }
+        }
+        accountIdToSessionTokenMap.remove(accountId);
     }
 }
