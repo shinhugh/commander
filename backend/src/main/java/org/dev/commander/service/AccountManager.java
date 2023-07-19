@@ -10,6 +10,7 @@ import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.*;
 import org.dev.commander.websocket.WebSocketRegistrar;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -95,6 +96,11 @@ public class AccountManager implements AccountService, SessionService, Authentic
     @Override
     public boolean verifyAuthenticationContainsAtLeastOneAuthority(Authentication authentication, Set<String> authorities) {
         return inner.verifyAuthenticationContainsAtLeastOneAuthority(authentication, authorities);
+    }
+
+    @Scheduled(fixedRate = 60000)
+    public void purgeExpiredSessions() {
+        inner.purgeExpiredSessions();
     }
 
     private boolean verifyClientIsOwnerOrAdmin(Authentication authentication, Account account) {
@@ -263,6 +269,10 @@ public class AccountManager implements AccountService, SessionService, Authentic
                     .getAuthorities()
                     .stream()
                     .anyMatch(a -> authorities.contains(a.getAuthority()));
+        }
+
+        public void purgeExpiredSessions() {
+            // TODO: Purge expired sessions and close corresponding WebSocket connections
         }
 
         private boolean verifyClientIsOwnerOrAdmin(Authentication authentication, Account account) {

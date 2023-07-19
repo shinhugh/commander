@@ -12,5 +12,3 @@
 TODO
 
 - implement friend system
-
-- periodically purge expired Session instances from database
