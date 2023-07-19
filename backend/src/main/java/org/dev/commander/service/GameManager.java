@@ -32,12 +32,12 @@ public class GameManager implements GameService {
     }
 
     @Override
-    public List<GameEntry> readGameEntries(Authentication authentication, Long accountId, Long id) {
+    public List<GameEntry> readGameEntries(Authentication authentication, Long accountId, Long id) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException, NotAuthorizedException {
         return inner.readGameEntries(authentication, accountId, id);
     }
 
     @Override
-    public GameEntry createGame(Authentication authentication, GameEntry gameEntry) {
+    public GameEntry createGame(Authentication authentication, GameEntry gameEntry) throws NotAuthenticatedException, IllegalArgumentException {
         return inner.createGame(authentication, gameEntry);
     }
 

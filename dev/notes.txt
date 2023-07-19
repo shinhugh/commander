@@ -9,4 +9,8 @@
 
 - . /home/dev/Documents/commander/dev/deploy.sh && sudo systemctl restart tomcat10
 
-- should I be declaring custom RuntimeExceptions in method header?
+TODO
+
+- implement friend system
+
+- periodically purge expired Session instances from database

@@ -4,22 +4,63 @@
   <title>Test</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <link rel="stylesheet" href="index.css">
   <script src="app.js" defer></script>
 </head>
 <body>
 
-  <!-- Login module -->
-  <div>
-
+  <!-- Top bar -->
+  <div id="top_bar_root">
+    <button id="logout_button">Logout</button>
   </div>
 
-  <!-- Login module -->
-  <div>
+  <!-- Content area root -->
+  <div id="content_area_root">
 
-  </div>
+    <!-- Login module -->
+    <div id="login_module_root">
+      <div id="login_module_tabs">
+        <div id="login_tab">
+          <p>Login</p>
+        </div>
+        <div id="account_creation_tab">
+          <p>Create account</p>
+        </div>
+      </div>
+      <div id="login_module_pages">
+        <div id="login_page">
+          <div>
+            <p>Username</p>
+            <input id="login_username_input" type="text">
+          </div>
+          <div>
+            <p>Password</p>
+            <input id="login_password_input" type="password">
+          </div>
+          <button id="login_button">Login</button>
+        </div>
+        <div id="account_creation_page">
+          <div>
+            <p>Username</p>
+            <input id="account_creation_username_input" type="text">
+          </div>
+          <div>
+            <p>Password</p>
+            <input id="account_creation_password_input" type="password">
+          </div>
+          <div>
+            <p>Public name</p>
+            <input id="account_creation_public_name_input" type="text">
+          </div>
+          <button id="account_creation_button">Create account</button>
+        </div>
+      </div>
+    </div>
 
-  <!-- Login module -->
-  <div>
+    <!-- Lobby module -->
+    <div id="lobby_module_root">
+
+    </div>
 
   </div>
 

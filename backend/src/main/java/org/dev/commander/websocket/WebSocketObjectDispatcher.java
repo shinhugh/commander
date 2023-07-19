@@ -22,7 +22,7 @@ public class WebSocketObjectDispatcher implements ObjectDispatcher, WebSocketReg
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public void sendObject(long accountId, Object object) {
+    public void sendObject(long accountId, Object object) throws IllegalArgumentException {
         Set<String> sessionTokens = accountIdToSessionTokenMap.get(accountId);
         if (sessionTokens == null) {
             return;
