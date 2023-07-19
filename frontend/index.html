@@ -4,15 +4,17 @@
   <title>Test</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <link rel="stylesheet" href="index.css">
-  <script src="app.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300&display=swap">
+  <link rel="stylesheet" href="common.css">
+  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="login.css">
+  <link rel="stylesheet" href="lobby.css">
+  <script src="api.js" defer></script>
+  <script src="ui.js" defer></script>
 </head>
 <body>
-
-  <!-- Top bar -->
-  <div id="top_bar_root">
-    <button id="logout_button">Logout</button>
-  </div>
 
   <!-- Content area root -->
   <div id="content_area_root">
@@ -59,9 +61,24 @@
 
     <!-- Lobby module -->
     <div id="lobby_module_root">
-
+      <p>Lobby</p>
     </div>
 
+  </div>
+
+  <!-- Top bar -->
+  <div id="top_bar_root">
+    <div id="top_bar_left_strip">
+      <p>Commander</p>
+    </div>
+    <div id="top_bar_right_strip">
+      <button id="logout_button">Logout</button>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div id="notification_root">
+    <p id="notification_message"></p>
   </div>
 
 </body>

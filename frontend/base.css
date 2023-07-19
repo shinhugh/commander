@@ -1,0 +1,61 @@
+html, body {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  position: relative;
+  font-family: 'IBM Plex Mono', monospace;
+  background: black;
+  color: white;
+}
+
+#content_area_root {
+  height: 100%;
+  width: 100%;
+  flex: 1 1 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+#top_bar_root {
+  height: 4rem;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  padding: 0 1rem;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+#top_bar_root>* {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  pointer-events: none;
+}
+
+#top_bar_root button {
+  pointer-events: auto;
+}
+
+#notification_root {
+  max-width: 40%;
+  bottom: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  position: absolute;
+  padding: 1rem;
+  border-radius: 5px;
+  box-shadow: 2px 2px 15px #ffffff30;
+  background: black;
+}
+
+#notification_message {
+  text-align: center;
+}
