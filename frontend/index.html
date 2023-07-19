@@ -61,7 +61,55 @@
 
     <!-- Lobby module -->
     <div id="lobby_module_root">
-      <p>Lobby</p>
+      <div>
+        <div class="lobby_section">
+          <p>Active games</p>
+          <div id="active_games_list">
+            <div class="game_entry">
+              <p class="game_entry_players">John</p>
+              <div class="game_entry_right_strip">
+                <p class="game_entry_time">2023-07-19</p>
+                <button class="game_entry_leave_button">Leave</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="lobby_section">
+          <p>Invitations</p>
+          <div id="invitations_list">
+            <div class="game_entry">
+              <p class="game_entry_players">Abe, Bob, Caleb</p>
+              <div class="game_entry_right_strip">
+                <p class="game_entry_time">2023-07-19</p>
+                <button class="game_entry_accept_button">Accept</button>
+                <button class="game_entry_deny_button">Deny</button>
+              </div>
+            </div>
+            <div class="game_entry">
+              <p class="game_entry_players">David</p>
+              <div class="game_entry_right_strip">
+                <p class="game_entry_time">2023-07-17</p>
+                <button class="game_entry_accept_button">Accept</button>
+                <button class="game_entry_deny_button">Deny</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="lobby_section">
+          <p>Pending games</p>
+          <div id="pending_games_list">
+            <div class="game_entry">
+              <p class="game_entry_players">Sally</p>
+              <div class="game_entry_right_strip">
+                <p class="game_entry_time">2023-07-18</p>
+                <button class="game_entry_withdraw_button">Withdraw</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -72,6 +120,9 @@
       <p>Commander</p>
     </div>
     <div id="top_bar_right_strip">
+      <button id="create_game_button">Create game</button>
+      <button id="add_friend_button">Add friend</button>
+      <button id="account_button">Account</button>
       <button id="logout_button">Logout</button>
     </div>
   </div>

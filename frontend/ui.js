@@ -15,9 +15,15 @@ const accountCreationPasswordInput = document.getElementById('account_creation_p
 const accountCreationPublicNameInput = document.getElementById('account_creation_public_name_input');
 const accountCreationButton = document.getElementById('account_creation_button');
 const lobbyModuleRoot = document.getElementById('lobby_module_root');
+const activeGamesList = document.getElementById('active_games_list');
+const invitationsList = document.getElementById('invitations_list');
+const pendingGamesList = document.getElementById('pending_games_list');
 const topBarRoot = document.getElementById('top_bar_root');
 const topBarLeftStrip = document.getElementById('top_bar_left_strip');
 const topBarRightStrip = document.getElementById('top_bar_right_strip');
+const createGameButton = document.getElementById('create_game_button');
+const addFriendButton = document.getElementById('add_friend_button');
+const accountButton = document.getElementById('account_button');
 const logoutButton = document.getElementById('logout_button');
 const notificationRoot = document.getElementById('notification_root');
 const notificationMessage = document.getElementById('notification_message');
@@ -31,33 +37,33 @@ let notificationTimeoutId;
 const notify = (message) => {
   clearTimeout(notificationTimeoutId);
   notificationMessage.innerHTML = message;
-  body.appendChild(notificationRoot);
+  notificationRoot.style.removeProperty('display');
   notificationTimeoutId = setTimeout(() => {
-    notificationRoot.remove();
+    notificationRoot.style.display = 'none';
   }, 2000);
 };
 
 const showLoginModule = () => {
-  contentAreaRoot.innerHTML = '';
-  contentAreaRoot.appendChild(loginModuleRoot);
+  lobbyModuleRoot.style.display = 'none';
+  loginModuleRoot.style.removeProperty('display');
 };
 
 const showLobbyModule = () => {
-  contentAreaRoot.innerHTML = '';
-  contentAreaRoot.appendChild(lobbyModuleRoot);
+  loginModuleRoot.style.display = 'none';
+  lobbyModuleRoot.style.removeProperty('display');
 };
 
 const tabToLogin = () => {
-  loginModulePages.innerHTML = '';
-  loginModulePages.appendChild(loginPage);
+  accountCreationPage.style.display = 'none';
+  loginPage.style.removeProperty('display');
   accountCreationTab.classList.remove('selected');
   loginTab.classList.add('selected');
   loginUsernameInput.focus();
 };
 
 const tabToAccountCreation = () => {
-  loginModulePages.innerHTML = '';
-  loginModulePages.appendChild(accountCreationPage);
+  loginPage.style.display = 'none';
+  accountCreationPage.style.removeProperty('display');
   loginTab.classList.remove('selected');
   accountCreationTab.classList.add('selected');
   accountCreationUsernameInput.focus();
@@ -79,15 +85,27 @@ const createAccountFromInput = async () => {
 
 // ------------------------------------------------------------
 
-notificationRoot.remove();
+notificationRoot.style.display = 'none';
 showLoginModule();
 tabToLogin();
-logoutButton.remove();
+createGameButton.style.display = 'none';
+addFriendButton.style.display = 'none';
+accountButton.style.display = 'none';
+logoutButton.style.display = 'none';
 
 loginTab.addEventListener('click', tabToLogin);
 accountCreationTab.addEventListener('click', tabToAccountCreation);
 loginButton.addEventListener('click', loginFromInput);
 accountCreationButton.addEventListener('click', createAccountFromInput);
+createGameButton.addEventListener('click', () => {
+  notify('Not implemented');
+});
+addFriendButton.addEventListener('click', () => {
+  notify('Not implemented');
+});
+accountButton.addEventListener('click', () => {
+  notify('Not implemented');
+});
 logoutButton.addEventListener('click', logout);
 loginUsernameInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
@@ -117,7 +135,10 @@ accountCreationPublicNameInput.addEventListener('keydown', (e) => {
 
 registerLoginCallback((success) => {
   if (success) {
-    topBarRightStrip.appendChild(logoutButton);
+    createGameButton.style.removeProperty('display');
+    addFriendButton.style.removeProperty('display');
+    accountButton.style.removeProperty('display');
+    logoutButton.style.removeProperty('display');
     showLobbyModule();
     loginUsernameInput.value = null;
     loginPasswordInput.value = null;
@@ -130,7 +151,10 @@ registerLoginCallback((success) => {
 });
 
 registerLogoutCallback(() => {
-  logoutButton.remove();
+  createGameButton.style.display = 'none';
+  addFriendButton.style.display = 'none';
+  accountButton.style.display = 'none';
+  logoutButton.style.display = 'none';
   showLoginModule();
   tabToLogin();
 });
@@ -153,6 +177,9 @@ registerAccountCreationCallback((status, username) => {
 });
 
 if (checkLoggedIn()) {
-  topBarRightStrip.appendChild(logoutButton);
+  createGameButton.style.removeProperty('display');
+  addFriendButton.style.removeProperty('display');
+  accountButton.style.removeProperty('display');
+  logoutButton.style.removeProperty('display');
   showLobbyModule();
 }
