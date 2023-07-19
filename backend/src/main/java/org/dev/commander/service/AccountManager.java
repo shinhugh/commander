@@ -29,8 +29,8 @@ public class AccountManager implements AccountService, SessionService, Authentic
     }
 
     @Override
-    public Account readAccountById(Authentication authentication, long id) throws IllegalArgumentException, NotFoundException {
-        Account account = inner.readAccountById(id);
+    public Account readAccountById(Authentication authentication, Long id) throws IllegalArgumentException, NotFoundException {
+        Account account = inner.readAccountById(authentication, id);
         account.setPassword(null);
         if (!verifyClientIsOwnerOrAdmin(authentication, account)) {
             account.setLoginName(null);
@@ -52,7 +52,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
     }
 
     @Override
-    public Account updateAccountById(Authentication authentication, long id, Account account) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException, NotAuthorizedException, ConflictException {
+    public Account updateAccountById(Authentication authentication, Long id, Account account) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException, NotAuthorizedException, ConflictException {
         try {
             account = inner.updateAccountById(authentication, id, account);
         }
@@ -64,7 +64,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
     }
 
     @Override
-    public void deleteAccountById(Authentication authentication, long id) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException, NotAuthorizedException {
+    public void deleteAccountById(Authentication authentication, Long id) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException, NotAuthorizedException {
         inner.deleteAccountById(authentication, id);
     }
 
@@ -140,7 +140,13 @@ public class AccountManager implements AccountService, SessionService, Authentic
             this.passwordEncoder = passwordEncoder;
         }
 
-        public Account readAccountById(long id) {
+        public Account readAccountById(Authentication authentication, Long id) {
+            if (id == null) {
+                if (authentication == null) {
+                    throw new IllegalArgumentException();
+                }
+                id = ((Account) authentication.getPrincipal()).getId();
+            }
             if (id <= 0) {
                 throw new IllegalArgumentException();
             }
@@ -158,11 +164,15 @@ public class AccountManager implements AccountService, SessionService, Authentic
             return accountRepository.save(account);
         }
 
-        public Account updateAccountById(Authentication authentication, long id, Account account) {
+        // TODO: Interpret null fields in account as "leave unchanged"
+        public Account updateAccountById(Authentication authentication, Long id, Account account) {
             if (authentication == null) {
                 throw new NotAuthenticatedException();
             }
-            if (id <= 0 || !validateAccount(account, true)) {
+            if (id == null) {
+                id = ((Account) authentication.getPrincipal()).getId();
+            }
+            if (id <= 0 || !validateAccount(account, account.getAuthorities() != 0)) {
                 throw new IllegalArgumentException();
             }
             Account existingAccount = accountRepository.findById(id).orElseThrow(NotFoundException::new);
@@ -171,7 +181,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
             }
             existingAccount.setLoginName(account.getLoginName());
             existingAccount.setPassword(passwordEncoder.encode(account.getPassword()));
-            if (verifyAuthenticationContainsAtLeastOneAuthority(authentication, Set.of("ADMIN"))) {
+            if (verifyAuthenticationContainsAtLeastOneAuthority(authentication, Set.of("ADMIN")) && account.getAuthorities() != 0) {
                 existingAccount.setAuthorities(account.getAuthorities());
             }
             existingAccount.setPublicName(account.getPublicName());
@@ -180,9 +190,12 @@ public class AccountManager implements AccountService, SessionService, Authentic
             return existingAccount;
         }
 
-        public void deleteAccountById(Authentication authentication, long id) {
+        public void deleteAccountById(Authentication authentication, Long id) {
             if (authentication == null) {
                 throw new NotAuthenticatedException();
+            }
+            if (id == null) {
+                id = ((Account) authentication.getPrincipal()).getId();
             }
             if (id <= 0) {
                 throw new IllegalArgumentException();

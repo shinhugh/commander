@@ -18,7 +18,7 @@ public class AccountController {
     }
 
     @GetMapping
-    public Account readAccount(Authentication authentication, @RequestParam("id") long id) {
+    public Account readAccount(Authentication authentication, @RequestParam(name = "id", required = false) Long id) {
         return accountService.readAccountById(authentication, id);
     }
 
@@ -28,12 +28,12 @@ public class AccountController {
     }
 
     @PutMapping
-    public Account updateAccount(Authentication authentication, @RequestParam("id") long id, @RequestBody Account account) {
+    public Account updateAccount(Authentication authentication, @RequestParam(name = "id", required = false) Long id, @RequestBody Account account) {
         return accountService.updateAccountById(authentication, id, account);
     }
 
     @DeleteMapping
-    public void deleteAccount(Authentication authentication, @RequestParam("id") long id) {
+    public void deleteAccount(Authentication authentication, @RequestParam(name = "id", required = false) Long id) {
         accountService.deleteAccountById(authentication, id);
     }
 }

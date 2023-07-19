@@ -1,8 +1,11 @@
 let sessionToken;
 let connection;
+const socketCallbacks = [];
 const loginCallbacks = [];
 const logoutCallbacks = [];
 const accountCreationCallbacks = [];
+const accountUpdateCallbacks = [];
+const accountDeleteCallbacks = [];
 
 // ------------------------------------------------------------
 
@@ -33,6 +36,7 @@ const openSocketConnection = async () => {
       resolve();
     });
   });
+  // TODO: Add event handler to invoke socket callbacks
   connection = socket;
 };
 
@@ -51,9 +55,12 @@ const sendSocketMessage = (obj) => {
   connection.send(JSON.stringify(obj));
 };
 
+const registerSocketCallback = (callback) => {
+  socketCallbacks.push(callback);
+};
+
 const getCookie = (key) => {
   const cookieString = RegExp(key + "=[^;]+").exec(document.cookie);
-  // Return everything after the equal sign, or an empty string if the cookie name not found
   return decodeURIComponent(!!cookieString ? cookieString.toString().replace(/^[^=]+./,"") : "");
 };
 
@@ -71,7 +78,7 @@ const login = async (username, password) => {
     document.cookie = 'token=' + sessionToken;
   }
   for (callback of loginCallbacks) {
-    callback(response.ok);
+    callback(response.status);
   }
 };
 
@@ -91,6 +98,18 @@ const registerLogoutCallback = (callback) => {
   logoutCallbacks.push(callback);
 };
 
+const getAccount = async (accountId) => {
+  let url = '/api/account';
+  if (accountId != null) {
+    url += '?id=' + accountId;
+  }
+  const response = await callApi(url, 'GET', null, null);
+  if (response.ok) {
+    return await response.json();
+  }
+  return null;
+};
+
 const createAccount = async (username, password, publicName) => {
   const response = await callApi('/api/account', 'POST', 'application/json', JSON.stringify({
     loginName: username,
@@ -102,14 +121,56 @@ const createAccount = async (username, password, publicName) => {
     responseBody = await response.json();
   }
   for (callback of accountCreationCallbacks) {
-    callback(response.status, username);
+    callback(response.status, responseBody);
   }
   if (response.ok) {
     return responseBody;
   }
-  throw new Error();
+  return null;
 };
 
 const registerAccountCreationCallback = (callback) => {
   accountCreationCallbacks.push(callback);
+};
+
+const updateAccount = async (accountId, username, password, publicName) => {
+  let url = '/api/account';
+  if (accountId != null) {
+    url += '?id=' + accountId;
+  }
+  const response = await callApi(url, 'PUT', 'application/json', JSON.stringify({
+    loginName: username,
+    password: password,
+    publicName: publicName
+  }));
+  let responseBody;
+  if (response.ok) {
+    responseBody = await response.json();
+  }
+  for (callback of accountUpdateCallbacks) {
+    callback(response.status, responseBody);
+  }
+  if (response.ok) {
+    return responseBody;
+  }
+  return null;
+};
+
+const registerAccountUpdateCallback = (callback) => {
+  accountUpdateCallbacks.push(callback);
+};
+
+const deleteAccount = async (accountId) => {
+  let url = '/api/account';
+  if (accountId != null) {
+    url += '?id=' + accountId;
+  }
+  const response = await callApi(url, 'DELETE', null, null);
+  for (callback of accountDeleteCallbacks) {
+    callback(response.status);
+  }
+};
+
+const registerAccountDeleteCallback = (callback) => {
+  accountDeleteCallbacks.push(callback);
 };

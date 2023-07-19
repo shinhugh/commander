@@ -23,36 +23,42 @@
   gap: 0.5rem;
 }
 
-.lobby_section>:first-child {
+.lobby_section_title {
   flex: 0 0 auto;
 }
 
-.lobby_section>:last-child {
+.lobby_section_list_wrapper {
   flex: 1 1 0;
+  position: relative;
   border: 2px solid white;
   border-radius: 10px;
+  overflow: hidden;
+}
+
+.lobby_section_list {
+  height: calc(100% + 4px);
+  width: 100%;
+  position: absolute;
+  top: -2px;
   overflow-y: scroll;
 }
 
 .game_entry {
   height: 6rem;
+  margin-bottom: -2px;
   padding: 0 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-top: 2px solid white;
   border-bottom: 2px solid white;
-}
-
-.game_entry:last-child {
-  border-bottom: none;
-  /* TODO: Add bottom border if list doesn't fill all of vertical space */
 }
 
 .game_entry:hover {
   background: #ffffff20;
 }
 
-#active_games_list>.game_entry:active {
+.game_entry:active {
   background: #ffffff40;
 }
 
@@ -63,6 +69,51 @@
   gap: 1rem;
 }
 
-.game_entry_time:not(:last-child) {
-  margin-right: 0.5rem;
+#account_page {
+  width: 25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.account_page_field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+.account_page_field_label {
+  font-size: 0.8rem;
+}
+
+#account_page>button {
+  align-self: flex-end;
+}
+
+#modify_account_page {
+  width: 25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.modify_account_page_field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+.modify_account_page_field_label {
+  font-size: 0.8rem;
+}
+
+.modify_account_page_field>input {
+  align-self: stretch;
+}
+
+#modify_account_page .horizontal_button_strip {
+  display: flex;
+  justify-content: space-between;
 }

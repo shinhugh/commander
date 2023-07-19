@@ -63,13 +63,15 @@
     <div id="lobby_module_root">
       <div>
         <div class="lobby_section">
-          <p>Active games</p>
-          <div id="active_games_list">
-            <div class="game_entry">
-              <p class="game_entry_players">John</p>
-              <div class="game_entry_right_strip">
-                <p class="game_entry_time">2023-07-19</p>
-                <button class="game_entry_leave_button">Leave</button>
+          <p class="lobby_section_title">Active games</p>
+          <div class="lobby_section_list_wrapper">
+            <div id="active_games_list" class="lobby_section_list">
+              <div class="game_entry">
+                <p class="game_entry_players"></p>
+                <div class="game_entry_right_strip">
+                  <p class="game_entry_next_turn"></p>
+                  <p class="game_entry_time"></p>
+                </div>
               </div>
             </div>
           </div>
@@ -77,36 +79,15 @@
       </div>
       <div>
         <div class="lobby_section">
-          <p>Invitations</p>
-          <div id="invitations_list">
-            <div class="game_entry">
-              <p class="game_entry_players">Abe, Bob, Caleb</p>
-              <div class="game_entry_right_strip">
-                <p class="game_entry_time">2023-07-19</p>
-                <button class="game_entry_accept_button">Accept</button>
-                <button class="game_entry_deny_button">Deny</button>
-              </div>
-            </div>
-            <div class="game_entry">
-              <p class="game_entry_players">David</p>
-              <div class="game_entry_right_strip">
-                <p class="game_entry_time">2023-07-17</p>
-                <button class="game_entry_accept_button">Accept</button>
-                <button class="game_entry_deny_button">Deny</button>
-              </div>
-            </div>
+          <p class="lobby_section_title">Invitations</p>
+          <div class="lobby_section_list_wrapper">
+            <div id="invitations_list" class="lobby_section_list"></div>
           </div>
         </div>
         <div class="lobby_section">
-          <p>Pending games</p>
-          <div id="pending_games_list">
-            <div class="game_entry">
-              <p class="game_entry_players">Sally</p>
-              <div class="game_entry_right_strip">
-                <p class="game_entry_time">2023-07-18</p>
-                <button class="game_entry_withdraw_button">Withdraw</button>
-              </div>
-            </div>
+          <p class="lobby_section_title">Pending games</p>
+          <div class="lobby_section_list_wrapper">
+            <div id="pending_games_list" class="lobby_section_list"></div>
           </div>
         </div>
       </div>
@@ -121,9 +102,60 @@
     </div>
     <div id="top_bar_right_strip">
       <button id="create_game_button">Create game</button>
-      <button id="add_friend_button">Add friend</button>
+      <button id="friends_button">Friends</button>
       <button id="account_button">Account</button>
       <button id="logout_button">Logout</button>
+    </div>
+  </div>
+
+  <!-- Overlay -->
+  <div id="overlay_backdrop">
+    <div id="overlay_dialog">
+      <div id="active_game_entry_page">
+        <p>Active game entry page</p>
+      </div>
+      <div id="invitation_entry_page">
+        <p>Invitation entry page</p>
+      </div>
+      <div id="pending_game_entry_page">
+        <p>Pending game entry page</p>
+      </div>
+      <div id="create_game_page">
+        <p>Create game page</p>
+      </div>
+      <div id="friends_page">
+        <p>Friends page</p>
+      </div>
+      <div id="account_page">
+        <div class="account_page_field">
+          <p class="account_page_field_label">Username</p>
+          <p id="account_page_username"></p>
+        </div>
+        <div class="account_page_field">
+          <p class="account_page_field_label">Public name</p>
+          <p id="account_page_public_name"></p>
+        </div>
+        <button id="account_page_modify_button">Modify</button>
+      </div>
+      <div id="modify_account_page">
+        <div class="modify_account_page_field">
+          <p class="modify_account_page_field_label">Username</p>
+          <input id="modify_account_page_username" type="text" placeholder="Optional">
+        </div>
+        <div class="modify_account_page_field">
+          <p class="modify_account_page_field_label">Password</p>
+          <input id="modify_account_page_password" type="password" placeholder="Optional">
+        </div>
+        <div class="modify_account_page_field">
+          <p class="modify_account_page_field_label">Public name</p>
+          <input id="modify_account_page_public_name" type="text" placeholder="Optional">
+        </div>
+        <div class="horizontal_button_strip">
+          <button id="modify_account_page_cancel_button">Cancel</button>
+          <button id="modify_account_page_delete_button">Delete</button>
+          <button id="modify_account_page_save_button">Save</button>
+        </div>
+      </div>
     </div>
   </div>
 

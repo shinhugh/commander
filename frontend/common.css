@@ -12,6 +12,10 @@
   text-decoration: none;
 }
 
+p {
+  cursor: default;
+}
+
 input {
   padding: 0.5rem;
   border: 2px solid white;
