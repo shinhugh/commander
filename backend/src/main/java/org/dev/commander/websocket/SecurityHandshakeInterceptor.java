@@ -20,6 +20,7 @@ public class SecurityHandshakeInterceptor implements HandshakeInterceptor {
         this.authenticationService = authenticationService;
     }
 
+    // TODO: Send status code 401 if this method returns false (currently sends 200)
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

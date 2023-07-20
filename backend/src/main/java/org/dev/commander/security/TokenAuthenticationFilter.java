@@ -2,6 +2,7 @@ package org.dev.commander.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 @Component
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
@@ -27,15 +29,24 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         this.authenticationManager = authenticationManager;
     }
 
-    // TODO: Support X-Authorization cookie
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authorizationHeader = request.getHeader("authorization");
-        if (authorizationHeader == null || authorizationHeader.indexOf("Bearer") != 0 || authorizationHeader.length() < 8) {
+        Cookie xAuthorizationCookie = null;
+        if (request.getCookies() != null) {
+            xAuthorizationCookie = Arrays.stream(request.getCookies()).filter(c -> "X-Authorization".equals(c.getName())).findFirst().orElse(null);
+        }
+        String token;
+        if (authorizationHeader != null && authorizationHeader.indexOf("Bearer") == 0 && authorizationHeader.length() >= 8) {
+            token = authorizationHeader.substring(7);
+        }
+        else if (xAuthorizationCookie != null && xAuthorizationCookie.getValue() != null) {
+            token = xAuthorizationCookie.getValue();
+        }
+        else {
             filterChain.doFilter(request, response);
             return;
         }
-        String token = authorizationHeader.substring(7);
         TokenAuthenticationToken attempt = new TokenAuthenticationToken(token);
         Authentication authentication;
         try {

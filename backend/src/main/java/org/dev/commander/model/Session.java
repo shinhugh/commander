@@ -1,5 +1,6 @@
 package org.dev.commander.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -7,6 +8,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "Sessions")
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class Session {
     @Column(name = "Token", nullable = false, unique = true)
     @Id

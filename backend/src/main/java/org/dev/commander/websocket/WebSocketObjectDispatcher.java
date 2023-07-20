@@ -6,8 +6,10 @@ import org.dev.commander.model.Account;
 import org.dev.commander.security.TokenAuthenticationToken;
 import org.dev.commander.websocket.exception.IllegalArgumentException;
 import org.springframework.stereotype.Component;
+import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
 import java.security.Principal;
@@ -15,11 +17,63 @@ import java.util.*;
 
 // TODO: Make thread-safe
 @Component
-public class WebSocketObjectDispatcher implements ObjectDispatcher, WebSocketRegistrar {
+public class WebSocketObjectDispatcher extends TextWebSocketHandler implements ObjectDispatcher, WebSocketRegistrar {
     private final Map<String, WebSocketSession> sessionTokenToConnectionMap = new HashMap<>();
     private final Map<Long, Set<String>> accountIdToSessionTokenMap = new HashMap<>();
     private final Map<String, Long> sessionTokenToAccountIdMap = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    public void afterConnectionEstablished(WebSocketSession session) {
+        if (session == null) {
+            return;
+        }
+        Principal principal = session.getPrincipal();
+        if (principal == null || principal.getClass() != TokenAuthenticationToken.class) {
+            try {
+                session.close();
+            }
+            catch (IOException ignored) { }
+            return;
+        }
+        TokenAuthenticationToken authenticationToken = (TokenAuthenticationToken) principal;
+        String sessionToken = (String) authenticationToken.getCredentials();
+        long accountId = ((Account) authenticationToken.getPrincipal()).getId();
+        sessionTokenToConnectionMap.put(sessionToken, session);
+        accountIdToSessionTokenMap.putIfAbsent(accountId, new HashSet<>());
+        accountIdToSessionTokenMap.get(accountId).add(sessionToken);
+        sessionTokenToAccountIdMap.put(sessionToken, accountId);
+    }
+
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+        if (session == null) {
+            return;
+        }
+        Principal principal = session.getPrincipal();
+        if (principal == null || principal.getClass() != TokenAuthenticationToken.class) {
+            try {
+                session.close();
+            }
+            catch (IOException ignored) { }
+            return;
+        }
+        TokenAuthenticationToken authenticationToken = (TokenAuthenticationToken) principal;
+        String sessionToken = (String) authenticationToken.getCredentials();
+        long accountId = ((Account) authenticationToken.getPrincipal()).getId();
+        sessionTokenToAccountIdMap.remove(sessionToken);
+        accountIdToSessionTokenMap.get(accountId).remove(sessionToken);
+        if (accountIdToSessionTokenMap.get(accountId).isEmpty()) {
+            accountIdToSessionTokenMap.remove(accountId);
+        }
+        sessionTokenToConnectionMap.remove(sessionToken);
+    }
+
+    @Override
+    public void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
+        // TODO: Parse message as JSON
+        // TODO: Delegate parsed message to appropriate service
+    }
 
     @Override
     public void sendObject(long accountId, Object object) throws IllegalArgumentException {
@@ -53,52 +107,6 @@ public class WebSocketObjectDispatcher implements ObjectDispatcher, WebSocketReg
         if (sessionTokens.isEmpty()) {
             accountIdToSessionTokenMap.remove(accountId);
         }
-    }
-
-    @Override
-    public void registerConnection(WebSocketSession connection) {
-        if (connection == null) {
-            return;
-        }
-        Principal principal = connection.getPrincipal();
-        if (principal == null || principal.getClass() != TokenAuthenticationToken.class) {
-            try {
-                connection.close();
-            }
-            catch (IOException ignored) { }
-            return;
-        }
-        TokenAuthenticationToken authenticationToken = (TokenAuthenticationToken) principal;
-        String sessionToken = (String) authenticationToken.getCredentials();
-        long accountId = ((Account) authenticationToken.getPrincipal()).getId();
-        sessionTokenToConnectionMap.put(sessionToken, connection);
-        accountIdToSessionTokenMap.putIfAbsent(accountId, new HashSet<>());
-        accountIdToSessionTokenMap.get(accountId).add(sessionToken);
-        sessionTokenToAccountIdMap.put(sessionToken, accountId);
-    }
-
-    @Override
-    public void unregisterConnection(WebSocketSession connection) {
-        if (connection == null) {
-            return;
-        }
-        Principal principal = connection.getPrincipal();
-        if (principal == null || principal.getClass() != TokenAuthenticationToken.class) {
-            try {
-                connection.close();
-            }
-            catch (IOException ignored) { }
-            return;
-        }
-        TokenAuthenticationToken authenticationToken = (TokenAuthenticationToken) principal;
-        String sessionToken = (String) authenticationToken.getCredentials();
-        long accountId = ((Account) authenticationToken.getPrincipal()).getId();
-        sessionTokenToAccountIdMap.remove(sessionToken);
-        accountIdToSessionTokenMap.get(accountId).remove(sessionToken);
-        if (accountIdToSessionTokenMap.get(accountId).isEmpty()) {
-            accountIdToSessionTokenMap.remove(accountId);
-        }
-        sessionTokenToConnectionMap.remove(sessionToken);
     }
 
     @Override

@@ -80,7 +80,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
     }
 
     @Override
-    public String login(Authentication authentication, Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException {
+    public Session login(Authentication authentication, Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException {
         return inner.login(authentication, credentials);
     }
 
@@ -228,9 +228,12 @@ public class AccountManager implements AccountService, SessionService, Authentic
             return accountRepository.findById(session.getAccountId()).orElseThrow(NotFoundException::new);
         }
 
-        public String login(Authentication authentication, Credentials credentials) {
+        public Session login(Authentication authentication, Credentials credentials) {
             if (authentication != null) {
-                return (String) authentication.getCredentials();
+                Session session = sessionRepository.findById((String) authentication.getCredentials()).orElse(null);
+                if (session != null) {
+                    return session;
+                }
             }
             if (credentials == null || credentials.getUsername() == null || credentials.getPassword() == null) {
                 throw new IllegalArgumentException();
@@ -252,7 +255,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
             session.setCreationTime(creationTime);
             session.setExpirationTime(expirationTime);
             sessionRepository.save(session);
-            return token;
+            return session;
         }
 
         public void logout(Authentication authentication, boolean all) {

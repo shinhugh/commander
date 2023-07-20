@@ -29,7 +29,7 @@ const callApi = async (path, method, contentType, body) => {
 };
 
 const openSocketConnection = async () => {
-  // TODO: Cannot send authorization header; find workaround
+  // TODO: Test and verify that X-Authorization cookie gets sent
   await new Promise(resolve => {
     const socket = new WebSocket('ws://localhost:8080/api/ws');
     socket.addEventListener('open', () => {
@@ -74,7 +74,8 @@ const login = async (username, password) => {
     password, password
   }));
   if (response.ok) {
-    sessionToken = await response.text();
+    const session = await response.json();
+    sessionToken = session.token;
     document.cookie = 'token=' + sessionToken;
   }
   for (callback of loginCallbacks) {
