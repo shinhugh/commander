@@ -8,11 +8,11 @@
   box-shadow: 2px 2px 15px #ffffff30;
 }
 
-#content_login_module_tabs_container {
+#content_login_module_tabs {
   display: flex;
 }
 
-#content_login_module_tabs_container>* {
+#content_login_module_tabs>* {
   flex: 1 1 0;
   padding: 1rem 0;
   display: flex;
@@ -20,38 +20,38 @@
   align-items: center;
 }
 
-#content_login_module_tabs_container>* {
+#content_login_module_tabs>* {
   background: #202020;
   color: white;
 }
 
-#content_login_module_tabs_container>.selected {
+#content_login_module_tabs>.selected {
   background: black;
   color: white;
 }
 
-#content_login_module_pages_container {
+#content_login_module_pages {
   height: 28rem;
   padding: 4rem 3rem;
   background: black;
   overflow-y: auto;
 }
 
-#content_login_module_pages_container>* {
+#content_login_module_pages>* {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-#content_login_module_pages_container p {
+#content_login_module_pages p {
   margin-bottom: 0.5rem;
   font-size: 0.8rem;
 }
 
-#content_login_module_pages_container input {
+#content_login_module_pages input {
   width: 15rem;
 }
 
-#content_login_module_pages_container>*>button {
+#content_login_module_pages>*>button {
   align-self: flex-end;
 }

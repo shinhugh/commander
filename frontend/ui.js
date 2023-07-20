@@ -9,22 +9,26 @@ const ui = {
       root: document.getElementById('content'),
       loginModule: {
         root: document.getElementById('content_login_module'),
-        tabsContainer: document.getElementById('content_login_module_tabs_container'),
-        loginTab: document.getElementById('content_login_module_login_tab'),
-        createAccountTab: document.getElementById('content_login_module_create_account_tab'),
-        pagesContainer: document.getElementById('content_login_module_pages_container'),
-        loginPage: {
-          root: document.getElementById('content_login_module_login_page'),
-          usernameInput: document.getElementById('content_login_module_login_page_username_input'),
-          passwordInput: document.getElementById('content_login_module_login_page_password_input'),
-          loginButton: document.getElementById('content_login_module_login_page_login_button'),
+        tabs: {
+          root: document.getElementById('content_login_module_tabs'),
+          loginTab: document.getElementById('content_login_module_tabs_login_tab'),
+          createAccountTab: document.getElementById('content_login_module_tabs_create_account_tab')
         },
-        createAccountPage: {
-          root: document.getElementById('content_login_module_create_account_page'),
-          usernameInput: document.getElementById('content_login_module_create_account_page_username_input'),
-          passwordInput: document.getElementById('content_login_module_create_account_page_password_input'),
-          publicNameInput: document.getElementById('content_login_module_create_account_page_public_name_input'),
-          createAccountButton: document.getElementById('content_login_module_create_account_page_create_account_button')
+        pages: {
+          root: document.getElementById('content_login_module_pages'),
+          loginPage: {
+            root: document.getElementById('content_login_module_pages_login_page'),
+            usernameInput: document.getElementById('content_login_module_pages_login_page_username_input'),
+            passwordInput: document.getElementById('content_login_module_pages_login_page_password_input'),
+            loginButton: document.getElementById('content_login_module_pages_login_page_login_button'),
+          },
+          createAccountPage: {
+            root: document.getElementById('content_login_module_pages_create_account_page'),
+            usernameInput: document.getElementById('content_login_module_pages_create_account_page_username_input'),
+            passwordInput: document.getElementById('content_login_module_pages_create_account_page_password_input'),
+            publicNameInput: document.getElementById('content_login_module_pages_create_account_page_public_name_input'),
+            createAccountButton: document.getElementById('content_login_module_pages_create_account_page_create_account_button')
+          }
         }
       },
       lobbyModule: {
@@ -90,32 +94,250 @@ const ui = {
     element.style.removeProperty('display');
   },
 
-  navigateToLoginModule: () => {
-    ui.hide(ui.elements.lobbyModule.root);
-    ui.show(ui.elements.loginModule.root);
+  select: (element) => {
+    element.classList.add('selected');
   },
 
-  navigateToLobbyModule: () => {
-    ui.hide(ui.elements.loginModule.root);
-    ui.show(ui.elements.lobbyModule.root);
+  unselect: (element) => {
+    element.classList.remove('selected');
+  },
+
+  notify: (message) => {
+    clearTimeout(ui.state.notificationTimeoutId);
+    ui.elements.notification.message.innerHTML = message;
+    ui.show(ui.elements.notification.root);
+    ui.state.notificationTimeoutId = setTimeout(() => {
+      ui.hide(ui.elements.notification.root);
+    }, 2000);
+  },
+
+  hideOverlay: () => {
+    ui.hide(ui.elements.overlay.root);
+  },
+
+  showOverlay: () => {
+    ui.show(ui.elements.overlay.root);
+  },
+
+  clearOverlay: () => {
+    ui.hide(ui.elements.overlay.activeGameEntryPage.root);
+    ui.hide(ui.elements.overlay.invitationEntryPage.root);
+    ui.hide(ui.elements.overlay.pendingGameEntryPage.root);
+    ui.hide(ui.elements.overlay.createGamePage.root);
+    ui.hide(ui.elements.overlay.friendsPage.root);
+    ui.hide(ui.elements.overlay.accountPage.root);
+    ui.hide(ui.elements.overlay.modifyAccountPage.root);
+  },
+
+  showLoginModule: () => {
+    ui.hide(ui.elements.content.lobbyModule.root);
+    ui.show(ui.elements.content.loginModule.root);
+  },
+
+  showLobbyModule: () => {
+    ui.hide(ui.elements.content.loginModule.root);
+    ui.show(ui.elements.content.lobbyModule.root);
+  },
+
+  hideTopBarButtons: () => {
+    ui.hide(ui.elements.topBar.createGameButton);
+    ui.hide(ui.elements.topBar.friendsButton);
+    ui.hide(ui.elements.topBar.accountButton);
+    ui.hide(ui.elements.topBar.logoutButton);
+  },
+
+  showTopBarButtons: () => {
+    ui.show(ui.elements.topBar.createGameButton);
+    ui.show(ui.elements.topBar.friendsButton);
+    ui.show(ui.elements.topBar.accountButton);
+    ui.show(ui.elements.topBar.logoutButton);
+  },
+
+  showLoginPage: () => {
+    ui.hide(ui.elements.content.loginModule.pages.createAccountPage.root);
+    ui.show(ui.elements.content.loginModule.pages.loginPage.root);
+    ui.unselect(ui.elements.content.loginModule.tabs.createAccountTab);
+    ui.select(ui.elements.content.loginModule.tabs.loginTab);
+  },
+
+  showCreateAccountPage: () => {
+    ui.hide(ui.elements.content.loginModule.pages.loginPage.root);
+    ui.show(ui.elements.content.loginModule.pages.createAccountPage.root);
+    ui.unselect(ui.elements.content.loginModule.tabs.loginTab);
+    ui.select(ui.elements.content.loginModule.tabs.createAccountTab);
+  },
+
+  addActiveGameEntry: (gameEntry) => {
+    // TODO: Implement
+  },
+
+  addInvitationEntry: (gameEntry) => {
+    // TODO: Implement
+  },
+
+  addPendingGameEntry: (gameEntry) => {
+    // TODO: Implement
+  },
+
+  showActiveGameEntryPage: () => {
+    ui.clearOverlay();
+    ui.show(ui.elements.overlay.activeGameEntryPage.root);
+  },
+
+  showInvitationEntryPage: () => {
+    ui.clearOverlay();
+    ui.show(ui.elements.overlay.invitationEntryPage.root);
+  },
+
+  showPendingGameEntryPage: () => {
+    ui.clearOverlay();
+    ui.show(ui.elements.overlay.pendingGameEntryPage.root);
+  },
+
+  showCreateGamePage: () => {
+    ui.clearOverlay();
+    ui.show(ui.elements.overlay.createGamePage.root);
+  },
+
+  showFriendsPage: () => {
+    ui.clearOverlay();
+    ui.show(ui.elements.overlay.friendsPage.root);
+  },
+
+  showAccountPage: () => {
+    ui.clearOverlay();
+    ui.show(ui.elements.overlay.accountPage.root);
+  },
+
+  showModifyAccountPage: () => {
+    ui.clearOverlay();
+    ui.show(ui.elements.overlay.modifyAccountPage.root);
+  },
+
+  handleLogout: () => {
+    ui.hideOverlay();
+    ui.hideTopBarButtons();
+    ui.showLoginPage();
+    ui.showLoginModule();
+    ui.elements.content.loginModule.pages.loginPage.usernameInput.focus();
+  },
+
+  handleLogin: () => {
+    ui.showLobbyModule();
+    ui.showTopBarButtons();
   }
 
 };
 
 // ------------------------------------------------------------
 
-// TODO: Add event handlers
+ui.elements.content.loginModule.tabs.loginTab.addEventListener('click', () => {
+  ui.showLoginPage();
+  ui.elements.content.loginModule.pages.loginPage.usernameInput.focus();
+});
+ui.elements.content.loginModule.tabs.createAccountTab.addEventListener('click', () => {
+  ui.showCreateAccountPage();
+  ui.elements.content.loginModule.pages.createAccountPage.usernameInput.focus();
+});
+ui.elements.content.loginModule.pages.loginPage.usernameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    ui.elements.content.loginModule.pages.loginPage.passwordInput.focus();
+  }
+});
+ui.elements.content.loginModule.pages.loginPage.passwordInput.addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    const username = ui.elements.content.loginModule.pages.loginPage.usernameInput.value;
+    const password = ui.elements.content.loginModule.pages.loginPage.passwordInput.value;
+    try {
+      await api.login(username, password);
+    }
+    catch {
+      ui.notify('Failed to login');
+      return;
+    }
+    ui.handleLogin();
+  }
+});
+ui.elements.content.loginModule.pages.loginPage.loginButton.addEventListener('click', async () => {
+  const username = ui.elements.content.loginModule.pages.loginPage.usernameInput.value;
+  const password = ui.elements.content.loginModule.pages.loginPage.passwordInput.value;
+  try {
+    await api.login(username, password);
+  }
+  catch {
+    ui.notify('Failed to login');
+    return;
+  }
+  ui.handleLogin();
+});
+ui.elements.content.loginModule.pages.createAccountPage.usernameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    ui.elements.content.loginModule.pages.createAccountPage.passwordInput.focus();
+  }
+});
+ui.elements.content.loginModule.pages.createAccountPage.passwordInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.focus();
+  }
+});
+ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    const username = ui.elements.content.loginModule.pages.createAccountPage.usernameInput.value;
+    const password = ui.elements.content.loginModule.pages.createAccountPage.passwordInput.value;
+    const publicName = ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.value;
+    let account;
+    try {
+      account = await api.createAccount(username, password, publicName);
+    }
+    catch {
+      ui.notify('Failed to create account');
+      return;
+    }
+    ui.notify('Successfully created account');
+    ui.showLoginPage();
+    ui.elements.content.loginModule.pages.loginPage.usernameInput.value = account.loginName;
+    ui.elements.content.loginModule.pages.loginPage.passwordInput.value = null;
+    ui.elements.content.loginModule.pages.loginPage.passwordInput.focus();
+  }
+});
+ui.elements.content.loginModule.pages.createAccountPage.createAccountButton.addEventListener('click', async () => {
+  const username = ui.elements.content.loginModule.pages.createAccountPage.usernameInput.value;
+  const password = ui.elements.content.loginModule.pages.createAccountPage.passwordInput.value;
+  const publicName = ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.value;
+  let account;
+  try {
+    account = await api.createAccount(username, password, publicName);
+  }
+  catch { // TODO: Use error to describe why operation failed
+    ui.notify('Failed to create account');
+    return;
+  }
+  ui.notify('Successfully created account');
+  ui.showLoginPage();
+  ui.elements.content.loginModule.pages.loginPage.usernameInput.value = account.loginName;
+  ui.elements.content.loginModule.pages.loginPage.passwordInput.value = null;
+  ui.elements.content.loginModule.pages.loginPage.passwordInput.focus();
+});
 
 // ------------------------------------------------------------
 
 ui.hide(ui.elements.content.loginModule.root);
-ui.hide(ui.elements.content.loginModule.loginPage.root);
-ui.hide(ui.elements.content.loginModule.createAccountPage.root);
+ui.hide(ui.elements.content.loginModule.pages.loginPage.root);
+ui.hide(ui.elements.content.loginModule.pages.createAccountPage.root);
 ui.hide(ui.elements.content.lobbyModule.root);
+ui.elements.content.lobbyModule.gameEntryTemplate.remove();
 ui.hide(ui.elements.topBar.createGameButton);
 ui.hide(ui.elements.topBar.friendsButton);
 ui.hide(ui.elements.topBar.accountButton);
 ui.hide(ui.elements.topBar.logoutButton);
 ui.hide(ui.elements.overlay.root);
+ui.hide(ui.elements.overlay.activeGameEntryPage.root);
+ui.hide(ui.elements.overlay.invitationEntryPage.root);
+ui.hide(ui.elements.overlay.pendingGameEntryPage.root);
+ui.hide(ui.elements.overlay.createGamePage.root);
+ui.hide(ui.elements.overlay.friendsPage.root);
+ui.hide(ui.elements.overlay.accountPage.root);
+ui.hide(ui.elements.overlay.modifyAccountPage.root);
+ui.hide(ui.elements.notification.root);
 
-ui.navigateToLoginModule();
+ui.handleLogout();

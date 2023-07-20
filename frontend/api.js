@@ -211,3 +211,7 @@ const api = {
   }
 
 };
+
+// ------------------------------------------------------------
+
+// TODO: See if user is already logged in; populate internal variables accordingly
