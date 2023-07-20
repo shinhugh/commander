@@ -69,51 +69,51 @@
   gap: 1rem;
 }
 
-#account_page {
+#overlay_account_page {
   width: 25rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.account_page_field {
+.overlay_account_page_field {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 0.3rem;
 }
 
-.account_page_field_label {
+.overlay_account_page_field_label {
   font-size: 0.8rem;
 }
 
-#account_page>button {
+#overlay_account_page>button {
   align-self: flex-end;
 }
 
-#modify_account_page {
+#overlay_modify_account_page {
   width: 25rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.modify_account_page_field {
+.overlay_modify_account_page_field {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 0.3rem;
 }
 
-.modify_account_page_field_label {
+.overlay_modify_account_page_field_label {
   font-size: 0.8rem;
 }
 
-.modify_account_page_field>input {
+.overlay_modify_account_page_field>input {
   align-self: stretch;
 }
 
-#modify_account_page .horizontal_button_strip {
+#overlay_modify_account_page .horizontal_button_strip {
   display: flex;
   justify-content: space-between;
 }

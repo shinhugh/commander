@@ -21,40 +21,40 @@
 
     <!-- Login module -->
     <div id="login_module_root">
-      <div id="login_tabs_container">
-        <div id="login_tab">
+      <div id="login_module_tabs_container">
+        <div id="login_module_login_tab">
           <p>Login</p>
         </div>
-        <div id="create_account_tab">
+        <div id="login_module_create_account_tab">
           <p>Create account</p>
         </div>
       </div>
-      <div id="login_pages_container">
-        <div id="login_page">
+      <div id="login_module_pages_container">
+        <div id="login_module_login_page">
           <div>
             <p>Username</p>
-            <input id="login_username_input" type="text">
+            <input id="login_module_login_page_username_input" type="text">
           </div>
           <div>
             <p>Password</p>
-            <input id="login_password_input" type="password">
+            <input id="login_module_login_page_password_input" type="password">
           </div>
-          <button id="login_button">Login</button>
+          <button id="login_module_login_page_login_button">Login</button>
         </div>
-        <div id="create_account_page">
+        <div id="login_module_create_account_page">
           <div>
             <p>Username</p>
-            <input id="create_account_username_input" type="text">
+            <input id="login_module_create_account_page_username_input" type="text">
           </div>
           <div>
             <p>Password</p>
-            <input id="create_account_password_input" type="password">
+            <input id="login_module_create_account_page_password_input" type="password">
           </div>
           <div>
             <p>Public name</p>
-            <input id="create_account_public_name_input" type="text">
+            <input id="login_module_create_account_page_public_name_input" type="text">
           </div>
-          <button id="create_account_button">Create account</button>
+          <button id="login_module_create_account_page_create_account_button">Create account</button>
         </div>
       </div>
     </div>
@@ -65,7 +65,7 @@
         <div class="lobby_section">
           <p class="lobby_section_title">Active games</p>
           <div class="lobby_section_list_wrapper">
-            <div id="active_games_list" class="lobby_section_list">
+            <div id="lobby_module_active_games_list" class="lobby_section_list">
               <div class="game_entry">
                 <p class="game_entry_players"></p>
                 <div class="game_entry_right_strip">
@@ -81,13 +81,13 @@
         <div class="lobby_section">
           <p class="lobby_section_title">Invitations</p>
           <div class="lobby_section_list_wrapper">
-            <div id="invitations_list" class="lobby_section_list"></div>
+            <div id="lobby_module_invitations_list" class="lobby_section_list"></div>
           </div>
         </div>
         <div class="lobby_section">
           <p class="lobby_section_title">Pending games</p>
           <div class="lobby_section_list_wrapper">
-            <div id="pending_games_list" class="lobby_section_list"></div>
+            <div id="lobby_module_pending_games_list" class="lobby_section_list"></div>
           </div>
         </div>
       </div>
@@ -101,59 +101,59 @@
       <p>Commander</p>
     </div>
     <div>
-      <button id="create_game_button">Create game</button>
-      <button id="friends_button">Friends</button>
-      <button id="account_button">Account</button>
-      <button id="logout_button">Logout</button>
+      <button id="top_bar_create_game_button">Create game</button>
+      <button id="top_bar_friends_button">Friends</button>
+      <button id="top_bar_account_button">Account</button>
+      <button id="top_bar_logout_button">Logout</button>
     </div>
   </div>
 
   <!-- Overlay -->
   <div id="overlay_backdrop">
     <div id="overlay_window">
-      <div id="active_game_entry_page">
+      <div id="overlay_active_game_entry_page">
         <p>Active game entry page</p>
       </div>
-      <div id="invitation_entry_page">
+      <div id="overlay_invitation_entry_page">
         <p>Invitation entry page</p>
       </div>
-      <div id="pending_game_entry_page">
+      <div id="overlay_pending_game_entry_page">
         <p>Pending game entry page</p>
       </div>
-      <div id="create_game_page">
+      <div id="overlay_create_game_page">
         <p>Create game page</p>
       </div>
-      <div id="friends_page">
+      <div id="overlay_friends_page">
         <p>Friends page</p>
       </div>
-      <div id="account_page">
-        <div class="account_page_field">
-          <p class="account_page_field_label">Username</p>
-          <p id="account_page_username"></p>
+      <div id="overlay_account_page">
+        <div class="overlay_account_page_field">
+          <p class="overlay_account_page_field_label">Username</p>
+          <p id="overlay_account_page_username"></p>
         </div>
-        <div class="account_page_field">
-          <p class="account_page_field_label">Public name</p>
-          <p id="account_page_public_name"></p>
+        <div class="overlay_account_page_field">
+          <p class="overlay_account_page_field_label">Public name</p>
+          <p id="overlay_account_page_public_name"></p>
         </div>
-        <button id="account_page_modify_button">Modify</button>
+        <button id="overlay_account_page_modify_button">Modify</button>
       </div>
-      <div id="modify_account_page">
-        <div class="modify_account_page_field">
-          <p class="modify_account_page_field_label">Username</p>
-          <input id="modify_account_username_input" type="text" placeholder="Optional">
+      <div id="overlay_modify_account_page">
+        <div class="overlay_modify_account_page_field">
+          <p class="overlay_modify_account_page_field_label">Username</p>
+          <input id="overlay_modify_account_page_username_input" type="text" placeholder="Optional">
         </div>
-        <div class="modify_account_page_field">
-          <p class="modify_account_page_field_label">Password</p>
-          <input id="modify_account_password_input" type="password" placeholder="Optional">
+        <div class="overlay_modify_account_page_field">
+          <p class="overlay_modify_account_page_field_label">Password</p>
+          <input id="overlay_modify_account_page_password_input" type="password" placeholder="Optional">
         </div>
-        <div class="modify_account_page_field">
-          <p class="modify_account_page_field_label">Public name</p>
-          <input id="modify_account_public_name_input" type="text" placeholder="Optional">
+        <div class="overlay_modify_account_page_field">
+          <p class="overlay_modify_account_page_field_label">Public name</p>
+          <input id="overlay_modify_account_page_public_name_input" type="text" placeholder="Optional">
         </div>
         <div class="horizontal_button_strip">
-          <button id="modify_account_cancel_button">Cancel</button>
-          <button id="modify_account_delete_button">Delete</button>
-          <button id="modify_account_save_button">Save</button>
+          <button id="overlay_modify_account_page_cancel_button">Cancel</button>
+          <button id="overlay_modify_account_page_delete_button">Delete</button>
+          <button id="overlay_modify_account_page_save_button">Save</button>
         </div>
       </div>
     </div>
