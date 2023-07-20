@@ -332,7 +332,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
             String loginName = account.getLoginName();
             String password = account.getPassword();
             String publicName = account.getPublicName();
-            int authorities = account.getAuthorities();
+            Integer authorities = account.getAuthorities();
             if (!allowBlankFields || loginName != null) {
                 if (loginName == null || loginName.length() < LOGIN_NAME_LENGTH_MIN || loginName.length() > LOGIN_NAME_LENGTH_MAX || !verifyAllowedChars(loginName, LOGIN_NAME_ALLOWED_CHARS)) {
                     return false;
@@ -349,8 +349,8 @@ public class AccountManager implements AccountService, SessionService, Authentic
                 }
             }
             if (validateAuthorities) {
-                if (!allowBlankFields || authorities != 0) {
-                    return authorities % 2 == 1 && authorities <= 3;
+                if (!allowBlankFields || authorities != null) {
+                    return authorities != null && authorities % 2 == 1 && authorities <= 3;
                 }
             }
             return true;
