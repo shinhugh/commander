@@ -57,6 +57,9 @@ public class WebSocketObjectDispatcher implements ObjectDispatcher, WebSocketReg
 
     @Override
     public void registerConnection(WebSocketSession connection) {
+        if (connection == null) {
+            return;
+        }
         Principal principal = connection.getPrincipal();
         if (principal == null || principal.getClass() != TokenAuthenticationToken.class) {
             try {
@@ -76,6 +79,9 @@ public class WebSocketObjectDispatcher implements ObjectDispatcher, WebSocketReg
 
     @Override
     public void unregisterConnection(WebSocketSession connection) {
+        if (connection == null) {
+            return;
+        }
         Principal principal = connection.getPrincipal();
         if (principal == null || principal.getClass() != TokenAuthenticationToken.class) {
             try {
@@ -104,10 +110,12 @@ public class WebSocketObjectDispatcher implements ObjectDispatcher, WebSocketReg
         sessionTokenToAccountIdMap.remove(sessionToken);
         accountIdToSessionTokenMap.get(accountId).remove(sessionToken);
         WebSocketSession connection = sessionTokenToConnectionMap.remove(sessionToken);
-        try {
-            connection.close();
+        if (connection != null) {
+            try {
+                connection.close();
+            }
+            catch (IOException ignored) { }
         }
-        catch (IOException ignored) { }
     }
 
     @Override
@@ -119,10 +127,12 @@ public class WebSocketObjectDispatcher implements ObjectDispatcher, WebSocketReg
         for (String sessionToken : sessionTokens) {
             sessionTokenToAccountIdMap.remove(sessionToken);
             WebSocketSession connection = sessionTokenToConnectionMap.remove(sessionToken);
-            try {
-                connection.close();
+            if (connection != null) {
+                try {
+                    connection.close();
+                }
+                catch (IOException ignored) { }
             }
-            catch (IOException ignored) { }
         }
         accountIdToSessionTokenMap.remove(accountId);
     }

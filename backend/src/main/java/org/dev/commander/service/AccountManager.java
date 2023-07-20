@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Set;
 
 import static java.lang.System.currentTimeMillis;
@@ -290,7 +291,12 @@ public class AccountManager implements AccountService, SessionService, Authentic
         }
 
         public void purgeExpiredSessions() {
-            // TODO: Purge expired sessions and close corresponding WebSocket connections
+            long currentTime = currentTimeMillis();
+            List<Session> expiredSessions = sessionRepository.findByExpirationTimeLessThanEqual(currentTime);
+            for (Session session : expiredSessions) {
+                webSocketRegistrar.closeConnectionForSession(session.getToken());
+            }
+            sessionRepository.deleteByExpirationTimeLessThanEqual(currentTime);
         }
 
         private boolean verifyClientIsOwnerOrAdmin(Authentication authentication, Account account) {
