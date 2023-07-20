@@ -11,6 +11,4 @@
 
 TODO
 
-- browser API does not support sending authorization header with WebSocket request
-
 - implement friend system

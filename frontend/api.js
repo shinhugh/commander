@@ -1,176 +1,213 @@
-let sessionToken;
-let connection;
-const socketCallbacks = [];
-const loginCallbacks = [];
-const logoutCallbacks = [];
-const accountCreationCallbacks = [];
-const accountUpdateCallbacks = [];
-const accountDeleteCallbacks = [];
+const api = {
 
-// ------------------------------------------------------------
+  internal: {
 
-const callApi = async (path, method, contentType, body) => {
-  const url = 'http://127.0.0.1:8080' + path;
-  const headers = { };
-  if (sessionToken != null) {
-    headers.authorization = 'Bearer ' + sessionToken;
+    endpoint: window.location.hostname + ':' + window.location.port,
+
+    socket: null,
+
+    incomingSocketMessageHandlers: [],
+
+    session: null,
+
+    account: null,
+
+    connectSocket: async () => {
+      const url = 'ws://' + api.internal.endpoint + '/api/ws';
+      const socket = new WebSocket(url);
+      await new Promise((resolve, reject) => {
+        socket.addEventListener('open', () => {
+          resolve();
+        });
+        socket.addEventListener('error', () => {
+          reject();
+        });
+      });
+      socket.addEventListener('message', e => {
+        for (const handler of api.internal.incomingSocketMessageHandlers) {
+          handler(e.data); // TODO: Is e.data correct? Expecting string
+        }
+      });
+      api.internal.socket = socket;
+    },
+
+    disconnectSocket: async () => {
+      if (api.internal.socket == null) {
+        return;
+      }
+      const socket = api.internal.socket;
+      api.internal.socket = null;
+      await new Promise(resolve => {
+        socket.addEventListener('close', () => {
+          resolve();
+        });
+        socket.addEventListener('error', () => {
+          resolve();
+        });
+        socket.close();
+      });
+    },
+
+    makeRequest: async (path, method, parameters, contentType, body) => {
+      let parameterString = '';
+      if (parameters != null && Object.keys(parameters).length > 0) {
+        parameterString += '?';
+        for (const key of Object.keys(parameters)) {
+          parameterString += key + '=' + parameters[key] + '&';
+        }
+        parameterString = parameterString.substring(0, parameterString.length - 1);
+      }
+      const url = 'http://' + api.internal.endpoint + path + parameterString;
+      const headers = { };
+      if (api.internal.session != null) {
+        headers.authorization = 'Bearer ' + api.internal.session.token;
+      }
+      if (contentType != null) {
+        headers['content-type'] = contentType;
+      }
+      const options = {
+        method: method,
+        headers: headers
+      };
+      if (body != null) {
+        options.body = body;
+      }
+      return await fetch(url, options);
+    }
+
+  },
+
+  sendObjectOverSocket: (obj) => {
+    if (api.internal.socket != null) {
+      api.internal.socket.send(JSON.stringify(obj));
+    }
+  },
+
+  registerIncomingSocketMessageHandler: (handler) => {
+    api.internal.incomingSocketMessageHandlers.push(handler);
+  },
+
+  getLoggedInAccount: () => {
+    return api.internal.account;
+  },
+
+  login: async (username, password) => {
+    if (api.internal.session != null) {
+      return;
+    }
+    const response = await api.internal.makeRequest('/api/auth', 'POST', null, 'application/json', JSON.stringify({
+      username: username,
+      password, password
+    }));
+    if (response.ok) {
+      api.internal.session = await response.json();
+      api.internal.account = await api.readAccount(null);
+      return;
+    }
+    switch (response.status) {
+      case 400:
+        throw new Error('Bad request');
+      case 401:
+        throw new Error('Unauthorized');
+    }
+  },
+
+  logout: async () => {
+    if (api.internal.session == null) {
+      return;
+    }
+    await api.internal.makeRequest('/api/auth', 'DELETE', null, null, null);
+    api.internal.session = null;
+    api.internal.account = null;
+  },
+
+  readAccount: async (accountId) => {
+    let parameters = null;
+    if (accountId != null) {
+      parameters = {
+        id: accountId
+      };
+    }
+    const response = await api.internal.makeRequest('/api/account', 'GET', parameters, null, null);
+    if (response.ok) {
+      return await response.json();
+    }
+    switch (response.status) {
+      case 400:
+        throw new Error('Bad request');
+      case 404:
+        throw new Error('Not found');
+    }
+  },
+
+  createAccount: async (username, password, publicName) => {
+    const response = await api.internal.makeRequest('/api/account', 'POST', null, 'application/json', JSON.stringify({
+      loginName: username,
+      password: password,
+      publicName: publicName
+    }));
+    if (response.ok) {
+      return await response.json();
+    }
+    switch (response.status) {
+      case 400:
+        throw new Error('Bad request');
+      case 409:
+        throw new Error('Conflict');
+    }
+  },
+
+  updateAccount: async (accountId, username, password, authorities, publicName) => {
+    let parameters = null;
+    if (accountId != null) {
+      parameters = {
+        id: accountId
+      };
+    }
+    const response = await api.internal.makeRequest('/api/account', 'PUT', parameters, 'application/json', JSON.stringify({
+      loginName: username,
+      password: password,
+      authorities: authorities,
+      publicName: publicName
+    }));
+    if (response.ok) {
+      return await response.json();
+    }
+    switch (response.status) {
+      case 400:
+        throw new Error('Bad request');
+      case 401:
+        throw new Error('Unauthorized');
+      case 403:
+        throw new Error('Forbidden');
+      case 404:
+        throw new Error('Not found');
+      case 409:
+        throw new Error('Conflict');
+    }
+  },
+
+  deleteAccount: async (accountId) => {
+    let parameters = null;
+    if (accountId != null) {
+      parameters = {
+        id: accountId
+      };
+    }
+    const response = await api.internal.makeRequest('/api/account', 'DELETE', parameters, null, null);
+    if (response.ok) {
+      return;
+    }
+    switch (response.status) {
+      case 400:
+        throw new Error('Bad request');
+      case 401:
+        throw new Error('Unauthorized');
+      case 403:
+        throw new Error('Forbidden');
+      case 404:
+        throw new Error('Not found');
+    }
   }
-  if (contentType != null) {
-    headers['content-type'] = contentType;
-  }
-  const options = {
-    method: method,
-    headers: headers
-  };
-  if (body != null) {
-    options.body = body;
-  }
-  return await fetch(url, options);
-};
 
-const openSocketConnection = async () => {
-  // TODO: Test and verify that X-Authorization cookie gets sent
-  const socket = new WebSocket('ws://127.0.0.1:8080/api/ws');
-  await new Promise(resolve => {
-    socket.addEventListener('open', () => {
-      resolve();
-    });
-  });
-  // TODO: Add event handler to invoke socket callbacks
-  connection = socket;
-};
-
-const closeSocketConnection = async () => {
-  const socket = connection;
-  connection = null;
-  await new Promise(resolve => {
-    socket.addEventListener('close', () => {
-      resolve();
-    });
-    socket.close();
-  });
-};
-
-const sendSocketMessage = (obj) => {
-  connection.send(JSON.stringify(obj));
-};
-
-const registerSocketCallback = (callback) => {
-  socketCallbacks.push(callback);
-};
-
-const getCookie = (key) => {
-  const cookieString = RegExp(key + "=[^;]+").exec(document.cookie);
-  return decodeURIComponent(!!cookieString ? cookieString.toString().replace(/^[^=]+./,"") : "");
-};
-
-const checkLoggedIn = () => {
-  return getCookie('token') !== '';
-};
-
-const login = async (username, password) => {
-  const response = await callApi('/api/auth', 'POST', 'application/json', JSON.stringify({
-    username: username,
-    password, password
-  }));
-  if (response.ok) {
-    const session = await response.json();
-    sessionToken = session.token;
-  }
-  for (callback of loginCallbacks) {
-    callback(response.status);
-  }
-};
-
-const registerLoginCallback = (callback) => {
-  loginCallbacks.push(callback);
-};
-
-const logout = async () => {
-  await callApi('/api/auth', 'DELETE', null, null);
-  sessionToken = null;
-  for (callback of logoutCallbacks) {
-    callback();
-  }
-};
-
-const registerLogoutCallback = (callback) => {
-  logoutCallbacks.push(callback);
-};
-
-const getAccount = async (accountId) => {
-  let url = '/api/account';
-  if (accountId != null) {
-    url += '?id=' + accountId;
-  }
-  const response = await callApi(url, 'GET', null, null);
-  if (response.ok) {
-    return await response.json();
-  }
-  return null;
-};
-
-const createAccount = async (username, password, publicName) => {
-  const response = await callApi('/api/account', 'POST', 'application/json', JSON.stringify({
-    loginName: username,
-    password: password,
-    publicName: publicName
-  }));
-  let responseBody;
-  if (response.ok) {
-    responseBody = await response.json();
-  }
-  for (callback of accountCreationCallbacks) {
-    callback(response.status, responseBody);
-  }
-  if (response.ok) {
-    return responseBody;
-  }
-  return null;
-};
-
-const registerAccountCreationCallback = (callback) => {
-  accountCreationCallbacks.push(callback);
-};
-
-const updateAccount = async (accountId, username, password, publicName) => {
-  let url = '/api/account';
-  if (accountId != null) {
-    url += '?id=' + accountId;
-  }
-  const response = await callApi(url, 'PUT', 'application/json', JSON.stringify({
-    loginName: username,
-    password: password,
-    publicName: publicName
-  }));
-  let responseBody;
-  if (response.ok) {
-    responseBody = await response.json();
-  }
-  for (callback of accountUpdateCallbacks) {
-    callback(response.status, responseBody);
-  }
-  if (response.ok) {
-    return responseBody;
-  }
-  return null;
-};
-
-const registerAccountUpdateCallback = (callback) => {
-  accountUpdateCallbacks.push(callback);
-};
-
-const deleteAccount = async (accountId) => {
-  let url = '/api/account';
-  if (accountId != null) {
-    url += '?id=' + accountId;
-  }
-  const response = await callApi(url, 'DELETE', null, null);
-  for (callback of accountDeleteCallbacks) {
-    callback(response.status);
-  }
-};
-
-const registerAccountDeleteCallback = (callback) => {
-  accountDeleteCallbacks.push(callback);
 };

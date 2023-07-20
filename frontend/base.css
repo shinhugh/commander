@@ -53,7 +53,7 @@ body {
   background: #000000c0;
 }
 
-#overlay_dialog {
+#overlay_window {
   position: absolute;
   top: 50%;
   left: 50%;
