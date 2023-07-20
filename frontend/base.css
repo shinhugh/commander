@@ -64,6 +64,28 @@ body {
   background: black;
 }
 
+#blocker {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: black;
+}
+
+#blocker_indicator {
+  height: 10rem;
+  width: 10rem;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 6px solid white;
+  border-radius: 50%;
+  /* TODO: Cut out one corner */
+  /* TODO: Animate */
+}
+
 #notification {
   max-width: 40%;
   bottom: 3rem;

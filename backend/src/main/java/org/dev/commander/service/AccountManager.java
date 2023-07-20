@@ -175,23 +175,23 @@ public class AccountManager implements AccountService, SessionService, Authentic
             if (id == null) {
                 id = ((Account) authentication.getPrincipal()).getId();
             }
-            if (id <= 0 || !validateAccount(account, true, account.getAuthorities() != 0)) {
+            if (id <= 0 || !validateAccount(account, true, true)) {
                 throw new IllegalArgumentException();
             }
             Account existingAccount = accountRepository.findById(id).orElseThrow(NotFoundException::new);
             if (!verifyClientIsOwnerOrAdmin(authentication, existingAccount)) {
                 throw new NotAuthorizedException();
             }
-            if (account.getLoginName() != null) {
+            if (account.getLoginName() != null && !"".equals(account.getLoginName())) {
                 existingAccount.setLoginName(account.getLoginName());
             }
-            if (account.getPassword() != null) {
+            if (account.getPassword() != null && !"".equals(account.getPassword())) {
                 existingAccount.setPassword(passwordEncoder.encode(account.getPassword()));
             }
-            if (verifyAuthenticationContainsAtLeastOneAuthority(authentication, Set.of("ADMIN")) && account.getAuthorities() != 0) {
+            if (verifyAuthenticationContainsAtLeastOneAuthority(authentication, Set.of("ADMIN")) && account.getAuthorities() != null && account.getAuthorities() != 0) {
                 existingAccount.setAuthorities(account.getAuthorities());
             }
-            if (account.getPublicName() != null) {
+            if (account.getPublicName() != null && !"".equals(account.getPublicName())) {
                 existingAccount.setPublicName(account.getPublicName());
             }
             sessionRepository.deleteByAccountId(id);
@@ -333,23 +333,23 @@ public class AccountManager implements AccountService, SessionService, Authentic
             String password = account.getPassword();
             String publicName = account.getPublicName();
             Integer authorities = account.getAuthorities();
-            if (!allowBlankFields || loginName != null) {
+            if (!allowBlankFields || (loginName != null && !"".equals(loginName))) {
                 if (loginName == null || loginName.length() < LOGIN_NAME_LENGTH_MIN || loginName.length() > LOGIN_NAME_LENGTH_MAX || !verifyAllowedChars(loginName, LOGIN_NAME_ALLOWED_CHARS)) {
                     return false;
                 }
             }
-            if (!allowBlankFields || password != null) {
+            if (!allowBlankFields || (password != null && !"".equals(password))) {
                 if (password == null || password.length() < PASSWORD_LENGTH_MIN || password.length() > PASSWORD_LENGTH_MAX || !verifyAllowedChars(password, PASSWORD_ALLOWED_CHARS)) {
                     return false;
                 }
             }
-            if (!allowBlankFields || publicName != null) {
+            if (!allowBlankFields || (publicName != null && !"".equals(publicName))) {
                 if (publicName == null || publicName.length() < PUBLIC_NAME_LENGTH_MIN || publicName.length() > PUBLIC_NAME_LENGTH_MAX || !verifyAllowedChars(publicName, PUBLIC_NAME_ALLOWED_CHARS)) {
                     return false;
                 }
             }
             if (validateAuthorities) {
-                if (!allowBlankFields || authorities != null) {
+                if (!allowBlankFields || (authorities != null && authorities != 0)) {
                     return authorities != null && authorities % 2 == 1 && authorities <= 3;
                 }
             }

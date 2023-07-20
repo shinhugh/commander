@@ -77,6 +77,13 @@ const api = {
 
   },
 
+  initialize: async () => {
+    try {
+      await api.login();
+    }
+    catch { }
+  },
+
   sendObjectOverSocket: (obj) => {
     if (api.internal.socket != null) {
       api.internal.socket.send(JSON.stringify(obj));
@@ -104,12 +111,7 @@ const api = {
       api.internal.account = await api.readAccount(null);
       return;
     }
-    switch (response.status) {
-      case 400:
-        throw new Error('Bad request');
-      case 401:
-        throw new Error('Unauthorized');
-    }
+    throw new Error(response.status);
   },
 
   logout: async () => {
@@ -132,12 +134,7 @@ const api = {
     if (response.ok) {
       return await response.json();
     }
-    switch (response.status) {
-      case 400:
-        throw new Error('Bad request');
-      case 404:
-        throw new Error('Not found');
-    }
+    throw new Error(response.status);
   },
 
   createAccount: async (username, password, publicName) => {
@@ -149,12 +146,7 @@ const api = {
     if (response.ok) {
       return await response.json();
     }
-    switch (response.status) {
-      case 400:
-        throw new Error('Bad request');
-      case 409:
-        throw new Error('Conflict');
-    }
+    throw new Error(response.status);
   },
 
   updateAccount: async (accountId, username, password, authorities, publicName) => {
@@ -173,18 +165,7 @@ const api = {
     if (response.ok) {
       return await response.json();
     }
-    switch (response.status) {
-      case 400:
-        throw new Error('Bad request');
-      case 401:
-        throw new Error('Unauthorized');
-      case 403:
-        throw new Error('Forbidden');
-      case 404:
-        throw new Error('Not found');
-      case 409:
-        throw new Error('Conflict');
-    }
+    throw new Error(response.status);
   },
 
   deleteAccount: async (accountId) => {
@@ -198,20 +179,7 @@ const api = {
     if (response.ok) {
       return;
     }
-    switch (response.status) {
-      case 400:
-        throw new Error('Bad request');
-      case 401:
-        throw new Error('Unauthorized');
-      case 403:
-        throw new Error('Forbidden');
-      case 404:
-        throw new Error('Not found');
-    }
+    throw new Error(response.status);
   }
 
 };
-
-// ------------------------------------------------------------
-
-// TODO: See if user is already logged in; populate internal variables accordingly

@@ -87,6 +87,10 @@
   font-size: 0.8rem;
 }
 
+.overlay_account_page_field_value {
+  font-size: 1.2rem;
+}
+
 #overlay_account_page>button {
   align-self: flex-end;
 }

@@ -66,6 +66,7 @@ const ui = {
       },
       accountPage: {
         root: document.getElementById('overlay_account_page'),
+        id: document.getElementById('overlay_account_page_id'),
         username: document.getElementById('overlay_account_page_username'),
         publicName: document.getElementById('overlay_account_page_public_name'),
         modifyButton: document.getElementById('overlay_account_page_modify_button'),
@@ -79,6 +80,10 @@ const ui = {
         deleteButton: document.getElementById('overlay_modify_account_page_delete_button'),
         saveButton: document.getElementById('overlay_modify_account_page_save_button')
       }
+    },
+    blocker: {
+      root: document.getElementById('blocker'),
+      indicator: document.getElementById('blocker_indicator')
     },
     notification: {
       root: document.getElementById('notification'),
@@ -108,6 +113,7 @@ const ui = {
     ui.show(ui.elements.notification.root);
     ui.state.notificationTimeoutId = setTimeout(() => {
       ui.hide(ui.elements.notification.root);
+      ui.elements.notification.message.innerHTML = null;
     }, 2000);
   },
 
@@ -127,6 +133,14 @@ const ui = {
     ui.hide(ui.elements.overlay.friendsPage.root);
     ui.hide(ui.elements.overlay.accountPage.root);
     ui.hide(ui.elements.overlay.modifyAccountPage.root);
+  },
+
+  hideBlocker: () => {
+    ui.hide(ui.elements.blocker.root);
+  },
+
+  showBlocker: () => {
+    ui.show(ui.elements.blocker.root);
   },
 
   showLoginModule: () => {
@@ -212,6 +226,13 @@ const ui = {
   showModifyAccountPage: () => {
     ui.clearOverlay();
     ui.show(ui.elements.overlay.modifyAccountPage.root);
+    const account = api.getLoggedInAccount();
+    if (account != null) {
+      ui.elements.overlay.modifyAccountPage.usernameInput.value = account.loginName;
+      ui.elements.overlay.modifyAccountPage.passwordInput.value = null;
+      ui.elements.overlay.modifyAccountPage.publicNameInput.value = account.publicName;
+    }
+    ui.elements.overlay.modifyAccountPage.usernameInput.focus();
   },
 
   handleLogout: () => {
@@ -220,11 +241,114 @@ const ui = {
     ui.showLoginPage();
     ui.showLoginModule();
     ui.elements.content.loginModule.pages.loginPage.usernameInput.focus();
+    ui.elements.overlay.accountPage.id.innerHTML = null;
+    ui.elements.overlay.accountPage.username.innerHTML = null;
+    ui.elements.overlay.accountPage.publicName.innerHTML = null;
+    ui.elements.overlay.modifyAccountPage.usernameInput.value = null;
+    ui.elements.overlay.modifyAccountPage.passwordInput.value = null;
+    ui.elements.overlay.modifyAccountPage.publicNameInput.value = null;
   },
 
   handleLogin: () => {
     ui.showLobbyModule();
     ui.showTopBarButtons();
+    const account = api.getLoggedInAccount();
+    if (account != null) {
+      ui.elements.overlay.accountPage.id.innerHTML = account.id;
+      ui.elements.overlay.accountPage.username.innerHTML = account.loginName;
+      ui.elements.overlay.accountPage.publicName.innerHTML = account.publicName;
+    }
+    ui.elements.content.loginModule.pages.loginPage.usernameInput.value = null;
+    ui.elements.content.loginModule.pages.loginPage.passwordInput.value = null;
+    ui.elements.content.loginModule.pages.createAccountPage.usernameInput.value = null;
+    ui.elements.content.loginModule.pages.createAccountPage.passwordInput.value = null;
+    ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.value = null;
+  },
+
+  parseInputAndLogin: async () => {
+    const username = ui.elements.content.loginModule.pages.loginPage.usernameInput.value;
+    const password = ui.elements.content.loginModule.pages.loginPage.passwordInput.value;
+    if (username === '' || password === '') {
+      return;
+    }
+    try {
+      await api.login(username, password);
+    }
+    catch (e) {
+      switch (e.message) {
+        case '400':
+          ui.notify('Failed to login');
+          break;
+        case '401':
+          ui.notify('Invalid credentials');
+          break;
+      }
+      return;
+    }
+    ui.handleLogin();
+  },
+
+  parseInputAndCreateAccount: async () => {
+    const username = ui.elements.content.loginModule.pages.createAccountPage.usernameInput.value;
+    const password = ui.elements.content.loginModule.pages.createAccountPage.passwordInput.value;
+    const publicName = ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.value;
+    let account;
+    try {
+      account = await api.createAccount(username, password, publicName);
+    }
+    catch (e) {
+      switch (e.message) {
+        case '400':
+          ui.notify('Rules not met');
+          break;
+        case '409':
+          ui.notify('Username already taken');
+          break;
+      }
+      return;
+    }
+    ui.notify('Successfully created account');
+    ui.showLoginPage();
+    ui.elements.content.loginModule.pages.loginPage.usernameInput.value = account.loginName;
+    ui.elements.content.loginModule.pages.loginPage.passwordInput.value = null;
+    ui.elements.content.loginModule.pages.loginPage.passwordInput.focus();
+    ui.elements.content.loginModule.pages.createAccountPage.usernameInput.value = null;
+    ui.elements.content.loginModule.pages.createAccountPage.passwordInput.value = null;
+    ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.value = null;
+  },
+
+  parseInputAndUpdateAccount: async () => {
+    const username = ui.elements.overlay.modifyAccountPage.usernameInput.value;
+    const password = ui.elements.overlay.modifyAccountPage.passwordInput.value;
+    const publicName = ui.elements.overlay.modifyAccountPage.publicNameInput.value;
+    try {
+      await api.updateAccount(null, username, password, null, publicName);
+    }
+    catch (e) {
+      switch (e.message) {
+        case '400':
+          ui.notify('Rules not met');
+          break;
+        case '401':
+          ui.notify('Not authenticated');
+          break;
+        case '403':
+          ui.notify('Not authorized');
+          break;
+        case '404':
+          ui.notify('No such account');
+          break;
+        case '409':
+          ui.notify('Username already taken');
+          break;
+      }
+      return;
+    }
+    try {
+      await api.logout();
+    }
+    catch { }
+    ui.handleLogout();
   }
 
 };
@@ -246,29 +370,11 @@ ui.elements.content.loginModule.pages.loginPage.usernameInput.addEventListener('
 });
 ui.elements.content.loginModule.pages.loginPage.passwordInput.addEventListener('keydown', async e => {
   if (e.key === 'Enter') {
-    const username = ui.elements.content.loginModule.pages.loginPage.usernameInput.value;
-    const password = ui.elements.content.loginModule.pages.loginPage.passwordInput.value;
-    try {
-      await api.login(username, password);
-    }
-    catch {
-      ui.notify('Failed to login');
-      return;
-    }
-    ui.handleLogin();
+    await ui.parseInputAndLogin();
   }
 });
 ui.elements.content.loginModule.pages.loginPage.loginButton.addEventListener('click', async () => {
-  const username = ui.elements.content.loginModule.pages.loginPage.usernameInput.value;
-  const password = ui.elements.content.loginModule.pages.loginPage.passwordInput.value;
-  try {
-    await api.login(username, password);
-  }
-  catch {
-    ui.notify('Failed to login');
-    return;
-  }
-  ui.handleLogin();
+  await ui.parseInputAndLogin();
 });
 ui.elements.content.loginModule.pages.createAccountPage.usernameInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
@@ -282,41 +388,74 @@ ui.elements.content.loginModule.pages.createAccountPage.passwordInput.addEventLi
 });
 ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.addEventListener('keydown', async e => {
   if (e.key === 'Enter') {
-    const username = ui.elements.content.loginModule.pages.createAccountPage.usernameInput.value;
-    const password = ui.elements.content.loginModule.pages.createAccountPage.passwordInput.value;
-    const publicName = ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.value;
-    let account;
-    try {
-      account = await api.createAccount(username, password, publicName);
-    }
-    catch {
-      ui.notify('Failed to create account');
-      return;
-    }
-    ui.notify('Successfully created account');
-    ui.showLoginPage();
-    ui.elements.content.loginModule.pages.loginPage.usernameInput.value = account.loginName;
-    ui.elements.content.loginModule.pages.loginPage.passwordInput.value = null;
-    ui.elements.content.loginModule.pages.loginPage.passwordInput.focus();
+    await ui.parseInputAndCreateAccount();
   }
 });
 ui.elements.content.loginModule.pages.createAccountPage.createAccountButton.addEventListener('click', async () => {
-  const username = ui.elements.content.loginModule.pages.createAccountPage.usernameInput.value;
-  const password = ui.elements.content.loginModule.pages.createAccountPage.passwordInput.value;
-  const publicName = ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.value;
-  let account;
+  await ui.parseInputAndCreateAccount();
+});
+ui.elements.topBar.createGameButton.addEventListener('click', () => {
+  ui.showCreateGamePage();
+  ui.showOverlay();
+});
+ui.elements.topBar.friendsButton.addEventListener('click', () => {
+  ui.showFriendsPage();
+  ui.showOverlay();
+});
+ui.elements.topBar.accountButton.addEventListener('click', () => {
+  ui.showAccountPage();
+  ui.showOverlay();
+});
+ui.elements.topBar.logoutButton.addEventListener('click', async () => {
   try {
-    account = await api.createAccount(username, password, publicName);
+    await api.logout();
   }
-  catch { // TODO: Use error to describe why operation failed
-    ui.notify('Failed to create account');
+  catch { }
+  ui.handleLogout();
+});
+ui.elements.overlay.root.addEventListener('click', () => {
+  ui.hideOverlay();
+});
+ui.elements.overlay.window.addEventListener('click', e => {
+  e.stopPropagation();
+});
+ui.elements.overlay.accountPage.modifyButton.addEventListener('click', () => {
+  ui.showModifyAccountPage();
+});
+ui.elements.overlay.modifyAccountPage.usernameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    ui.elements.overlay.modifyAccountPage.passwordInput.focus();
+  }
+});
+ui.elements.overlay.modifyAccountPage.passwordInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    ui.elements.overlay.modifyAccountPage.publicNameInput.focus();
+  }
+});
+ui.elements.overlay.modifyAccountPage.publicNameInput.addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    await ui.parseInputAndUpdateAccount();
+  }
+});
+ui.elements.overlay.modifyAccountPage.cancelButton.addEventListener('click', () => {
+  ui.showAccountPage();
+});
+ui.elements.overlay.modifyAccountPage.deleteButton.addEventListener('click', async () => {
+  try {
+    await api.deleteAccount();
+  }
+  catch {
+    ui.notify('Failed to delete account');
     return;
   }
-  ui.notify('Successfully created account');
-  ui.showLoginPage();
-  ui.elements.content.loginModule.pages.loginPage.usernameInput.value = account.loginName;
-  ui.elements.content.loginModule.pages.loginPage.passwordInput.value = null;
-  ui.elements.content.loginModule.pages.loginPage.passwordInput.focus();
+  try {
+    await api.logout();
+  }
+  catch { }
+  ui.handleLogout();
+});
+ui.elements.overlay.modifyAccountPage.saveButton.addEventListener('click', async () => {
+  await ui.parseInputAndUpdateAccount();
 });
 
 // ------------------------------------------------------------
@@ -340,4 +479,12 @@ ui.hide(ui.elements.overlay.accountPage.root);
 ui.hide(ui.elements.overlay.modifyAccountPage.root);
 ui.hide(ui.elements.notification.root);
 
-ui.handleLogout();
+(async () => {
+  await api.initialize();
+  if (api.getLoggedInAccount() != null) {
+    ui.handleLogin();
+  } else {
+    ui.handleLogout();
+  }
+  ui.hideBlocker();
+})();
