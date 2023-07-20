@@ -8,5 +8,5 @@ import org.springframework.security.core.Authentication;
 
 public interface SessionService {
     Session login(Authentication authentication, Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException;
-    void logout(Authentication authentication, boolean all);
+    void logout(Authentication authentication, Boolean all);
 }

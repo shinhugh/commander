@@ -12,5 +12,5 @@ import java.util.List;
 public interface GameService {
     List<GameEntry> readGameEntries(Authentication authentication, Long accountId, Long id) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException, NotAuthorizedException;
     GameEntry createGame(Authentication authentication, GameEntry gameEntry) throws NotAuthenticatedException, IllegalArgumentException;
-    void leaveGame(Authentication authentication, long id);
+    void leaveGame(Authentication authentication, Long id);
 }

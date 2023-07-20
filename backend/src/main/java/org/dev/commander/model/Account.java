@@ -5,26 +5,26 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "Accounts")
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Account {
     @Column(name = "Id", nullable = false, unique = true)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
     @Column(name = "LoginName", nullable = false, unique = true)
     private String loginName;
     @Column(name = "Password", nullable = false)
     private String password;
     @Column(name = "Authorities", nullable = false)
-    private int authorities;
+    private Integer authorities;
     @Column(name = "PublicName", nullable = false)
     private String publicName;
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -44,11 +44,11 @@ public class Account {
         this.password = password;
     }
 
-    public int getAuthorities() {
+    public Integer getAuthorities() {
         return authorities;
     }
 
-    public void setAuthorities(int authorities) {
+    public void setAuthorities(Integer authorities) {
         this.authorities = authorities;
     }
 

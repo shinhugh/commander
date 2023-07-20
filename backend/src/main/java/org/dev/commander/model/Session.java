@@ -8,19 +8,19 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "Sessions")
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Session {
     @Column(name = "Token", nullable = false, unique = true)
     @Id
     private String token;
     @Column(name = "AccountId", nullable = false)
-    private long accountId;
+    private Long accountId;
     @Column(name = "Authorities", nullable = false)
-    private int authorities;
+    private Integer authorities;
     @Column(name = "CreationTime", nullable = false)
-    private long creationTime;
+    private Long creationTime;
     @Column(name = "ExpirationTime", nullable = false)
-    private long expirationTime;
+    private Long expirationTime;
 
     public String getToken() {
         return token;
@@ -30,35 +30,35 @@ public class Session {
         this.token = token;
     }
 
-    public long getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(long accountId) {
+    public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 
-    public int getAuthorities() {
+    public Integer getAuthorities() {
         return authorities;
     }
 
-    public void setAuthorities(int authorities) {
+    public void setAuthorities(Integer authorities) {
         this.authorities = authorities;
     }
 
-    public long getCreationTime() {
+    public Long getCreationTime() {
         return creationTime;
     }
 
-    public void setCreationTime(long creationTime) {
+    public void setCreationTime(Long creationTime) {
         this.creationTime = creationTime;
     }
 
-    public long getExpirationTime() {
+    public Long getExpirationTime() {
         return expirationTime;
     }
 
-    public void setExpirationTime(long expirationTime) {
+    public void setExpirationTime(Long expirationTime) {
         this.expirationTime = expirationTime;
     }
 }

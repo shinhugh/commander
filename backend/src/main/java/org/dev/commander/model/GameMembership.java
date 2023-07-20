@@ -10,44 +10,44 @@ import java.io.Serializable;
 public class GameMembership {
     @Column(name = "GameEntryId", nullable = false)
     @Id
-    private long gameEntryId;
+    private Long gameEntryId;
     @Column(name = "AccountId", nullable = false)
     @Id
-    private long accountId;
+    private Long accountId;
 
-    public long getGameEntryId() {
+    public Long getGameEntryId() {
         return gameEntryId;
     }
 
-    public void setGameEntryId(long gameEntryId) {
+    public void setGameEntryId(Long gameEntryId) {
         this.gameEntryId = gameEntryId;
     }
 
-    public long getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(long accountId) {
+    public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 
     public static class Key implements Serializable {
-        private long gameEntryId;
-        private long accountId;
+        private Long gameEntryId;
+        private Long accountId;
 
-        public long getGameEntryId() {
+        public Long getGameEntryId() {
             return gameEntryId;
         }
 
-        public void setGameEntryId(long gameEntryId) {
+        public void setGameEntryId(Long gameEntryId) {
             this.gameEntryId = gameEntryId;
         }
 
-        public long getAccountId() {
+        public Long getAccountId() {
             return accountId;
         }
 
-        public void setAccountId(long accountId) {
+        public void setAccountId(Long accountId) {
             this.accountId = accountId;
         }
     }

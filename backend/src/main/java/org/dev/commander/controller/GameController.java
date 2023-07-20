@@ -24,12 +24,12 @@ public class GameController {
     }
 
     @PostMapping
-    public GameEntry createGame(Authentication authentication, @RequestBody GameEntry gameEntry) {
+    public GameEntry createGame(Authentication authentication, @RequestBody(required = false) GameEntry gameEntry) {
         return gameService.createGame(authentication, gameEntry);
     }
 
     @DeleteMapping
-    public void leaveGame(Authentication authentication, @RequestParam("id") long id) {
+    public void leaveGame(Authentication authentication, @RequestParam(name = "id", required = false) Long id) {
         gameService.leaveGame(authentication, id);
     }
 }

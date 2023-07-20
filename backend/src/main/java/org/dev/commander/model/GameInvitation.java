@@ -10,64 +10,64 @@ import java.io.Serializable;
 public class GameInvitation {
     @Column(name = "GameEntryId", nullable = false)
     @Id
-    private long gameEntryId;
+    private Long gameEntryId;
     @Column(name = "AccountId", nullable = false)
     @Id
-    private long accountId;
+    private Long accountId;
     @Column(name = "CreationTime", nullable = false)
-    private long creationTime;
+    private Long creationTime;
     @Column(name = "ExpirationTime", nullable = false)
-    private long expirationTime;
+    private Long expirationTime;
 
-    public long getGameEntryId() {
+    public Long getGameEntryId() {
         return gameEntryId;
     }
 
-    public void setGameEntryId(long gameEntryId) {
+    public void setGameEntryId(Long gameEntryId) {
         this.gameEntryId = gameEntryId;
     }
 
-    public long getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(long accountId) {
+    public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 
-    public long getCreationTime() {
+    public Long getCreationTime() {
         return creationTime;
     }
 
-    public void setCreationTime(long creationTime) {
+    public void setCreationTime(Long creationTime) {
         this.creationTime = creationTime;
     }
 
-    public long getExpirationTime() {
+    public Long getExpirationTime() {
         return expirationTime;
     }
 
-    public void setExpirationTime(long expirationTime) {
+    public void setExpirationTime(Long expirationTime) {
         this.expirationTime = expirationTime;
     }
 
     public static class Key implements Serializable {
-        private long gameEntryId;
-        private long accountId;
+        private Long gameEntryId;
+        private Long accountId;
 
-        public long getGameEntryId() {
+        public Long getGameEntryId() {
             return gameEntryId;
         }
 
-        public void setGameEntryId(long gameEntryId) {
+        public void setGameEntryId(Long gameEntryId) {
             this.gameEntryId = gameEntryId;
         }
 
-        public long getAccountId() {
+        public Long getAccountId() {
             return accountId;
         }
 
-        public void setAccountId(long accountId) {
+        public void setAccountId(Long accountId) {
             this.accountId = accountId;
         }
     }

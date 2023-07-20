@@ -35,7 +35,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
         account.setPassword(null);
         if (!verifyClientIsOwnerOrAdmin(authentication, account)) {
             account.setLoginName(null);
-            account.setAuthorities(0);
+            account.setAuthorities(null);
         }
         return account;
     }
@@ -81,11 +81,14 @@ public class AccountManager implements AccountService, SessionService, Authentic
 
     @Override
     public Session login(Authentication authentication, Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException {
-        return inner.login(authentication, credentials);
+        Session session = inner.login(authentication, credentials);
+        session.setAccountId(null);
+        session.setAuthorities(null);
+        return session;
     }
 
     @Override
-    public void logout(Authentication authentication, boolean all) {
+    public void logout(Authentication authentication, Boolean all) {
         inner.logout(authentication, all);
     }
 
@@ -159,7 +162,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
                 throw new IllegalArgumentException();
             }
             account = deepCopyAccount(account);
-            account.setId(0);
+            account.setId(null);
             account.setPassword(passwordEncoder.encode(account.getPassword()));
             account.setAuthorities(1);
             return accountRepository.save(account);
@@ -258,11 +261,11 @@ public class AccountManager implements AccountService, SessionService, Authentic
             return session;
         }
 
-        public void logout(Authentication authentication, boolean all) {
+        public void logout(Authentication authentication, Boolean all) {
             if (authentication == null) {
                 return;
             }
-            if (all) {
+            if (all != null && all) {
                 long accountId = ((Account) authentication.getPrincipal()).getId();
                 sessionRepository.deleteByAccountId(accountId);
                 webSocketRegistrar.closeConnectionsForAccount(accountId);

@@ -42,7 +42,7 @@ public class GameManager implements GameService {
     }
 
     @Override
-    public void leaveGame(Authentication authentication, long id) {
+    public void leaveGame(Authentication authentication, Long id) {
         inner.leaveGame(authentication, id);
     }
 
