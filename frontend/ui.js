@@ -1,61 +1,106 @@
-let notificationTimeoutId;
+const ui = {
 
-// ------------------------------------------------------------
+  state: {
+    notificationTimeoutId: null
+  },
 
-const contentAreaRoot = document.getElementById('content_area_root');
+  elements: {
+    content: {
+      root: document.getElementById('content'),
+      loginModule: {
+        root: document.getElementById('content_login_module'),
+        tabsContainer: document.getElementById('content_login_module_tabs_container'),
+        loginTab: document.getElementById('content_login_module_login_tab'),
+        createAccountTab: document.getElementById('content_login_module_create_account_tab'),
+        pagesContainer: document.getElementById('content_login_module_pages_container'),
+        loginPage: {
+          root: document.getElementById('content_login_module_login_page'),
+          usernameInput: document.getElementById('content_login_module_login_page_username_input'),
+          passwordInput: document.getElementById('content_login_module_login_page_password_input'),
+          loginButton: document.getElementById('content_login_module_login_page_login_button'),
+        },
+        createAccountPage: {
+          root: document.getElementById('content_login_module_create_account_page'),
+          usernameInput: document.getElementById('content_login_module_create_account_page_username_input'),
+          passwordInput: document.getElementById('content_login_module_create_account_page_password_input'),
+          publicNameInput: document.getElementById('content_login_module_create_account_page_public_name_input'),
+          createAccountButton: document.getElementById('content_login_module_create_account_page_create_account_button')
+        }
+      },
+      lobbyModule: {
+        root: document.getElementById('content_lobby_module'),
+        activeGamesList: document.getElementById('content_lobby_module_active_games_list'),
+        invitationsList: document.getElementById('content_lobby_module_invitations_list'),
+        pendingGamesList: document.getElementById('content_lobby_module_pending_games_list'),
+        gameEntryTemplate: document.getElementsByClassName('game_entry')[0]
+      }
+    },
+    topBar: {
+      root: document.getElementById('top_bar'),
+      createGameButton: document.getElementById('top_bar_create_game_button'),
+      friendsButton: document.getElementById('top_bar_friends_button'),
+      accountButton: document.getElementById('top_bar_account_button'),
+      logoutButton: document.getElementById('top_bar_logout_button')
+    },
+    overlay: {
+      root: document.getElementById('overlay'),
+      window: document.getElementById('overlay_window'),
+      activeGameEntryPage: {
+        root: document.getElementById('overlay_active_game_entry_page')
+      },
+      invitationEntryPage: {
+        root: document.getElementById('overlay_invitation_entry_page')
+      },
+      pendingGameEntryPage: {
+        root: document.getElementById('overlay_pending_game_entry_page')
+      },
+      createGamePage: {
+        root: document.getElementById('overlay_create_game_page')
+      },
+      friendsPage: {
+        root: document.getElementById('overlay_friends_page')
+      },
+      accountPage: {
+        root: document.getElementById('overlay_account_page'),
+        username: document.getElementById('overlay_account_page_username'),
+        publicName: document.getElementById('overlay_account_page_public_name'),
+        modifyButton: document.getElementById('overlay_account_page_modify_button'),
+      },
+      modifyAccountPage: {
+        root: document.getElementById('overlay_modify_account_page'),
+        usernameInput: document.getElementById('overlay_modify_account_page_username_input'),
+        passwordInput: document.getElementById('overlay_modify_account_page_password_input'),
+        publicNameInput: document.getElementById('overlay_modify_account_page_public_name_input'),
+        cancelButton: document.getElementById('overlay_modify_account_page_cancel_button'),
+        deleteButton: document.getElementById('overlay_modify_account_page_delete_button'),
+        saveButton: document.getElementById('overlay_modify_account_page_save_button')
+      }
+    },
+    notification: {
+      root: document.getElementById('notification'),
+      message: document.getElementById('notification_message')
+    }
+  },
 
-const loginModuleRoot = document.getElementById('login_module_root');
-const loginModuleTabsContainer = document.getElementById('login_module_tabs_container');
-const loginModuleLoginTab = document.getElementById('login_module_login_tab');
-const loginModuleCreateAccountTab = document.getElementById('login_module_create_account_tab');
-const loginModulePagesContainer = document.getElementById('login_module_pages_container');
-const loginModuleLoginPage = document.getElementById('login_module_login_page');
-const loginModuleLoginPageUsernameInput = document.getElementById('login_module_login_page_username_input');
-const loginModuleLoginPagePasswordInput = document.getElementById('login_module_login_page_password_input');
-const loginModuleLoginPageLoginButton = document.getElementById('login_module_login_page_login_button');
-const loginModuleCreateAccountPage = document.getElementById('login_module_create_account_page');
-const loginModuleCreateAccountPageUsernameInput = document.getElementById('login_module_create_account_page_username_input');
-const loginModuleCreateAccountPagePasswordInput = document.getElementById('login_module_create_account_page_password_input');
-const loginModuleCreateAccountPagePublicNameInput = document.getElementById('login_module_create_account_page_public_name_input');
-const loginModuleCreateAccountPageCreateAccountButton = document.getElementById('login_module_create_account_page_create_account_button');
+  hide: (element) => {
+    element.style.display = 'none';
+  },
 
-const lobbyModuleRoot = document.getElementById('lobby_module_root');
-const lobbyModuleActiveGamesList = document.getElementById('lobby_module_active_games_list');
-const lobbyModuleInvitationsList = document.getElementById('lobby_module_invitations_list');
-const lobbyModulePendingGamesList = document.getElementById('lobby_module_pending_games_list');
-const lobbyModuleGameEntryTemplate = document.getElementsByClassName('game_entry')[0];
+  show: (element) => {
+    element.style.removeProperty('display');
+  },
 
-const topBarRoot = document.getElementById('top_bar_root');
-const topBarCreateGameButton = document.getElementById('top_bar_create_game_button');
-const topBarFriendsButton = document.getElementById('top_bar_friends_button');
-const topBarAccountButton = document.getElementById('top_bar_account_button');
-const topBarLogoutButton = document.getElementById('top_bar_logout_button');
+  navigateToLoginModule: () => {
+    ui.hide(ui.elements.lobbyModule.root);
+    ui.show(ui.elements.loginModule.root);
+  },
 
-const overlayBackdrop = document.getElementById('overlay_backdrop');
-const overlayWindow = document.getElementById('overlay_window');
-const overlayActiveGameEntryPage = document.getElementById('overlay_active_game_entry_page');
-const overlayInvitationEntryPage = document.getElementById('overlay_invitation_entry_page');
-const overlayPendingGameEntryPage = document.getElementById('overlay_pending_game_entry_page');
-const overlayCreateGamePage = document.getElementById('overlay_create_game_page');
-const overlayFriendsPage = document.getElementById('overlay_friends_page');
-const overlayAccountPage = document.getElementById('overlay_account_page');
-const overlayAccountPageUsername = document.getElementById('overlay_account_page_username');
-const overlayAccountPagePublicName = document.getElementById('overlay_account_page_public_name');
-const overlayAccountPageModifyButton = document.getElementById('overlay_account_page_modify_button');
-const overlayModifyAccountPage = document.getElementById('overlay_modify_account_page');
-const overlayModifyAccountPageUsernameInput = document.getElementById('overlay_modify_account_page_username_input');
-const overlayModifyAccountPagePasswordInput = document.getElementById('overlay_modify_account_page_password_input');
-const overlayModifyAccountPagePublicNameInput = document.getElementById('overlay_modify_account_page_public_name_input');
-const overlayModifyAccountPageCancelButton = document.getElementById('overlay_modify_account_page_cancel_button');
-const overlayModifyAccountPageDeleteButton = document.getElementById('overlay_modify_account_page_delete_button');
-const overlayModifyAccountPageSaveButton = document.getElementById('overlay_modify_account_page_save_button');
+  navigateToLobbyModule: () => {
+    ui.hide(ui.elements.loginModule.root);
+    ui.show(ui.elements.lobbyModule.root);
+  }
 
-const notificationRoot = document.getElementById('notification_root');
-const notificationMessage = document.getElementById('notification_message');
-
-// ------------------------------------------------------------
-
-// TODO: Functions
+};
 
 // ------------------------------------------------------------
 
@@ -63,4 +108,14 @@ const notificationMessage = document.getElementById('notification_message');
 
 // ------------------------------------------------------------
 
-// TODO: Initial setup
+ui.hide(ui.elements.content.loginModule.root);
+ui.hide(ui.elements.content.loginModule.loginPage.root);
+ui.hide(ui.elements.content.loginModule.createAccountPage.root);
+ui.hide(ui.elements.content.lobbyModule.root);
+ui.hide(ui.elements.topBar.createGameButton);
+ui.hide(ui.elements.topBar.friendsButton);
+ui.hide(ui.elements.topBar.accountButton);
+ui.hide(ui.elements.topBar.logoutButton);
+ui.hide(ui.elements.overlay.root);
+
+ui.navigateToLoginModule();

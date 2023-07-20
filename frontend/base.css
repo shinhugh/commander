@@ -10,7 +10,7 @@ body {
   color: white;
 }
 
-#content_area_root {
+#content {
   height: 100%;
   width: 100%;
   flex: 1 1 0;
@@ -19,7 +19,7 @@ body {
   left: 0;
 }
 
-#top_bar_root {
+#top_bar {
   height: 4rem;
   width: 100%;
   position: absolute;
@@ -31,7 +31,7 @@ body {
   pointer-events: none;
 }
 
-#top_bar_root>* {
+#top_bar>* {
   flex: 0 0 auto;
   display: flex;
   justify-content: space-between;
@@ -40,11 +40,11 @@ body {
   pointer-events: none;
 }
 
-#top_bar_root button {
+#top_bar button {
   pointer-events: auto;
 }
 
-#overlay_backdrop {
+#overlay {
   height: 100%;
   width: 100%;
   position: absolute;
@@ -64,7 +64,7 @@ body {
   background: black;
 }
 
-#notification_root {
+#notification {
   max-width: 40%;
   bottom: 3rem;
   left: 50%;
