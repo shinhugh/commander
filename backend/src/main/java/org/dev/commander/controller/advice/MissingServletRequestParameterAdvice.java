@@ -1,6 +1,5 @@
 package org.dev.commander.controller.advice;
 
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -10,7 +9,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(-1)
 public class MissingServletRequestParameterAdvice {
     @ResponseBody
     @ExceptionHandler(MissingServletRequestParameterException.class)

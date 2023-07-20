@@ -10,9 +10,8 @@ public class ServletInitializer extends AbstractAnnotationConfigDispatcherServle
         return new Class[] {
                 RepositoryConfig.class,
                 ServiceConfig.class,
-                ControllerConfig.class,
-                WebSocketConfig.class,
                 WebMvcConfig.class,
+                WebSocketConfig.class,
                 SecurityConfig.class
         };
     }

@@ -2,7 +2,6 @@ package org.dev.commander.controller;
 
 import org.dev.commander.model.GameEntry;
 import org.dev.commander.service.GameService;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/game")
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(-1)
 public class GameController {
     private final GameService gameService;
 

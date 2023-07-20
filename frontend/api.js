@@ -10,7 +10,7 @@ const accountDeleteCallbacks = [];
 // ------------------------------------------------------------
 
 const callApi = async (path, method, contentType, body) => {
-  const url = 'http://localhost:8080' + path;
+  const url = 'http://127.0.0.1:8080' + path;
   const headers = { };
   if (sessionToken != null) {
     headers.authorization = 'Bearer ' + sessionToken;
@@ -31,7 +31,7 @@ const callApi = async (path, method, contentType, body) => {
 const openSocketConnection = async () => {
   // TODO: Test and verify that X-Authorization cookie gets sent
   await new Promise(resolve => {
-    const socket = new WebSocket('ws://localhost:8080/api/ws');
+    const socket = new WebSocket('ws://127.0.0.1:8080/api/ws');
     socket.addEventListener('open', () => {
       resolve();
     });
@@ -76,7 +76,6 @@ const login = async (username, password) => {
   if (response.ok) {
     const session = await response.json();
     sessionToken = session.token;
-    document.cookie = 'token=' + sessionToken;
   }
   for (callback of loginCallbacks) {
     callback(response.status);
