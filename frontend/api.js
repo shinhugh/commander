@@ -30,8 +30,8 @@ const callApi = async (path, method, contentType, body) => {
 
 const openSocketConnection = async () => {
   // TODO: Test and verify that X-Authorization cookie gets sent
+  const socket = new WebSocket('ws://127.0.0.1:8080/api/ws');
   await new Promise(resolve => {
-    const socket = new WebSocket('ws://127.0.0.1:8080/api/ws');
     socket.addEventListener('open', () => {
       resolve();
     });
