@@ -154,7 +154,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
         }
 
         public Account createAccount(Account account) {
-            if (!validateAccount(account, false)) {
+            if (!validateAccount(account, false, false)) {
                 throw new IllegalArgumentException();
             }
             account = deepCopyAccount(account);
@@ -164,7 +164,6 @@ public class AccountManager implements AccountService, SessionService, Authentic
             return accountRepository.save(account);
         }
 
-        // TODO: Interpret null fields in account as "leave unchanged"
         public Account updateAccountById(Authentication authentication, Long id, Account account) {
             if (authentication == null) {
                 throw new NotAuthenticatedException();
@@ -172,19 +171,25 @@ public class AccountManager implements AccountService, SessionService, Authentic
             if (id == null) {
                 id = ((Account) authentication.getPrincipal()).getId();
             }
-            if (id <= 0 || !validateAccount(account, account.getAuthorities() != 0)) {
+            if (id <= 0 || !validateAccount(account, true, account.getAuthorities() != 0)) {
                 throw new IllegalArgumentException();
             }
             Account existingAccount = accountRepository.findById(id).orElseThrow(NotFoundException::new);
             if (!verifyClientIsOwnerOrAdmin(authentication, existingAccount)) {
                 throw new NotAuthorizedException();
             }
-            existingAccount.setLoginName(account.getLoginName());
-            existingAccount.setPassword(passwordEncoder.encode(account.getPassword()));
+            if (account.getLoginName() != null) {
+                existingAccount.setLoginName(account.getLoginName());
+            }
+            if (account.getPassword() != null) {
+                existingAccount.setPassword(passwordEncoder.encode(account.getPassword()));
+            }
             if (verifyAuthenticationContainsAtLeastOneAuthority(authentication, Set.of("ADMIN")) && account.getAuthorities() != 0) {
                 existingAccount.setAuthorities(account.getAuthorities());
             }
-            existingAccount.setPublicName(account.getPublicName());
+            if (account.getPublicName() != null) {
+                existingAccount.setPublicName(account.getPublicName());
+            }
             sessionRepository.deleteByAccountId(id);
             webSocketRegistrar.closeConnectionsForAccount(id);
             return existingAccount;
@@ -308,7 +313,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
             return accountCopy;
         }
 
-        private boolean validateAccount(Account account, boolean validateAuthorities) {
+        private boolean validateAccount(Account account, boolean allowBlankFields, boolean validateAuthorities) {
             if (account == null) {
                 return false;
             }
@@ -316,17 +321,25 @@ public class AccountManager implements AccountService, SessionService, Authentic
             String password = account.getPassword();
             String publicName = account.getPublicName();
             int authorities = account.getAuthorities();
-            if (loginName == null || loginName.length() < LOGIN_NAME_LENGTH_MIN || loginName.length() > LOGIN_NAME_LENGTH_MAX || !verifyAllowedChars(loginName, LOGIN_NAME_ALLOWED_CHARS)) {
-                return false;
+            if (!allowBlankFields || loginName != null) {
+                if (loginName == null || loginName.length() < LOGIN_NAME_LENGTH_MIN || loginName.length() > LOGIN_NAME_LENGTH_MAX || !verifyAllowedChars(loginName, LOGIN_NAME_ALLOWED_CHARS)) {
+                    return false;
+                }
             }
-            if (password == null || password.length() < PASSWORD_LENGTH_MIN || password.length() > PASSWORD_LENGTH_MAX || !verifyAllowedChars(password, PASSWORD_ALLOWED_CHARS)) {
-                return false;
+            if (!allowBlankFields || password != null) {
+                if (password == null || password.length() < PASSWORD_LENGTH_MIN || password.length() > PASSWORD_LENGTH_MAX || !verifyAllowedChars(password, PASSWORD_ALLOWED_CHARS)) {
+                    return false;
+                }
             }
-            if (publicName == null || publicName.length() < PUBLIC_NAME_LENGTH_MIN || publicName.length() > PUBLIC_NAME_LENGTH_MAX || !verifyAllowedChars(publicName, PUBLIC_NAME_ALLOWED_CHARS)) {
-                return false;
+            if (!allowBlankFields || publicName != null) {
+                if (publicName == null || publicName.length() < PUBLIC_NAME_LENGTH_MIN || publicName.length() > PUBLIC_NAME_LENGTH_MAX || !verifyAllowedChars(publicName, PUBLIC_NAME_ALLOWED_CHARS)) {
+                    return false;
+                }
             }
             if (validateAuthorities) {
-                return authorities % 2 == 1 && authorities <= 3;
+                if (!allowBlankFields || authorities != 0) {
+                    return authorities % 2 == 1 && authorities <= 3;
+                }
             }
             return true;
         }
