@@ -54,3 +54,13 @@ const notificationRoot = document.getElementById('notification_root');
 const notificationMessage = document.getElementById('notification_message');
 
 // ------------------------------------------------------------
+
+// TODO: Functions
+
+// ------------------------------------------------------------
+
+// TODO: Add event handlers
+
+// ------------------------------------------------------------
+
+// TODO: Initial setup
