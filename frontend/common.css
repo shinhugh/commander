@@ -37,3 +37,29 @@ button:hover {
 button:active {
   background: #ffffff40;
 }
+
+.list_wrapper {
+  position: relative;
+  border: 2px solid white;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.list {
+  height: calc(100% + 4px);
+  width: 100%;
+  position: absolute;
+  top: -2px;
+  overflow-y: scroll;
+}
+
+.list_entry {
+  margin-bottom: -2px;
+  border-top: 2px solid white;
+  border-bottom: 2px solid white;
+}
+
+.button_strip {
+  display: flex;
+  justify-content: space-between;
+}

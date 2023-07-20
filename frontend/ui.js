@@ -62,7 +62,14 @@ const ui = {
         root: document.getElementById('overlay_create_game_page')
       },
       friendsPage: {
-        root: document.getElementById('overlay_friends_page')
+        root: document.getElementById('overlay_friends_page'),
+        friendsList: document.getElementById('overlay_friends_page_friends_list'),
+        friendEntryTemplate: document.getElementsByClassName('friend_entry')[0],
+        addFriendSection: {
+          root: document.getElementById('overlay_friends_page_add_friend_section'),
+          idInput: document.getElementById('overlay_friends_page_add_friend_section_id_input'),
+          addFriendButton: document.getElementById('overlay_friends_page_add_friend_section_add_friend_button')
+        }
       },
       accountPage: {
         root: document.getElementById('overlay_account_page'),
@@ -349,6 +356,12 @@ const ui = {
     }
     catch { }
     ui.handleLogout();
+  },
+
+  addFriendEntry: (friendEntry) => {
+    const entry = ui.elements.overlay.friendsPage.friendEntryTemplate.cloneNode(true);
+    entry.getElementsByClassName('friend_entry_name')[0].innerHTML = friendEntry.name;
+    ui.elements.overlay.friendsPage.friendsList.insertBefore(entry, ui.elements.overlay.friendsPage.friendsList.firstElementChild);
   }
 
 };
@@ -475,6 +488,7 @@ ui.hide(ui.elements.overlay.invitationEntryPage.root);
 ui.hide(ui.elements.overlay.pendingGameEntryPage.root);
 ui.hide(ui.elements.overlay.createGamePage.root);
 ui.hide(ui.elements.overlay.friendsPage.root);
+ui.elements.overlay.friendsPage.friendEntryTemplate.remove();
 ui.hide(ui.elements.overlay.accountPage.root);
 ui.hide(ui.elements.overlay.modifyAccountPage.root);
 ui.hide(ui.elements.notification.root);

@@ -3,7 +3,7 @@
   top: calc(50% + 1rem);
   left: 50%;
   transform: translate(-50%, -50%);
-  border-radius: 10px;
+  border-radius: 5px;
   overflow: hidden;
   box-shadow: 2px 2px 15px #ffffff30;
 }

@@ -23,35 +23,21 @@
   gap: 0.5rem;
 }
 
-.lobby_section_title {
+.lobby_section>.title {
   flex: 0 0 auto;
+  font-size: 0.8rem;
 }
 
-.lobby_section_list_wrapper {
+.lobby_section>.list_wrapper {
   flex: 1 1 0;
-  position: relative;
-  border: 2px solid white;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.lobby_section_list {
-  height: calc(100% + 4px);
-  width: 100%;
-  position: absolute;
-  top: -2px;
-  overflow-y: scroll;
 }
 
 .game_entry {
   height: 6rem;
-  margin-bottom: -2px;
   padding: 0 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 2px solid white;
-  border-bottom: 2px solid white;
 }
 
 .game_entry:hover {
@@ -67,6 +53,47 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+}
+
+#overlay_friends_page {
+  height: 70vh;
+  width: 60vw;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+#overlay_friends_page>.title {
+  flex: 0 0 auto;
+  align-self: center;
+  font-size: 1.2rem;
+}
+
+#overlay_friends_page>.list_wrapper {
+  flex: 1 1 0;
+}
+
+.friend_entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+}
+
+.friend_entry_right_strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+#overlay_friends_page_add_friend_section {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+#overlay_friends_page_add_friend_section_id_input {
+  flex: 1 1 0;
 }
 
 #overlay_account_page {
@@ -115,9 +142,4 @@
 
 .overlay_modify_account_page_field>input {
   align-self: stretch;
-}
-
-#overlay_modify_account_page .horizontal_button_strip {
-  display: flex;
-  justify-content: space-between;
 }

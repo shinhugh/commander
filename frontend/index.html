@@ -63,10 +63,10 @@
     <div id="content_lobby_module">
       <div>
         <div class="lobby_section">
-          <p class="lobby_section_title">Active games</p>
-          <div class="lobby_section_list_wrapper">
-            <div id="content_lobby_module_active_games_list" class="lobby_section_list">
-              <div class="game_entry">
+          <p class="title">Active games</p>
+          <div class="list_wrapper">
+            <div id="content_lobby_module_active_games_list" class="list">
+              <div class="game_entry list_entry">
                 <p class="game_entry_players"></p>
                 <div class="game_entry_right_strip">
                   <p class="game_entry_next_turn"></p>
@@ -79,15 +79,15 @@
       </div>
       <div>
         <div class="lobby_section">
-          <p class="lobby_section_title">Invitations</p>
-          <div class="lobby_section_list_wrapper">
-            <div id="content_lobby_module_invitations_list" class="lobby_section_list"></div>
+          <p class="title">Invitations</p>
+          <div class="list_wrapper">
+            <div id="content_lobby_module_invitations_list" class="list"></div>
           </div>
         </div>
         <div class="lobby_section">
-          <p class="lobby_section_title">Pending games</p>
-          <div class="lobby_section_list_wrapper">
-            <div id="content_lobby_module_pending_games_list" class="lobby_section_list"></div>
+          <p class="title">Pending games</p>
+          <div class="list_wrapper">
+            <div id="content_lobby_module_pending_games_list" class="list"></div>
           </div>
         </div>
       </div>
@@ -111,21 +111,42 @@
   <!-- Overlay -->
   <div id="overlay">
     <div id="overlay_window">
+
       <div id="overlay_active_game_entry_page">
-        <p>Active game entry page</p>
+        <p>Game</p>
       </div>
+
       <div id="overlay_invitation_entry_page">
-        <p>Invitation entry page</p>
+        <p>Invitation</p>
       </div>
+
       <div id="overlay_pending_game_entry_page">
-        <p>Pending game entry page</p>
+        <p>Pending game</p>
       </div>
+
       <div id="overlay_create_game_page">
-        <p>Create game page</p>
+        <p>Create new game</p>
       </div>
+
       <div id="overlay_friends_page">
-        <p>Friends page</p>
+        <p class="title">Friends</p>
+        <div class="list_wrapper">
+          <div id="overlay_friends_page_friends_list" class="list">
+            <div class="friend_entry list_entry">
+              <p class="friend_entry_name"></p>
+              <div class="friend_entry_right_strip">
+                <button class="friend_entry_remove_button">Remove</button>
+                <button class="friend_entry_cancel_button">Cancel request</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="overlay_friends_page_add_friend_section">
+          <input id="overlay_friends_page_add_friend_section_id_input" type="text" placeholder="Account ID">
+          <button id="overlay_friends_page_add_friend_section_add_friend_button">Add friend</button>
+        </div>
       </div>
+
       <div id="overlay_account_page">
         <div class="overlay_account_page_field">
           <p class="overlay_account_page_field_label">ID</p>
@@ -141,6 +162,7 @@
         </div>
         <button id="overlay_account_page_modify_button">Modify</button>
       </div>
+
       <div id="overlay_modify_account_page">
         <div class="overlay_modify_account_page_field">
           <p class="overlay_modify_account_page_field_label">Username</p>
@@ -154,12 +176,13 @@
           <p class="overlay_modify_account_page_field_label">Public name</p>
           <input id="overlay_modify_account_page_public_name_input" type="text" placeholder="Optional">
         </div>
-        <div class="horizontal_button_strip">
+        <div class="button_strip">
           <button id="overlay_modify_account_page_cancel_button">Cancel</button>
           <button id="overlay_modify_account_page_delete_button">Delete</button>
           <button id="overlay_modify_account_page_save_button">Save</button>
         </div>
       </div>
+
     </div>
   </div>
 
