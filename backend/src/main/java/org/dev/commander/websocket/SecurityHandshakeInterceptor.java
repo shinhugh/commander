@@ -32,7 +32,7 @@ public class SecurityHandshakeInterceptor implements HandshakeInterceptor {
             return false;
         }
         try {
-            authenticationService.getSession((String) credentials);
+            authenticationService.identifySession((String) credentials);
         }
         catch (NotFoundException ex) {
             return false;

@@ -6,6 +6,6 @@ import org.springframework.data.repository.CrudRepository;
 import java.util.List;
 
 public interface GameMembershipRepository extends CrudRepository<GameMembership, GameMembership.Key> {
-    List<GameMembership> findByGameEntryId(long gameEntryId);
-    List<GameMembership> findByAccountId(long accountId);
+    List<GameMembership> findByGameEntryId(Long gameEntryId);
+    List<GameMembership> findByAccountId(Long accountId);
 }

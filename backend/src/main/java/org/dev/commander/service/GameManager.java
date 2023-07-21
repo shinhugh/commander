@@ -1,6 +1,7 @@
 package org.dev.commander.service;
 
 import jakarta.transaction.Transactional;
+import org.dev.commander.model.Account;
 import org.dev.commander.model.GameEntry;
 import org.dev.commander.model.GameInvitation;
 import org.dev.commander.model.GameMembership;
@@ -54,24 +55,24 @@ public class GameManager implements GameService {
         private final GameInvitationRepository gameInvitationRepository;
         private final GameMembershipRepository gameMembershipRepository;
         private final AccountRepository accountRepository;
-        private final AuthorityVerificationService authorityVerificationService;
+        private final AuthorizationService authorizationService;
         private final ObjectDispatcher objectDispatcher;
 
-        public Inner(GameEntryRepository gameEntryRepository, GameInvitationRepository gameInvitationRepository, GameMembershipRepository gameMembershipRepository, AccountRepository accountRepository, AuthorityVerificationService authorityVerificationService, ObjectDispatcher objectDispatcher) {
+        public Inner(GameEntryRepository gameEntryRepository, GameInvitationRepository gameInvitationRepository, GameMembershipRepository gameMembershipRepository, AccountRepository accountRepository, AuthorizationService authorizationService, ObjectDispatcher objectDispatcher) {
             this.gameEntryRepository = gameEntryRepository;
             this.gameInvitationRepository = gameInvitationRepository;
             this.gameMembershipRepository = gameMembershipRepository;
             this.accountRepository = accountRepository;
-            this.authorityVerificationService = authorityVerificationService;
+            this.authorizationService = authorizationService;
             this.objectDispatcher = objectDispatcher;
         }
 
         public List<GameEntry> readGameEntries(Authentication authentication, Long accountId, Long id) {
-            if (authentication == null) {
+            Account clientAccount = authorizationService.getAccount(authentication);
+            if (clientAccount == null) {
                 throw new NotAuthenticatedException();
             }
-            long clientAccountId = authorityVerificationService.getAccountId(authentication);
-            boolean isAdmin = authorityVerificationService.verifyAuthenticationContainsAtLeastOneAuthority(authentication, Set.of("ADMIN"));
+            boolean isAdmin = authorizationService.verifyAuthenticationContainsAtLeastOneAuthority(authentication, Set.of("ADMIN"));
             if (id != null) {
                 GameEntry gameEntry = gameEntryRepository.findById(id).orElse(null);
                 if (accountId != null && gameEntry != null) {
@@ -87,7 +88,7 @@ public class GameManager implements GameService {
                     throw new NotAuthorizedException();
                 }
                 List<GameMembership> gameMemberships = gameMembershipRepository.findByGameEntryId(id);
-                if (!isAdmin && gameMemberships.stream().noneMatch(p -> p.getAccountId() == clientAccountId)) {
+                if (!isAdmin && gameMemberships.stream().noneMatch(p -> p.getAccountId() == clientAccount.getId())) {
                     throw new NotAuthorizedException();
                 }
                 List<Long> invitations = new ArrayList<>();
@@ -104,7 +105,7 @@ public class GameManager implements GameService {
                 return List.of(gameEntry);
             }
             if (accountId != null) {
-                if (!isAdmin && accountId != clientAccountId) {
+                if (!isAdmin && accountId != clientAccount.getId()) {
                     throw new NotAuthorizedException();
                 }
                 List<GameEntry> gameEntries = new ArrayList<>();
@@ -134,13 +135,13 @@ public class GameManager implements GameService {
         }
 
         public GameEntry createGame(Authentication authentication, GameEntry gameEntry) {
-            if (authentication == null) {
+            Account clientAccount = authorizationService.getAccount(authentication);
+            if (clientAccount == null) {
                 throw new NotAuthenticatedException();
             }
             if (gameEntry.getInvitations() == null || gameEntry.getInvitations().isEmpty()) {
                 throw new IllegalArgumentException();
             }
-            long clientAccountId = authorityVerificationService.getAccountId(authentication);
             long creationTime = currentTimeMillis();
             long invitationExpirationTime = creationTime + INVITATION_LIFETIME;
             GameEntry newGameEntry = new GameEntry();
@@ -148,7 +149,7 @@ public class GameManager implements GameService {
             newGameEntry = gameEntryRepository.save(newGameEntry);
             GameMembership newGameMembership = new GameMembership();
             newGameMembership.setGameEntryId(newGameEntry.getId());
-            newGameMembership.setAccountId(clientAccountId);
+            newGameMembership.setAccountId(clientAccount.getId());
             gameMembershipRepository.save(newGameMembership);
             List<Long> gameInvitations = new ArrayList<>();
             for (Long accountId : gameEntry.getInvitations()) {
@@ -170,7 +171,7 @@ public class GameManager implements GameService {
                 throw new IllegalArgumentException();
             }
             newGameEntry.setInvitations(gameInvitations);
-            newGameEntry.setMembers(List.of(clientAccountId));
+            newGameEntry.setMembers(List.of(clientAccount.getId()));
             // TODO: Notify invited players via WebSocket
             return newGameEntry;
         }

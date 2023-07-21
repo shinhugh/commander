@@ -22,16 +22,49 @@ import java.util.Set;
 import static java.lang.System.currentTimeMillis;
 
 @Service
-public class AccountManager implements AccountService, SessionService, AuthenticationService, AuthorityVerificationService {
+public class AuthenticationManager implements AuthenticationService, AuthorizationService, AccountService {
     private final Inner inner;
 
-    public AccountManager(Inner inner) {
+    public AuthenticationManager(Inner inner) {
         this.inner = inner;
     }
 
     @Override
-    public Account readAccountById(Authentication authentication, Long id) throws IllegalArgumentException, NotFoundException {
-        Account account = inner.readAccountById(authentication, id);
+    public Session identifySession(String token) throws NotFoundException {
+        return inner.identifySession(token);
+    }
+
+    @Override
+    public Account identifyAccount(String token) throws NotFoundException {
+        return inner.identifyAccount(token);
+    }
+
+    @Override
+    public Session login(Authentication authentication, Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException {
+        Session session = inner.login(authentication, credentials);
+        session.setAccountId(null);
+        session.setAuthorities(null);
+        return session;
+    }
+
+    @Override
+    public void logout(Authentication authentication, Boolean all) {
+        inner.logout(authentication, all);
+    }
+
+    @Override
+    public Account getAccount(Authentication authentication) {
+        return inner.getAccount(authentication);
+    }
+
+    @Override
+    public boolean verifyAuthenticationContainsAtLeastOneAuthority(Authentication authentication, Set<String> authorities) {
+        return inner.verifyAuthenticationContainsAtLeastOneAuthority(authentication, authorities);
+    }
+
+    @Override
+    public Account readAccount(Authentication authentication, Long id) throws IllegalArgumentException, NotFoundException {
+        Account account = inner.readAccount(authentication, id);
         account.setPassword(null);
         if (!verifyClientIsOwnerOrAdmin(authentication, account)) {
             account.setLoginName(null);
@@ -53,9 +86,9 @@ public class AccountManager implements AccountService, SessionService, Authentic
     }
 
     @Override
-    public Account updateAccountById(Authentication authentication, Long id, Account account) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException, NotAuthorizedException, ConflictException {
+    public Account updateAccount(Authentication authentication, Long id, Account account) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException, NotAuthorizedException, ConflictException {
         try {
-            account = inner.updateAccountById(authentication, id, account);
+            account = inner.updateAccount(authentication, id, account);
         }
         catch (DataIntegrityViolationException ex) {
             throw new ConflictException();
@@ -65,41 +98,8 @@ public class AccountManager implements AccountService, SessionService, Authentic
     }
 
     @Override
-    public void deleteAccountById(Authentication authentication, Long id) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException, NotAuthorizedException {
-        inner.deleteAccountById(authentication, id);
-    }
-
-    @Override
-    public Session getSession(String token) throws NotFoundException {
-        return inner.getSession(token);
-    }
-
-    @Override
-    public Account getSessionOwner(Session session) throws NotFoundException {
-        return inner.getSessionOwner(session);
-    }
-
-    @Override
-    public Session login(Authentication authentication, Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException {
-        Session session = inner.login(authentication, credentials);
-        session.setAccountId(null);
-        session.setAuthorities(null);
-        return session;
-    }
-
-    @Override
-    public void logout(Authentication authentication, Boolean all) {
-        inner.logout(authentication, all);
-    }
-
-    @Override
-    public long getAccountId(Authentication authentication) {
-        return inner.getAccountId(authentication);
-    }
-
-    @Override
-    public boolean verifyAuthenticationContainsAtLeastOneAuthority(Authentication authentication, Set<String> authorities) {
-        return inner.verifyAuthenticationContainsAtLeastOneAuthority(authentication, authorities);
+    public void deleteAccount(Authentication authentication, Long id) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException, NotAuthorizedException {
+        inner.deleteAccount(authentication, id);
     }
 
     @Scheduled(fixedRate = 60000)
@@ -144,81 +144,7 @@ public class AccountManager implements AccountService, SessionService, Authentic
             this.passwordEncoder = passwordEncoder;
         }
 
-        public Account readAccountById(Authentication authentication, Long id) {
-            if (id == null) {
-                if (authentication == null) {
-                    throw new IllegalArgumentException();
-                }
-                id = ((Account) authentication.getPrincipal()).getId();
-            }
-            if (id <= 0) {
-                throw new IllegalArgumentException();
-            }
-            return accountRepository.findById(id).orElseThrow(NotFoundException::new);
-        }
-
-        public Account createAccount(Account account) {
-            if (!validateAccount(account, false, false)) {
-                throw new IllegalArgumentException();
-            }
-            account = deepCopyAccount(account);
-            account.setId(null);
-            account.setPassword(passwordEncoder.encode(account.getPassword()));
-            account.setAuthorities(1);
-            return accountRepository.save(account);
-        }
-
-        public Account updateAccountById(Authentication authentication, Long id, Account account) {
-            if (authentication == null) {
-                throw new NotAuthenticatedException();
-            }
-            if (id == null) {
-                id = ((Account) authentication.getPrincipal()).getId();
-            }
-            if (id <= 0 || !validateAccount(account, true, true)) {
-                throw new IllegalArgumentException();
-            }
-            Account existingAccount = accountRepository.findById(id).orElseThrow(NotFoundException::new);
-            if (!verifyClientIsOwnerOrAdmin(authentication, existingAccount)) {
-                throw new NotAuthorizedException();
-            }
-            if (account.getLoginName() != null && !"".equals(account.getLoginName())) {
-                existingAccount.setLoginName(account.getLoginName());
-            }
-            if (account.getPassword() != null && !"".equals(account.getPassword())) {
-                existingAccount.setPassword(passwordEncoder.encode(account.getPassword()));
-            }
-            if (verifyAuthenticationContainsAtLeastOneAuthority(authentication, Set.of("ADMIN")) && account.getAuthorities() != null && account.getAuthorities() != 0) {
-                existingAccount.setAuthorities(account.getAuthorities());
-            }
-            if (account.getPublicName() != null && !"".equals(account.getPublicName())) {
-                existingAccount.setPublicName(account.getPublicName());
-            }
-            sessionRepository.deleteByAccountId(id);
-            webSocketRegistrar.closeConnectionsForAccount(id);
-            return existingAccount;
-        }
-
-        public void deleteAccountById(Authentication authentication, Long id) {
-            if (authentication == null) {
-                throw new NotAuthenticatedException();
-            }
-            if (id == null) {
-                id = ((Account) authentication.getPrincipal()).getId();
-            }
-            if (id <= 0) {
-                throw new IllegalArgumentException();
-            }
-            Account account = accountRepository.findById(id).orElseThrow(NotFoundException::new);
-            if (!verifyClientIsOwnerOrAdmin(authentication, account)) {
-                throw new NotAuthorizedException();
-            }
-            accountRepository.deleteById(id);
-            sessionRepository.deleteByAccountId(id);
-            webSocketRegistrar.closeConnectionsForAccount(id);
-        }
-
-        public Session getSession(String token) {
+        public Session identifySession(String token) {
             Session session = sessionRepository.findById(token).orElseThrow(NotFoundException::new);
             if (session.getExpirationTime() <= currentTimeMillis()) {
                 sessionRepository.deleteById(token);
@@ -227,7 +153,8 @@ public class AccountManager implements AccountService, SessionService, Authentic
             return session;
         }
 
-        public Account getSessionOwner(Session session) {
+        public Account identifyAccount(String token) {
+            Session session = identifySession(token);
             return accountRepository.findById(session.getAccountId()).orElseThrow(NotFoundException::new);
         }
 
@@ -276,11 +203,15 @@ public class AccountManager implements AccountService, SessionService, Authentic
             }
         }
 
-        public long getAccountId(Authentication authentication) {
+        public Account getAccount(Authentication authentication) {
             if (authentication == null) {
-                return 0;
+                return null;
             }
-            return ((Account) authentication.getPrincipal()).getId();
+            Object principal = authentication.getPrincipal();
+            if (principal.getClass() != Account.class) {
+                return null;
+            }
+            return (Account) principal;
         }
 
         public boolean verifyAuthenticationContainsAtLeastOneAuthority(Authentication authentication, Set<String> authorities) {
@@ -294,6 +225,80 @@ public class AccountManager implements AccountService, SessionService, Authentic
                     .getAuthorities()
                     .stream()
                     .anyMatch(a -> authorities.contains(a.getAuthority()));
+        }
+
+        public Account readAccount(Authentication authentication, Long id) {
+            if (id == null) {
+                if (authentication == null) {
+                    throw new IllegalArgumentException();
+                }
+                id = ((Account) authentication.getPrincipal()).getId();
+            }
+            if (id <= 0) {
+                throw new IllegalArgumentException();
+            }
+            return accountRepository.findById(id).orElseThrow(NotFoundException::new);
+        }
+
+        public Account createAccount(Account account) {
+            if (!validateAccount(account, false, false)) {
+                throw new IllegalArgumentException();
+            }
+            account = deepCopyAccount(account);
+            account.setId(null);
+            account.setPassword(passwordEncoder.encode(account.getPassword()));
+            account.setAuthorities(1);
+            return accountRepository.save(account);
+        }
+
+        public Account updateAccount(Authentication authentication, Long id, Account account) {
+            if (authentication == null) {
+                throw new NotAuthenticatedException();
+            }
+            if (id == null) {
+                id = ((Account) authentication.getPrincipal()).getId();
+            }
+            if (id <= 0 || !validateAccount(account, true, true)) {
+                throw new IllegalArgumentException();
+            }
+            Account existingAccount = accountRepository.findById(id).orElseThrow(NotFoundException::new);
+            if (!verifyClientIsOwnerOrAdmin(authentication, existingAccount)) {
+                throw new NotAuthorizedException();
+            }
+            if (account.getLoginName() != null && !"".equals(account.getLoginName())) {
+                existingAccount.setLoginName(account.getLoginName());
+            }
+            if (account.getPassword() != null && !"".equals(account.getPassword())) {
+                existingAccount.setPassword(passwordEncoder.encode(account.getPassword()));
+            }
+            if (verifyAuthenticationContainsAtLeastOneAuthority(authentication, Set.of("ADMIN")) && account.getAuthorities() != null && account.getAuthorities() != 0) {
+                existingAccount.setAuthorities(account.getAuthorities());
+            }
+            if (account.getPublicName() != null && !"".equals(account.getPublicName())) {
+                existingAccount.setPublicName(account.getPublicName());
+            }
+            sessionRepository.deleteByAccountId(id);
+            webSocketRegistrar.closeConnectionsForAccount(id);
+            return existingAccount;
+        }
+
+        public void deleteAccount(Authentication authentication, Long id) {
+            if (authentication == null) {
+                throw new NotAuthenticatedException();
+            }
+            if (id == null) {
+                id = ((Account) authentication.getPrincipal()).getId();
+            }
+            if (id <= 0) {
+                throw new IllegalArgumentException();
+            }
+            Account account = accountRepository.findById(id).orElseThrow(NotFoundException::new);
+            if (!verifyClientIsOwnerOrAdmin(authentication, account)) {
+                throw new NotAuthorizedException();
+            }
+            accountRepository.deleteById(id);
+            sessionRepository.deleteByAccountId(id);
+            webSocketRegistrar.closeConnectionsForAccount(id);
         }
 
         public void purgeExpiredSessions() {

@@ -35,13 +35,14 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
         }
         String token = (String) authentication.getCredentials();
         Session session;
+        Account account;
         try {
-            session = authenticationService.getSession(token);
+            session = authenticationService.identifySession(token);
+            account = authenticationService.identifyAccount(token);
         }
         catch (NotFoundException ex) {
             throw new InvalidTokenException();
         }
-        Account account = authenticationService.getSessionOwner(session);
         Set<GrantedAuthority> authorities = translateAuthoritiesFlagToSet(session.getAuthorities());
         return new TokenAuthenticationToken(token, account, authorities);
     }

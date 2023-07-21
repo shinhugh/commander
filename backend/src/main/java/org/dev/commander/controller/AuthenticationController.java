@@ -2,7 +2,7 @@ package org.dev.commander.controller;
 
 import org.dev.commander.model.Credentials;
 import org.dev.commander.model.Session;
-import org.dev.commander.service.SessionService;
+import org.dev.commander.service.AuthenticationService;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -16,15 +16,15 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 @Order(-1)
 public class AuthenticationController {
-    private final SessionService sessionService;
+    private final AuthenticationService authenticationService;
 
-    public AuthenticationController(SessionService sessionService) {
-        this.sessionService = sessionService;
+    public AuthenticationController(AuthenticationService authenticationService) {
+        this.authenticationService = authenticationService;
     }
 
     @PostMapping
     public ResponseEntity<Session> login(Authentication authentication, @RequestBody(required = false) Credentials credentials) {
-        Session session = sessionService.login(authentication, credentials);
+        Session session = authenticationService.login(authentication, credentials);
         long maxAge = (session.getExpirationTime() - session.getCreationTime()) / 1000;
         String xAuthorizationCookieHeaderValue = "X-Authorization=" + session.getToken() + "; Max-Age=" + maxAge;
         HttpHeaders headers = new HttpHeaders();
@@ -41,7 +41,7 @@ public class AuthenticationController {
                 all = true;
             }
         }
-        sessionService.logout(authentication, all);
+        authenticationService.logout(authentication, all);
         String xAuthorizationCookieHeaderValue = "X-Authorization=; Max-Age=0";
         HttpHeaders headers = new HttpHeaders();
         headers.add("Set-Cookie", xAuthorizationCookieHeaderValue);
