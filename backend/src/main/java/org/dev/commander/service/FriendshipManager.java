@@ -3,6 +3,7 @@ package org.dev.commander.service;
 import jakarta.transaction.Transactional;
 import org.dev.commander.model.Account;
 import org.dev.commander.model.Friendship;
+import org.dev.commander.model.Friendships;
 import org.dev.commander.repository.FriendshipRepository;
 import org.dev.commander.service.exception.ConflictException;
 import org.dev.commander.service.exception.IllegalArgumentException;
@@ -12,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -27,19 +29,8 @@ public class FriendshipManager implements FriendshipService {
     }
 
     @Override
-    public List<Friendship> listFriendships(Authentication authentication) throws NotAuthenticatedException {
-        List<Friendship> friendships = inner.listFriendships(authentication);
-        for (Iterator<Friendship> it = friendships.iterator(); it.hasNext();) {
-            Friendship friendship = it.next();
-            if (!friendship.getAccepted()) {
-                it.remove();
-                continue;
-            }
-            friendship.setAccepted(null);
-            friendship.setRequestingAccountId(null);
-            friendship.setRespondingAccountId(null);
-        }
-        return friendships;
+    public Friendships listFriendships(Authentication authentication) throws NotAuthenticatedException {
+        return inner.listFriendships(authentication);
     }
 
     @Override
@@ -65,28 +56,52 @@ public class FriendshipManager implements FriendshipService {
             this.authorizationService = authorizationService;
         }
 
-        public List<Friendship> listFriendships(Authentication authentication) {
+        public Friendships listFriendships(Authentication authentication) {
             Account clientAccount = authorizationService.getAccount(authentication);
             if (clientAccount == null) {
                 throw new NotAuthenticatedException();
             }
-            List<Friendship> friendships = friendshipRepository.findByAccountAIdOrAccountBId(clientAccount.getId(), clientAccount.getId());
-            for (Iterator<Friendship> it = friendships.iterator(); it.hasNext();) {
+            Friendships friendships = new Friendships();
+            friendships.setConfirmedFriendships(new ArrayList<>());
+            friendships.setOutgoingRequests(new ArrayList<>());
+            friendships.setIncomingRequests(new ArrayList<>());
+            List<Friendship> friendshipList = friendshipRepository.findByRequestingAccountIdOrRespondingAccountId(clientAccount.getId(), clientAccount.getId());
+            for (Iterator<Friendship> it = friendshipList.iterator(); it.hasNext();) {
                 Friendship friendship = it.next();
-                if (friendship.getAccepted()) {
-                    Account requestingAccount, respondingAccount;
-                    try {
-                        requestingAccount = accountService.readAccount(authentication, friendship.getRequestingAccountId());
-                        respondingAccount = accountService.readAccount(authentication, friendship.getRespondingAccountId());
-                    }
-                    catch (NotFoundException ex) {
-                        it.remove();
-                        // TODO: Do I need to call: friendshipRepository.delete(friendship);
-                        continue;
-                    }
-                    friendship.setRequestingAccount(requestingAccount);
-                    friendship.setRespondingAccount(respondingAccount);
+                boolean accepted = friendship.getAccepted();
+                boolean outgoing = Objects.equals(friendship.getRequestingAccountId(), clientAccount.getId());
+                long friendAccountId = outgoing ? friendship.getRespondingAccountId() : friendship.getRequestingAccountId();
+                Account friendAccount;
+                try {
+                    friendAccount = accountService.readAccount(authentication, friendAccountId);
                 }
+                catch (NotFoundException ex) {
+                    it.remove();
+                    continue;
+                }
+                friendship = cloneFriendship(friendship);
+                friendship.setRequestingAccountId(null);
+                friendship.setRespondingAccountId(null);
+                friendship.setAccepted(null);
+                friendship.setFriendAccount(friendAccount);
+                if (accepted) {
+                    friendships.getConfirmedFriendships().add(friendship);
+                    continue;
+                }
+                if (outgoing) {
+                    friendships.getOutgoingRequests().add(friendship);
+                    continue;
+                }
+                friendships.getIncomingRequests().add(friendship);
+            }
+            if (friendships.getConfirmedFriendships().isEmpty()) {
+                friendships.setConfirmedFriendships(null);
+            }
+            if (friendships.getOutgoingRequests().isEmpty()) {
+                friendships.setOutgoingRequests(null);
+            }
+            if (friendships.getIncomingRequests().isEmpty()) {
+                friendships.setIncomingRequests(null);
             }
             return friendships;
         }
@@ -96,16 +111,16 @@ public class FriendshipManager implements FriendshipService {
             if (clientAccount == null) {
                 throw new NotAuthenticatedException();
             }
-            if (accountId == null || accountId <= 0) {
+            if (accountId == null || accountId <= 0 || accountId.equals(clientAccount.getId())) {
                 throw new IllegalArgumentException();
             }
             Friendship.Key key = new Friendship.Key();
-            key.setAccountAId(clientAccount.getId());
-            key.setAccountBId(accountId);
+            key.setRequestingAccountId(clientAccount.getId());
+            key.setRespondingAccountId(accountId);
             Friendship friendship = friendshipRepository.findById(key).orElse(null);
             if (friendship == null) {
-                key.setAccountAId(accountId);
-                key.setAccountBId(clientAccount.getId());
+                key.setRequestingAccountId(accountId);
+                key.setRespondingAccountId(clientAccount.getId());
                 friendship = friendshipRepository.findById(key).orElse(null);
             }
             if (friendship == null) {
@@ -131,11 +146,21 @@ public class FriendshipManager implements FriendshipService {
             if (clientAccount == null) {
                 throw new NotAuthenticatedException();
             }
-            if (accountId == null || accountId <= 0) {
+            if (accountId == null || accountId <= 0 || accountId.equals(clientAccount.getId())) {
                 throw new IllegalArgumentException();
             }
             // TODO: Implement
             throw new RuntimeException("Not implemented");
+        }
+
+        private Friendship cloneFriendship(Friendship friendship) {
+            Friendship clone = new Friendship();
+            clone.setRequestingAccountId(friendship.getRequestingAccountId());
+            clone.setRespondingAccountId(friendship.getRespondingAccountId());
+            clone.setAccepted(friendship.getAccepted());
+            clone.setCreationTime(friendship.getCreationTime());
+            clone.setFriendAccount(friendship.getFriendAccount());
+            return clone;
         }
     }
 }

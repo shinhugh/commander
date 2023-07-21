@@ -21,9 +21,7 @@ public class Friendship {
     @Column(name = "CreationTime", nullable = false)
     private Long creationTime;
     @Transient
-    private Account requestingAccount;
-    @Transient
-    private Account respondingAccount;
+    private Account friendAccount;
 
     public Long getRequestingAccountId() {
         return requestingAccountId;
@@ -57,40 +55,32 @@ public class Friendship {
         this.creationTime = creationTime;
     }
 
-    public Account getRequestingAccount() {
-        return requestingAccount;
+    public Account getFriendAccount() {
+        return friendAccount;
     }
 
-    public void setRequestingAccount(Account requestingAccount) {
-        this.requestingAccount = requestingAccount;
-    }
-
-    public Account getRespondingAccount() {
-        return respondingAccount;
-    }
-
-    public void setRespondingAccount(Account respondingAccount) {
-        this.respondingAccount = respondingAccount;
+    public void setFriendAccount(Account friendAccount) {
+        this.friendAccount = friendAccount;
     }
 
     public static class Key implements Serializable {
-        private Long accountAId;
-        private Long accountBId;
+        private Long requestingAccountId;
+        private Long respondingAccountId;
 
-        public Long getAccountAId() {
-            return accountAId;
+        public Long getRequestingAccountId() {
+            return requestingAccountId;
         }
 
-        public void setAccountAId(Long accountAId) {
-            this.accountAId = accountAId;
+        public void setRequestingAccountId(Long requestingAccountId) {
+            this.requestingAccountId = requestingAccountId;
         }
 
-        public Long getAccountBId() {
-            return accountBId;
+        public Long getRespondingAccountId() {
+            return respondingAccountId;
         }
 
-        public void setAccountBId(Long accountBId) {
-            this.accountBId = accountBId;
+        public void setRespondingAccountId(Long respondingAccountId) {
+            this.respondingAccountId = respondingAccountId;
         }
     }
 }

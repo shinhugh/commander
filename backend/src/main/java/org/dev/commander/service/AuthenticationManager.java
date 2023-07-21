@@ -41,10 +41,7 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
 
     @Override
     public Session login(Authentication authentication, Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException {
-        Session session = inner.login(authentication, credentials);
-        session.setAccountId(null);
-        session.setAuthorities(null);
-        return session;
+        return inner.login(authentication, credentials);
     }
 
     @Override
@@ -64,37 +61,27 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
 
     @Override
     public Account readAccount(Authentication authentication, Long id) throws IllegalArgumentException, NotFoundException {
-        Account account = inner.readAccount(authentication, id);
-        account.setPassword(null);
-        if (!verifyClientIsOwnerOrAdmin(authentication, account)) {
-            account.setLoginName(null);
-            account.setAuthorities(null);
-        }
-        return account;
+        return inner.readAccount(authentication, id);
     }
 
     @Override
     public Account createAccount(Authentication authentication, Account account) throws IllegalArgumentException, ConflictException {
         try {
-            account = inner.createAccount(account);
+            return inner.createAccount(account);
         }
         catch (DataIntegrityViolationException ex) {
             throw new ConflictException();
         }
-        account.setPassword(null);
-        return account;
     }
 
     @Override
     public Account updateAccount(Authentication authentication, Long id, Account account) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException, NotAuthorizedException, ConflictException {
         try {
-            account = inner.updateAccount(authentication, id, account);
+            return inner.updateAccount(authentication, id, account);
         }
         catch (DataIntegrityViolationException ex) {
             throw new ConflictException();
         }
-        account.setPassword(null);
-        return account;
     }
 
     @Override
@@ -105,16 +92,6 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
     @Scheduled(fixedRate = 60000)
     public void purgeExpiredSessions() {
         inner.purgeExpiredSessions();
-    }
-
-    private boolean verifyClientIsOwnerOrAdmin(Authentication authentication, Account account) {
-        if (authentication == null) {
-            return false;
-        }
-        if (account.getLoginName().equals(authentication.getName())) {
-            return true;
-        }
-        return verifyAuthenticationContainsAtLeastOneAuthority(authentication, Set.of("ADMIN"));
     }
 
     @Component
@@ -132,14 +109,14 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
         private static final int SESSION_TOKEN_LENGTH = 128;
         private static final String SESSION_TOKEN_ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         private static final long SESSION_DURATION = 86400000L;
-        private final AccountRepository accountRepository;
         private final SessionRepository sessionRepository;
+        private final AccountRepository accountRepository;
         private final WebSocketRegistrar webSocketRegistrar;
         private final PasswordEncoder passwordEncoder;
 
-        public Inner(AccountRepository accountRepository, SessionRepository sessionRepository, WebSocketRegistrar webSocketRegistrar, PasswordEncoder passwordEncoder) {
-            this.accountRepository = accountRepository;
+        public Inner(SessionRepository sessionRepository, AccountRepository accountRepository, WebSocketRegistrar webSocketRegistrar, PasswordEncoder passwordEncoder) {
             this.sessionRepository = sessionRepository;
+            this.accountRepository = accountRepository;
             this.webSocketRegistrar = webSocketRegistrar;
             this.passwordEncoder = passwordEncoder;
         }
@@ -150,12 +127,12 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
                 sessionRepository.deleteById(token);
                 throw new NotFoundException();
             }
-            return session;
+            return cloneSession(session);
         }
 
         public Account identifyAccount(String token) {
             Session session = identifySession(token);
-            return accountRepository.findById(session.getAccountId()).orElseThrow(NotFoundException::new);
+            return cloneAccount(accountRepository.findById(session.getAccountId()).orElseThrow(NotFoundException::new));
         }
 
         public Session login(Authentication authentication, Credentials credentials) {
@@ -185,6 +162,9 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
             session.setCreationTime(creationTime);
             session.setExpirationTime(expirationTime);
             sessionRepository.save(session);
+            session = cloneSession(session);
+            session.setAccountId(null);
+            session.setAuthorities(null);
             return session;
         }
 
@@ -237,7 +217,13 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
             if (id <= 0) {
                 throw new IllegalArgumentException();
             }
-            return accountRepository.findById(id).orElseThrow(NotFoundException::new);
+            Account account = cloneAccount(accountRepository.findById(id).orElseThrow(NotFoundException::new));
+            account.setPassword(null);
+            if (!verifyClientIsOwnerOrAdmin(authentication, account)) {
+                account.setLoginName(null);
+                account.setAuthorities(null);
+            }
+            return account;
         }
 
         public Account createAccount(Account account) {
@@ -248,7 +234,9 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
             account.setId(null);
             account.setPassword(passwordEncoder.encode(account.getPassword()));
             account.setAuthorities(1);
-            return accountRepository.save(account);
+            account = cloneAccount(accountRepository.save(account));
+            account.setPassword(null);
+            return account;
         }
 
         public Account updateAccount(Authentication authentication, Long id, Account account) {
@@ -279,6 +267,8 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
             }
             sessionRepository.deleteByAccountId(id);
             webSocketRegistrar.closeConnectionsForAccount(id);
+            existingAccount = cloneAccount(existingAccount);
+            existingAccount.setPassword(null);
             return existingAccount;
         }
 
@@ -376,6 +366,26 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
                 }
             }
             return true;
+        }
+
+        private Session cloneSession(Session session) {
+            Session clone = new Session();
+            clone.setToken(session.getToken());
+            clone.setAccountId(session.getAccountId());
+            clone.setAuthorities(session.getAuthorities());
+            clone.setCreationTime(session.getCreationTime());
+            clone.setExpirationTime(session.getExpirationTime());
+            return clone;
+        }
+
+        private Account cloneAccount(Account account) {
+            Account clone = new Account();
+            clone.setId(account.getId());
+            clone.setLoginName(account.getLoginName());
+            clone.setPassword(account.getPassword());
+            clone.setAuthorities(account.getAuthorities());
+            clone.setPublicName(account.getPublicName());
+            return clone;
         }
     }
 }

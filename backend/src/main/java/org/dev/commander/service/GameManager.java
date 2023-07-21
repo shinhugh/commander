@@ -24,6 +24,7 @@ import java.util.Set;
 
 import static java.lang.System.currentTimeMillis;
 
+// TODO: Clone entities before returning
 @Service
 public class GameManager implements GameService {
     private final Inner inner;

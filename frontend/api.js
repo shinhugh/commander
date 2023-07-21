@@ -12,6 +12,8 @@ const api = {
 
     account: null,
 
+    friends: [],
+
     connectSocket: async () => {
       const url = 'ws://' + api.internal.endpoint + '/api/ws';
       const socket = new WebSocket(url);
@@ -176,6 +178,42 @@ const api = {
       };
     }
     const response = await api.internal.makeRequest('/api/account', 'DELETE', parameters, null, null);
+    if (response.ok) {
+      return;
+    }
+    throw new Error(response.status);
+  },
+
+  getFriends: async () => {
+    const response = await api.internal.makeRequest('/api/friendship', 'GET', null, null, null);
+    if (response.ok) {
+      return await response.json();
+    }
+    throw new Error(response.status);
+  },
+
+  addFriend: async (accountId) => {
+    let parameters = null;
+    if (accountId != null) {
+      parameters = {
+        id: accountId
+      };
+    }
+    const response = await api.internal.makeRequest('/api/friendship', 'POST', parameters, null, null);
+    if (response.ok) {
+      return;
+    }
+    throw new Error(response.status);
+  },
+
+  removeFriend: async (accountId) => {
+    let parameters = null;
+    if (accountId != null) {
+      parameters = {
+        id: accountId
+      };
+    }
+    const response = await api.internal.makeRequest('/api/friendship', 'DELETE', parameters, null, null);
     if (response.ok) {
       return;
     }
