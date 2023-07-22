@@ -197,6 +197,15 @@ const api = {
       throw new Error(response.status);
     },
 
+    logout: async () => {
+      if (api.internal.session == null) {
+        return;
+      }
+      await api.internal.requestLogout();
+      api.internal.session = null;
+      api.internal.account = null;
+    },
+
     login: async (username, password) => {
       if (api.internal.session != null) {
         return;
@@ -207,14 +216,7 @@ const api = {
       await api.internal.updateFriends();
     },
 
-    logout: async () => {
-      if (api.internal.session == null) {
-        return;
-      }
-      await api.internal.requestLogout();
-      api.internal.session = null;
-      api.internal.account = null;
-    },
+    // TODO: createAccount(), updateAccount(), deleteAccount()
 
     updateFriends: async () => {
       if (api.internal.session != null) {
@@ -244,6 +246,18 @@ const api = {
 
   getFriends: () => {
     return api.internal.friends;
-  }
+  },
+
+  logout: api.internal.logout,
+
+  login: api.internal.login,
+
+  createAccount: api.internal.createAccount,
+
+  updateAccount: api.internal.updateAccount,
+
+  deleteAccount: api.internal.deleteAccount,
+
+  initialize: api.internal.initialize
 
 };
