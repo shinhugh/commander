@@ -216,7 +216,17 @@ const api = {
       await api.internal.updateFriends();
     },
 
-    // TODO: createAccount(), updateAccount(), deleteAccount()
+    createAccount: async (username, password, publicName) => {
+      return await api.internal.requestCreateAccount(username, password, publicName);
+    },
+
+    updateAccount: async (accountId, username, password, authorities, publicName) => {
+      return await api.internal.requestUpdateAccount(accountId, username, password, authorities, publicName);
+    },
+
+    deleteAccount: async (accountId) => {
+      await api.internal.requestDeleteAccount(accountId);
+    },
 
     updateFriends: async () => {
       if (api.internal.session != null) {
@@ -233,7 +243,7 @@ const api = {
 
     initialize: async () => {
       try {
-        await api.internal.login();
+        await api.internal.login(null);
       }
       catch { }
     }
@@ -248,16 +258,28 @@ const api = {
     return api.internal.friends;
   },
 
-  logout: api.internal.logout,
+  logout: async () => {
+    await api.internal.logout();
+  },
 
-  login: api.internal.login,
+  login: async (username, password) => {
+    await api.internal.login(username, password);
+  },
 
-  createAccount: api.internal.createAccount,
+  createAccount: async (username, password, publicName) => {
+    return await api.internal.createAccount(username, password, publicName);
+  },
 
-  updateAccount: api.internal.updateAccount,
+  updateAccount: async (accountId, username, password, authorities, publicName) => {
+    return await api.internal.updateAccount(accountId, username, password, authorities, publicName);
+  },
 
-  deleteAccount: api.internal.deleteAccount,
+  deleteAccount: async (accountId) => {
+    await api.internal.deleteAccount(accountId);
+  },
 
-  initialize: api.internal.initialize
+  initialize: async () => {
+    await api.internal.initialize();
+  }
 
 };
