@@ -114,14 +114,9 @@ const ui = {
     element.classList.remove('selected');
   },
 
-  notify: (message) => {
-    clearTimeout(ui.state.notificationTimeoutId);
-    ui.elements.notification.message.innerHTML = message;
-    ui.show(ui.elements.notification.root);
-    ui.state.notificationTimeoutId = setTimeout(() => {
-      ui.hide(ui.elements.notification.root);
-      ui.elements.notification.message.innerHTML = null;
-    }, 2000);
+  clearContent: () => {
+    ui.hide(ui.elements.content.loginModule.root);
+    ui.hide(ui.elements.content.lobbyModule.root);
   },
 
   hideOverlay: () => {
@@ -142,6 +137,16 @@ const ui = {
     ui.hide(ui.elements.overlay.modifyAccountPage.root);
   },
 
+  notify: (message) => {
+    clearTimeout(ui.state.notificationTimeoutId);
+    ui.elements.notification.message.innerHTML = message;
+    ui.show(ui.elements.notification.root);
+    ui.state.notificationTimeoutId = setTimeout(() => {
+      ui.hide(ui.elements.notification.root);
+      ui.elements.notification.message.innerHTML = null;
+    }, 2000);
+  },
+
   hideBlocker: () => {
     ui.hide(ui.elements.blocker.root);
   },
@@ -151,12 +156,12 @@ const ui = {
   },
 
   showLoginModule: () => {
-    ui.hide(ui.elements.content.lobbyModule.root);
+    ui.clearContent();
     ui.show(ui.elements.content.loginModule.root);
   },
 
   showLobbyModule: () => {
-    ui.hide(ui.elements.content.loginModule.root);
+    ui.clearContent();
     ui.show(ui.elements.content.lobbyModule.root);
   },
 
@@ -188,18 +193,6 @@ const ui = {
     ui.select(ui.elements.content.loginModule.tabs.createAccountTab);
   },
 
-  addActiveGameEntry: (gameEntry) => {
-    // TODO: Implement
-  },
-
-  addInvitationEntry: (gameEntry) => {
-    // TODO: Implement
-  },
-
-  addPendingGameEntry: (gameEntry) => {
-    // TODO: Implement
-  },
-
   showActiveGameEntryPage: () => {
     ui.clearOverlay();
     ui.show(ui.elements.overlay.activeGameEntryPage.root);
@@ -223,7 +216,6 @@ const ui = {
   showFriendsPage: () => {
     ui.clearOverlay();
     ui.show(ui.elements.overlay.friendsPage.root);
-    ui.updateFriendsPage();
   },
 
   showAccountPage: () => {
@@ -234,6 +226,47 @@ const ui = {
   showModifyAccountPage: () => {
     ui.clearOverlay();
     ui.show(ui.elements.overlay.modifyAccountPage.root);
+  },
+
+  addActiveGameEntry: (gameEntry) => {
+    // TODO: Implement
+  },
+
+  addInvitationEntry: (gameEntry) => {
+    // TODO: Implement
+  },
+
+  addPendingGameEntry: (gameEntry) => {
+    // TODO: Implement
+  },
+
+  addFriendEntry: (friendEntry) => {
+    const entry = ui.elements.overlay.friendsPage.friendEntryTemplate.cloneNode(true);
+    entry.getElementsByClassName('friend_entry_name')[0].innerHTML = friendEntry.friendAccount.publicName;
+    ui.elements.overlay.friendsPage.friendsList.insertBefore(entry, ui.elements.overlay.friendsPage.friendsList.firstElementChild);
+  },
+
+  refreshFriendsPage: () => {
+    ui.elements.overlay.friendsPage.friendsList.innerHTML = null;
+    const friends = api.getFriends();
+    if (friends.incomingRequests != null) {
+      for (const friend of friends.incomingRequests) {
+        ui.addFriendEntry(friend);
+      }
+    }
+    if (friends.confirmedFriendships != null) {
+      for (const friend of friends.confirmedFriendships) {
+        ui.addFriendEntry(friend);
+      }
+    }
+    if (friends.outgoingRequests != null) {
+      for (const friend of friends.outgoingRequests) {
+        ui.addFriendEntry(friend);
+      }
+    }
+  },
+
+  refreshModifyAccountPage: () => {
     const account = api.getLoggedInAccount();
     if (account != null) {
       ui.elements.overlay.modifyAccountPage.usernameInput.value = account.loginName;
@@ -241,37 +274,6 @@ const ui = {
       ui.elements.overlay.modifyAccountPage.publicNameInput.value = account.publicName;
     }
     ui.elements.overlay.modifyAccountPage.usernameInput.focus();
-  },
-
-  handleLogout: () => {
-    ui.hideOverlay();
-    ui.hideTopBarButtons();
-    ui.showLoginPage();
-    ui.showLoginModule();
-    ui.elements.content.loginModule.pages.loginPage.usernameInput.focus();
-    ui.elements.overlay.friendsPage.friendsList.innerHTML = null;
-    ui.elements.overlay.accountPage.id.innerHTML = null;
-    ui.elements.overlay.accountPage.username.innerHTML = null;
-    ui.elements.overlay.accountPage.publicName.innerHTML = null;
-    ui.elements.overlay.modifyAccountPage.usernameInput.value = null;
-    ui.elements.overlay.modifyAccountPage.passwordInput.value = null;
-    ui.elements.overlay.modifyAccountPage.publicNameInput.value = null;
-  },
-
-  handleLogin: () => {
-    ui.showLobbyModule();
-    ui.showTopBarButtons();
-    const account = api.getLoggedInAccount();
-    if (account != null) {
-      ui.elements.overlay.accountPage.id.innerHTML = account.id;
-      ui.elements.overlay.accountPage.username.innerHTML = account.loginName;
-      ui.elements.overlay.accountPage.publicName.innerHTML = account.publicName;
-    }
-    ui.elements.content.loginModule.pages.loginPage.usernameInput.value = null;
-    ui.elements.content.loginModule.pages.loginPage.passwordInput.value = null;
-    ui.elements.content.loginModule.pages.createAccountPage.usernameInput.value = null;
-    ui.elements.content.loginModule.pages.createAccountPage.passwordInput.value = null;
-    ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.value = null;
   },
 
   parseInputAndLogin: async () => {
@@ -360,30 +362,42 @@ const ui = {
     ui.handleLogout();
   },
 
-  addFriendEntry: (friendEntry) => {
-    const entry = ui.elements.overlay.friendsPage.friendEntryTemplate.cloneNode(true);
-    entry.getElementsByClassName('friend_entry_name')[0].innerHTML = friendEntry.friendAccount.publicName;
-    ui.elements.overlay.friendsPage.friendsList.insertBefore(entry, ui.elements.overlay.friendsPage.friendsList.firstElementChild);
+  handleIncomingSocketMessage: (message) => {
+    // TODO
   },
 
-  updateFriendsPage: () => {
+  handleLogout: () => {
+    ui.hideOverlay();
+    ui.hideTopBarButtons();
+    ui.showLoginPage();
+    ui.showLoginModule();
+    ui.elements.content.loginModule.pages.loginPage.usernameInput.focus();
+    ui.elements.content.lobbyModule.activeGamesList.innerHTML = null;
+    ui.elements.content.lobbyModule.invitationsList.innerHTML = null;
+    ui.elements.content.lobbyModule.pendingGamesList.innerHTML = null;
     ui.elements.overlay.friendsPage.friendsList.innerHTML = null;
-    const friends = api.getFriends();
-    if (friends.incomingRequests != null) {
-      for (const friend of friends.incomingRequests) {
-        ui.addFriendEntry(friend);
-      }
+    ui.elements.overlay.accountPage.id.innerHTML = null;
+    ui.elements.overlay.accountPage.username.innerHTML = null;
+    ui.elements.overlay.accountPage.publicName.innerHTML = null;
+    ui.elements.overlay.modifyAccountPage.usernameInput.value = null;
+    ui.elements.overlay.modifyAccountPage.passwordInput.value = null;
+    ui.elements.overlay.modifyAccountPage.publicNameInput.value = null;
+  },
+
+  handleLogin: () => {
+    ui.showLobbyModule();
+    ui.showTopBarButtons();
+    const account = api.getLoggedInAccount();
+    if (account != null) {
+      ui.elements.overlay.accountPage.id.innerHTML = account.id;
+      ui.elements.overlay.accountPage.username.innerHTML = account.loginName;
+      ui.elements.overlay.accountPage.publicName.innerHTML = account.publicName;
     }
-    if (friends.confirmedFriendships != null) {
-      for (const friend of friends.confirmedFriendships) {
-        ui.addFriendEntry(friend);
-      }
-    }
-    if (friends.outgoingRequests != null) {
-      for (const friend of friends.outgoingRequests) {
-        ui.addFriendEntry(friend);
-      }
-    }
+    ui.elements.content.loginModule.pages.loginPage.usernameInput.value = null;
+    ui.elements.content.loginModule.pages.loginPage.passwordInput.value = null;
+    ui.elements.content.loginModule.pages.createAccountPage.usernameInput.value = null;
+    ui.elements.content.loginModule.pages.createAccountPage.passwordInput.value = null;
+    ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.value = null;
   }
 
 };
@@ -434,6 +448,7 @@ ui.elements.topBar.createGameButton.addEventListener('click', () => {
   ui.showOverlay();
 });
 ui.elements.topBar.friendsButton.addEventListener('click', () => {
+  ui.refreshFriendsPage();
   ui.showFriendsPage();
   ui.showOverlay();
 });
@@ -455,6 +470,7 @@ ui.elements.overlay.window.addEventListener('click', e => {
   e.stopPropagation();
 });
 ui.elements.overlay.accountPage.modifyButton.addEventListener('click', () => {
+  ui.refreshModifyAccountPage();
   ui.showModifyAccountPage();
 });
 ui.elements.overlay.modifyAccountPage.usernameInput.addEventListener('keydown', e => {
@@ -516,7 +532,7 @@ ui.hide(ui.elements.overlay.modifyAccountPage.root);
 ui.hide(ui.elements.notification.root);
 
 (async () => {
-  await api.initialize();
+  await api.initialize([ui.handleIncomingSocketMessage]);
   if (api.getLoggedInAccount() != null) {
     ui.handleLogin();
   } else {

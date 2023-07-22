@@ -50,10 +50,6 @@ const api = {
       });
     },
 
-    registerIncomingSocketMessageHandler: (handler) => {
-      api.internal.incomingSocketMessageHandlers.push(handler);
-    },
-
     sendObjectOverSocket: (obj) => {
       if (api.internal.socket != null) {
         api.internal.socket.send(JSON.stringify(obj));
@@ -241,7 +237,12 @@ const api = {
       }
     },
 
-    initialize: async () => {
+    initialize: async (incomingSocketMessageHandlers) => {
+      if (incomingSocketMessageHandlers != null) {
+        for (const handler of incomingSocketMessageHandlers) {
+          api.internal.incomingSocketMessageHandlers.push(handler);
+        }
+      }
       try {
         await api.internal.login(null, null);
       }
@@ -278,8 +279,8 @@ const api = {
     await api.internal.deleteAccount(accountId);
   },
 
-  initialize: async () => {
-    await api.internal.initialize();
+  initialize: async (incomingSocketMessageHandlers) => {
+    await api.internal.initialize(incomingSocketMessageHandlers);
   }
 
 };
