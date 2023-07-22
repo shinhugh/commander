@@ -87,6 +87,10 @@ const api = {
       return await fetch(url, options);
     },
 
+    requestLogout: async () => {
+      await api.internal.makeRequest('/api/auth', 'DELETE', null, null, null);
+    },
+
     requestLogin: async (username, password) => {
       const response = await api.internal.makeRequest('/api/auth', 'POST', null, 'application/json', JSON.stringify({
         username: username,
@@ -96,10 +100,6 @@ const api = {
         return await response.json();
       }
       throw new Error(response.status);
-    },
-
-    requestLogout: async () => {
-      await api.internal.makeRequest('/api/auth', 'DELETE', null, null, null);
     },
 
     requestReadAccount: async (accountId) => {
@@ -243,7 +243,7 @@ const api = {
 
     initialize: async () => {
       try {
-        await api.internal.login(null);
+        await api.internal.login(null, null);
       }
       catch { }
     }
