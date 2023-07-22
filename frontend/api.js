@@ -6,13 +6,13 @@ const api = {
 
     socket: null,
 
-    incomingSocketMessageHandlers: [],
+    incomingSocketMessageHandlers: [ ],
 
     session: null,
 
     account: null,
 
-    friends: [],
+    friends: null,
 
     connectSocket: async () => {
       const url = 'ws://' + api.internal.endpoint + '/api/ws';
@@ -50,6 +50,16 @@ const api = {
       });
     },
 
+    registerIncomingSocketMessageHandler: (handler) => {
+      api.internal.incomingSocketMessageHandlers.push(handler);
+    },
+
+    sendObjectOverSocket: (obj) => {
+      if (api.internal.socket != null) {
+        api.internal.socket.send(JSON.stringify(obj));
+      }
+    },
+
     makeRequest: async (path, method, parameters, contentType, body) => {
       let parameterString = '';
       if (parameters != null && Object.keys(parameters).length > 0) {
@@ -75,149 +85,165 @@ const api = {
         options.body = body;
       }
       return await fetch(url, options);
+    },
+
+    requestLogin: async (username, password) => {
+      const response = await api.internal.makeRequest('/api/auth', 'POST', null, 'application/json', JSON.stringify({
+        username: username,
+        password, password
+      }));
+      if (response.ok) {
+        return await response.json();
+      }
+      throw new Error(response.status);
+    },
+
+    requestLogout: async () => {
+      await api.internal.makeRequest('/api/auth', 'DELETE', null, null, null);
+    },
+
+    requestReadAccount: async (accountId) => {
+      let parameters = null;
+      if (accountId != null) {
+        parameters = {
+          id: accountId
+        };
+      }
+      const response = await api.internal.makeRequest('/api/account', 'GET', parameters, null, null);
+      if (response.ok) {
+        return await response.json();
+      }
+      throw new Error(response.status);
+    },
+
+    requestCreateAccount: async (username, password, publicName) => {
+      const response = await api.internal.makeRequest('/api/account', 'POST', null, 'application/json', JSON.stringify({
+        loginName: username,
+        password: password,
+        publicName: publicName
+      }));
+      if (response.ok) {
+        return await response.json();
+      }
+      throw new Error(response.status);
+    },
+
+    requestUpdateAccount: async (accountId, username, password, authorities, publicName) => {
+      let parameters = null;
+      if (accountId != null) {
+        parameters = {
+          id: accountId
+        };
+      }
+      const response = await api.internal.makeRequest('/api/account', 'PUT', parameters, 'application/json', JSON.stringify({
+        loginName: username,
+        password: password,
+        authorities: authorities,
+        publicName: publicName
+      }));
+      if (response.ok) {
+        return await response.json();
+      }
+      throw new Error(response.status);
+    },
+
+    requestDeleteAccount: async (accountId) => {
+      let parameters = null;
+      if (accountId != null) {
+        parameters = {
+          id: accountId
+        };
+      }
+      const response = await api.internal.makeRequest('/api/account', 'DELETE', parameters, null, null);
+      if (response.ok) {
+        return;
+      }
+      throw new Error(response.status);
+    },
+
+    requestListFriendships: async () => {
+      const response = await api.internal.makeRequest('/api/friendship', 'GET', null, null, null);
+      if (response.ok) {
+        return await response.json();
+      }
+      throw new Error(response.status);
+    },
+
+    requestRequestFriendship: async (accountId) => {
+      let parameters = null;
+      if (accountId != null) {
+        parameters = {
+          id: accountId
+        };
+      }
+      const response = await api.internal.makeRequest('/api/friendship', 'POST', parameters, null, null);
+      if (response.ok) {
+        return;
+      }
+      throw new Error(response.status);
+    },
+
+    requestTerminateFriendship: async (accountId) => {
+      let parameters = null;
+      if (accountId != null) {
+        parameters = {
+          id: accountId
+        };
+      }
+      const response = await api.internal.makeRequest('/api/friendship', 'DELETE', parameters, null, null);
+      if (response.ok) {
+        return;
+      }
+      throw new Error(response.status);
+    },
+
+    login: async (username, password) => {
+      if (api.internal.session != null) {
+        return;
+      }
+      api.internal.session = await api.internal.requestLogin(username, password);
+      api.internal.account = await api.internal.requestReadAccount(null);
+      // TODO: Connect WebSocket
+      await api.internal.updateFriends();
+    },
+
+    logout: async () => {
+      if (api.internal.session == null) {
+        return;
+      }
+      await api.internal.requestLogout();
+      api.internal.session = null;
+      api.internal.account = null;
+    },
+
+    updateFriends: async () => {
+      if (api.internal.session != null) {
+        try {
+          api.internal.friends = await api.internal.requestListFriendships();
+        }
+        catch {
+          api.internal.friends = null;
+        }
+      } else {
+        api.internal.friends = null;
+      }
+    },
+
+    initialize: async () => {
+      try {
+        await api.internal.login();
+      }
+      catch { }
     }
 
-  },
-
-  initialize: async () => {
-    try {
-      await api.login();
-    }
-    catch { }
-  },
-
-  sendObjectOverSocket: (obj) => {
-    if (api.internal.socket != null) {
-      api.internal.socket.send(JSON.stringify(obj));
-    }
-  },
-
-  registerIncomingSocketMessageHandler: (handler) => {
-    api.internal.incomingSocketMessageHandlers.push(handler);
   },
 
   getLoggedInAccount: () => {
     return api.internal.account;
   },
 
-  login: async (username, password) => {
-    if (api.internal.session != null) {
-      return;
-    }
-    const response = await api.internal.makeRequest('/api/auth', 'POST', null, 'application/json', JSON.stringify({
-      username: username,
-      password, password
-    }));
-    if (response.ok) {
-      api.internal.session = await response.json();
-      api.internal.account = await api.readAccount(null);
-      return;
-    }
-    throw new Error(response.status);
-  },
-
-  logout: async () => {
-    if (api.internal.session == null) {
-      return;
-    }
-    await api.internal.makeRequest('/api/auth', 'DELETE', null, null, null);
-    api.internal.session = null;
-    api.internal.account = null;
-  },
-
-  readAccount: async (accountId) => {
-    let parameters = null;
-    if (accountId != null) {
-      parameters = {
-        id: accountId
-      };
-    }
-    const response = await api.internal.makeRequest('/api/account', 'GET', parameters, null, null);
-    if (response.ok) {
-      return await response.json();
-    }
-    throw new Error(response.status);
-  },
-
-  createAccount: async (username, password, publicName) => {
-    const response = await api.internal.makeRequest('/api/account', 'POST', null, 'application/json', JSON.stringify({
-      loginName: username,
-      password: password,
-      publicName: publicName
-    }));
-    if (response.ok) {
-      return await response.json();
-    }
-    throw new Error(response.status);
-  },
-
-  updateAccount: async (accountId, username, password, authorities, publicName) => {
-    let parameters = null;
-    if (accountId != null) {
-      parameters = {
-        id: accountId
-      };
-    }
-    const response = await api.internal.makeRequest('/api/account', 'PUT', parameters, 'application/json', JSON.stringify({
-      loginName: username,
-      password: password,
-      authorities: authorities,
-      publicName: publicName
-    }));
-    if (response.ok) {
-      return await response.json();
-    }
-    throw new Error(response.status);
-  },
-
-  deleteAccount: async (accountId) => {
-    let parameters = null;
-    if (accountId != null) {
-      parameters = {
-        id: accountId
-      };
-    }
-    const response = await api.internal.makeRequest('/api/account', 'DELETE', parameters, null, null);
-    if (response.ok) {
-      return;
-    }
-    throw new Error(response.status);
-  },
-
-  getFriends: async () => {
-    const response = await api.internal.makeRequest('/api/friendship', 'GET', null, null, null);
-    if (response.ok) {
-      return await response.json();
-    }
-    throw new Error(response.status);
-  },
-
-  addFriend: async (accountId) => {
-    let parameters = null;
-    if (accountId != null) {
-      parameters = {
-        id: accountId
-      };
-    }
-    const response = await api.internal.makeRequest('/api/friendship', 'POST', parameters, null, null);
-    if (response.ok) {
-      return;
-    }
-    throw new Error(response.status);
-  },
-
-  removeFriend: async (accountId) => {
-    let parameters = null;
-    if (accountId != null) {
-      parameters = {
-        id: accountId
-      };
-    }
-    const response = await api.internal.makeRequest('/api/friendship', 'DELETE', parameters, null, null);
-    if (response.ok) {
-      return;
-    }
-    throw new Error(response.status);
+  getFriends: () => {
+    return api.internal.friends;
   }
 
 };

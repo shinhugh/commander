@@ -223,6 +223,7 @@ const ui = {
   showFriendsPage: () => {
     ui.clearOverlay();
     ui.show(ui.elements.overlay.friendsPage.root);
+    ui.updateFriendsPage();
   },
 
   showAccountPage: () => {
@@ -248,6 +249,7 @@ const ui = {
     ui.showLoginPage();
     ui.showLoginModule();
     ui.elements.content.loginModule.pages.loginPage.usernameInput.focus();
+    ui.elements.overlay.friendsPage.friendsList.innerHTML = null;
     ui.elements.overlay.accountPage.id.innerHTML = null;
     ui.elements.overlay.accountPage.username.innerHTML = null;
     ui.elements.overlay.accountPage.publicName.innerHTML = null;
@@ -360,8 +362,28 @@ const ui = {
 
   addFriendEntry: (friendEntry) => {
     const entry = ui.elements.overlay.friendsPage.friendEntryTemplate.cloneNode(true);
-    entry.getElementsByClassName('friend_entry_name')[0].innerHTML = friendEntry.name;
+    entry.getElementsByClassName('friend_entry_name')[0].innerHTML = friendEntry.friendAccount.publicName;
     ui.elements.overlay.friendsPage.friendsList.insertBefore(entry, ui.elements.overlay.friendsPage.friendsList.firstElementChild);
+  },
+
+  updateFriendsPage: () => {
+    ui.elements.overlay.friendsPage.friendsList.innerHTML = null;
+    const friends = api.getFriends();
+    if (friends.incomingRequests != null) {
+      for (const friend of friends.incomingRequests) {
+        ui.addFriendEntry(friend);
+      }
+    }
+    if (friends.confirmedFriendships != null) {
+      for (const friend of friends.confirmedFriendships) {
+        ui.addFriendEntry(friend);
+      }
+    }
+    if (friends.outgoingRequests != null) {
+      for (const friend of friends.outgoingRequests) {
+        ui.addFriendEntry(friend);
+      }
+    }
   }
 
 };
