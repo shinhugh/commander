@@ -136,6 +136,7 @@ public class FriendshipManager implements FriendshipService {
             }
             if (!friendship.getAccepted() && Objects.equals(friendship.getRespondingAccountId(), clientAccount.getId())) {
                 friendship.setAccepted(true);
+                // TODO: Notify via WebSocket
                 return;
             }
             throw new ConflictException();
@@ -149,8 +150,20 @@ public class FriendshipManager implements FriendshipService {
             if (accountId == null || accountId <= 0 || accountId.equals(clientAccount.getId())) {
                 throw new IllegalArgumentException();
             }
-            // TODO: Implement
-            throw new RuntimeException("Not implemented");
+            Friendship.Key key = new Friendship.Key();
+            key.setRequestingAccountId(clientAccount.getId());
+            key.setRespondingAccountId(accountId);
+            Friendship friendship = friendshipRepository.findById(key).orElse(null);
+            if (friendship == null) {
+                key.setRequestingAccountId(accountId);
+                key.setRespondingAccountId(clientAccount.getId());
+                friendship = friendshipRepository.findById(key).orElse(null);
+            }
+            if (friendship == null) {
+                throw new NotFoundException();
+            }
+            friendshipRepository.delete(friendship);
+            // TODO: Notify via WebSocket
         }
 
         private Friendship cloneFriendship(Friendship friendship) {

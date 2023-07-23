@@ -269,6 +269,7 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
             webSocketRegistrar.closeConnectionsForAccount(id);
             existingAccount = cloneAccount(existingAccount);
             existingAccount.setPassword(null);
+            // TODO: Notify friends via WebSocket
             return existingAccount;
         }
 
@@ -286,9 +287,10 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
             if (!verifyClientIsOwnerOrAdmin(authentication, account)) {
                 throw new NotAuthorizedException();
             }
-            accountRepository.deleteById(id);
-            sessionRepository.deleteByAccountId(id);
             webSocketRegistrar.closeConnectionsForAccount(id);
+            // TODO: Terminate affiliated friendships
+            sessionRepository.deleteByAccountId(id);
+            accountRepository.delete(account);
         }
 
         public void purgeExpiredSessions() {
