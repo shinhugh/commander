@@ -455,7 +455,7 @@ const ui = {
       catch (e) {
         switch (e.message) {
           case '409':
-            ui.notify('Request exists for specified user');
+            ui.notify('User is already a confirmed or requested friend');
             break;
           default:
             ui.notify('Failed to add friend');
