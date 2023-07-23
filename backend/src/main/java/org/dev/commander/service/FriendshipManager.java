@@ -45,6 +45,11 @@ public class FriendshipManager implements FriendshipService {
         inner.terminateFriendship(authentication, accountId);
     }
 
+    @Override
+    public void terminateAllFriendships(Authentication authentication) throws NotAuthenticatedException {
+        inner.terminateAllFriendships(authentication);
+    }
+
     @Component
     @Transactional
     public static class Inner {
@@ -58,6 +63,8 @@ public class FriendshipManager implements FriendshipService {
             this.accountService = accountService;
             this.authorizationService = authorizationService;
             this.objectDispatcher = objectDispatcher;
+            // TODO: Subscribe to account update and handle by notifying friends via WebSocket
+            // TODO: Subscribe to account delete and handle by deleting friendships and notifying friends via WebSocket
         }
 
         public Friendships listFriendships(Authentication authentication) {
@@ -180,6 +187,26 @@ public class FriendshipManager implements FriendshipService {
             message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
             objectDispatcher.sendObject(clientAccount.getId(), message);
             objectDispatcher.sendObject(accountId, message);
+        }
+
+        public void terminateAllFriendships(Authentication authentication) {
+            Account clientAccount = authorizationService.getAccount(authentication);
+            if (clientAccount == null) {
+                throw new NotAuthenticatedException();
+            }
+            List<Friendship> friendships = friendshipRepository.findByRequestingAccountIdOrRespondingAccountId(clientAccount.getId(), clientAccount.getId());
+            List<Long> friendIds = new ArrayList<>();
+            for (Friendship friendship : friendships) {
+                friendIds.add(friendship.getFriendAccount().getId());
+            }
+            friendshipRepository.deleteByRequestingAccountIdOrRespondingAccountId(clientAccount.getId(), clientAccount.getId());
+            // TODO: Will message go out before deletes happen (because of @Transactional)? (It should not)
+            WebSocketMessage message = new WebSocketMessage();
+            message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
+            objectDispatcher.sendObject(clientAccount.getId(), message);
+            for (Long friendId : friendIds) {
+                objectDispatcher.sendObject(friendId, message);
+            }
         }
 
         private Friendship cloneFriendship(Friendship friendship) {

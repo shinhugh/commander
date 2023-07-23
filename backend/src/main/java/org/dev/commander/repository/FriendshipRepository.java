@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface FriendshipRepository extends CrudRepository<Friendship, Friendship.Key> {
     List<Friendship> findByRequestingAccountIdOrRespondingAccountId(Long requestingAccountId, Long respondingAccountId);
+    void deleteByRequestingAccountIdOrRespondingAccountId(Long requestingAccountId, Long respondingAccountId);
 }
