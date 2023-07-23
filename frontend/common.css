@@ -38,6 +38,21 @@ button:active {
   background: #ffffff40;
 }
 
+button.alt_color {
+  background: #00000020;
+  color: black;
+}
+
+button.alt_color:hover {
+  background: #00000030;
+  color: black;
+}
+
+button.alt_color:active {
+  background: #00000040;
+  color: black;
+}
+
 .list_wrapper {
   position: relative;
   border: 2px solid white;

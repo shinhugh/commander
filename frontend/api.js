@@ -210,6 +210,10 @@ const api = {
       await api.internal.updateFriends();
     },
 
+    readAccount: async (accountId) => {
+      return await api.internal.requestReadAccount(accountId);
+    },
+
     createAccount: async (username, password, publicName) => {
       return await api.internal.requestCreateAccount(username, password, publicName);
     },
@@ -272,6 +276,10 @@ const api = {
 
   login: async (username, password) => {
     await api.internal.login(username, password);
+  },
+
+  readAccount: async (accountId) => {
+    return await api.internal.readAccount(accountId);
   },
 
   createAccount: async (username, password, publicName) => {

@@ -88,8 +88,25 @@
 
 #overlay_friends_page_add_friend_section {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
+}
+
+#overlay_friends_page_add_friend_section>div {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+}
+
+#overlay_friends_page_add_friend_section_result {
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: 2px solid white;
+}
+
+#overlay_friends_page_add_friend_section_result_name {
+  margin-left: 1rem;
 }
 
 #overlay_friends_page_add_friend_section_id_input {
