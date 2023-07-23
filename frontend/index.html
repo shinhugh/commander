@@ -101,7 +101,7 @@
       <p>Commander</p>
     </div>
     <div>
-      <button id="top_bar_create_game_button">Create game</button>
+      <button id="top_bar_create_game_button">New game</button>
       <button id="top_bar_friends_button">Friends</button>
       <button id="top_bar_account_button">Account</button>
       <button id="top_bar_logout_button">Logout</button>
@@ -132,11 +132,23 @@
         <p class="title">Friends</p>
         <div class="list_wrapper">
           <div id="overlay_friends_page_friends_list" class="list">
-            <div class="friend_entry list_entry">
+            <div class="incoming_friendship_request_entry friend_entry list_entry">
+              <p class="friend_entry_name"></p>
+              <div class="friend_entry_right_strip">
+                <button class="friend_entry_accept_button">Accept</button>
+                <button class="friend_entry_deny_button">Deny</button>
+              </div>
+            </div>
+            <div class="confirmed_friendship_entry friend_entry list_entry">
               <p class="friend_entry_name"></p>
               <div class="friend_entry_right_strip">
                 <button class="friend_entry_remove_button">Remove</button>
-                <button class="friend_entry_cancel_button">Cancel request</button>
+              </div>
+            </div>
+            <div class="outgoing_friendship_request_entry friend_entry list_entry">
+              <p class="friend_entry_name"></p>
+              <div class="friend_entry_right_strip">
+                <button class="friend_entry_cancel_button">Cancel</button>
               </div>
             </div>
           </div>

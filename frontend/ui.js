@@ -64,7 +64,9 @@ const ui = {
       friendsPage: {
         root: document.getElementById('overlay_friends_page'),
         friendsList: document.getElementById('overlay_friends_page_friends_list'),
-        friendEntryTemplate: document.getElementsByClassName('friend_entry')[0],
+        incomingFriendshipRequestEntryTemplate: document.getElementsByClassName('incoming_friendship_request_entry')[0],
+        confirmedFriendshipEntryTemplate: document.getElementsByClassName('confirmed_friendship_entry')[0],
+        outgoingFriendshipRequestEntryTemplate: document.getElementsByClassName('outgoing_friendship_request_entry')[0],
         addFriendSection: {
           root: document.getElementById('overlay_friends_page_add_friend_section'),
           idInput: document.getElementById('overlay_friends_page_add_friend_section_id_input'),
@@ -240,40 +242,111 @@ const ui = {
     // TODO: Implement
   },
 
-  addFriendEntry: (friendEntry) => {
-    const entry = ui.elements.overlay.friendsPage.friendEntryTemplate.cloneNode(true);
+  addIncomingFriendshipRequestEntry: (friendEntry) => {
+    const entry = ui.elements.overlay.friendsPage.incomingFriendshipRequestEntryTemplate.cloneNode(true);
     entry.getElementsByClassName('friend_entry_name')[0].innerHTML = friendEntry.friendAccount.publicName;
+    entry.getElementsByClassName('friend_entry_accept_button')[0].addEventListener('click', async () => {
+      try {
+        await api.requestFriendship(friendEntry.friendAccount.id);
+      }
+      catch {
+        ui.notify('Failed to accept friend request');
+        return;
+      }
+      ui.notify('Accepted friend request');
+    });
+    entry.getElementsByClassName('friend_entry_deny_button')[0].addEventListener('click', async () => {
+      try {
+        await api.terminateFriendship(friendEntry.friendAccount.id);
+      }
+      catch {
+        ui.notify('Failed to deny friend request');
+        return;
+      }
+      ui.notify('Denied friend request');
+    });
     ui.elements.overlay.friendsPage.friendsList.insertBefore(entry, ui.elements.overlay.friendsPage.friendsList.firstElementChild);
   },
 
-  refreshFriendsPage: () => {
+  addConfirmedFriendshipEntry: (friendEntry) => {
+    const entry = ui.elements.overlay.friendsPage.confirmedFriendshipEntryTemplate.cloneNode(true);
+    entry.getElementsByClassName('friend_entry_name')[0].innerHTML = friendEntry.friendAccount.publicName;
+    entry.getElementsByClassName('friend_entry_remove_button')[0].addEventListener('click', async () => {
+      try {
+        await api.terminateFriendship(friendEntry.friendAccount.id);
+      }
+      catch {
+        ui.notify('Failed to remove friend');
+        return;
+      }
+      ui.notify('Removed friend');
+    });
+    ui.elements.overlay.friendsPage.friendsList.insertBefore(entry, ui.elements.overlay.friendsPage.friendsList.firstElementChild);
+  },
+
+  addOutgoingFriendshipRequestEntry: (friendEntry) => {
+    const entry = ui.elements.overlay.friendsPage.outgoingFriendshipRequestEntryTemplate.cloneNode(true);
+    entry.getElementsByClassName('friend_entry_name')[0].innerHTML = friendEntry.friendAccount.publicName;
+    entry.getElementsByClassName('friend_entry_cancel_button')[0].addEventListener('click', async () => {
+      try {
+        await api.terminateFriendship(friendEntry.friendAccount.id);
+      }
+      catch {
+        ui.notify('Failed to cancel friend request');
+        return;
+      }
+      ui.notify('Canceled friend request');
+    });
+    ui.elements.overlay.friendsPage.friendsList.insertBefore(entry, ui.elements.overlay.friendsPage.friendsList.firstElementChild);
+  },
+
+  refreshFriendsList: () => {
     ui.elements.overlay.friendsPage.friendsList.innerHTML = null;
     const friends = api.getFriends();
-    if (friends.incomingRequests != null) {
-      for (const friend of friends.incomingRequests) {
-        ui.addFriendEntry(friend);
+    if (friends == null) {
+      return;
+    }
+    if (friends.outgoingRequests != null) {
+      for (const friendEntry of friends.outgoingRequests) {
+        ui.addOutgoingFriendshipRequestEntry(friendEntry);
       }
     }
     if (friends.confirmedFriendships != null) {
-      for (const friend of friends.confirmedFriendships) {
-        ui.addFriendEntry(friend);
+      for (const friendEntry of friends.confirmedFriendships) {
+        ui.addConfirmedFriendshipEntry(friendEntry);
       }
     }
-    if (friends.outgoingRequests != null) {
-      for (const friend of friends.outgoingRequests) {
-        ui.addFriendEntry(friend);
+    if (friends.incomingRequests != null) {
+      for (const friendEntry of friends.incomingRequests) {
+        ui.addIncomingFriendshipRequestEntry(friendEntry);
       }
+    }
+  },
+
+  refreshAccountPage: () => {
+    const account = api.getLoggedInAccount();
+    if (account == null) {
+      ui.elements.overlay.accountPage.id.innerHTML = null;
+      ui.elements.overlay.accountPage.username.innerHTML = null;
+      ui.elements.overlay.accountPage.publicName.innerHTML = null;
+    } else {
+      ui.elements.overlay.accountPage.id.innerHTML = account.id;
+      ui.elements.overlay.accountPage.username.innerHTML = account.username;
+      ui.elements.overlay.accountPage.publicName.innerHTML = account.publicName;
     }
   },
 
   refreshModifyAccountPage: () => {
     const account = api.getLoggedInAccount();
-    if (account != null) {
+    if (account == null) {
+      ui.elements.overlay.modifyAccountPage.usernameInput.value = null;
+      ui.elements.overlay.modifyAccountPage.passwordInput.value = null;
+      ui.elements.overlay.modifyAccountPage.publicNameInput.value = null;
+    } else {
       ui.elements.overlay.modifyAccountPage.usernameInput.value = account.loginName;
       ui.elements.overlay.modifyAccountPage.passwordInput.value = null;
       ui.elements.overlay.modifyAccountPage.publicNameInput.value = account.publicName;
     }
-    ui.elements.overlay.modifyAccountPage.usernameInput.focus();
   },
 
   parseInputAndLogin: async () => {
@@ -328,6 +401,29 @@ const ui = {
     ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.value = null;
   },
 
+  parseInputAndRequestFriendship: async () => {
+    const accountId = ui.elements.overlay.friendsPage.addFriendSection.idInput.value;
+    if (accountId === '') {
+      return;
+    }
+    try {
+      await api.requestFriendship(accountId);
+    }
+    catch (e) {
+      switch (e.message) {
+        case '404':
+          ui.notify('User not found');
+          break;
+        default:
+          ui.notify('Failed to add friend');
+          break;
+      }
+      return;
+    }
+    ui.elements.overlay.friendsPage.addFriendSection.idInput.value = null;
+    ui.notify('Friendship request sent');
+  },
+
   parseInputAndUpdateAccount: async () => {
     const username = ui.elements.overlay.modifyAccountPage.usernameInput.value;
     const password = ui.elements.overlay.modifyAccountPage.passwordInput.value;
@@ -355,6 +451,7 @@ const ui = {
       }
       return;
     }
+    ui.notify('Successfully updated account');
     try {
       await api.logout();
     }
@@ -363,7 +460,7 @@ const ui = {
   },
 
   handleIncomingSocketMessage: (message) => {
-    // TODO
+    console.log(message); // DEBUG
   },
 
   handleLogout: () => {
@@ -372,27 +469,20 @@ const ui = {
     ui.showLoginPage();
     ui.showLoginModule();
     ui.elements.content.loginModule.pages.loginPage.usernameInput.focus();
+    // TODO: Implement function for refreshing lists
     ui.elements.content.lobbyModule.activeGamesList.innerHTML = null;
     ui.elements.content.lobbyModule.invitationsList.innerHTML = null;
     ui.elements.content.lobbyModule.pendingGamesList.innerHTML = null;
-    ui.elements.overlay.friendsPage.friendsList.innerHTML = null;
-    ui.elements.overlay.accountPage.id.innerHTML = null;
-    ui.elements.overlay.accountPage.username.innerHTML = null;
-    ui.elements.overlay.accountPage.publicName.innerHTML = null;
-    ui.elements.overlay.modifyAccountPage.usernameInput.value = null;
-    ui.elements.overlay.modifyAccountPage.passwordInput.value = null;
-    ui.elements.overlay.modifyAccountPage.publicNameInput.value = null;
+    ui.refreshFriendsList();
+    ui.elements.overlay.friendsPage.addFriendSection.idInput.value = null;
+    ui.refreshAccountPage();
+    ui.refreshModifyAccountPage();
   },
 
   handleLogin: () => {
     ui.showLobbyModule();
     ui.showTopBarButtons();
-    const account = api.getLoggedInAccount();
-    if (account != null) {
-      ui.elements.overlay.accountPage.id.innerHTML = account.id;
-      ui.elements.overlay.accountPage.username.innerHTML = account.loginName;
-      ui.elements.overlay.accountPage.publicName.innerHTML = account.publicName;
-    }
+    ui.refreshAccountPage();
     ui.elements.content.loginModule.pages.loginPage.usernameInput.value = null;
     ui.elements.content.loginModule.pages.loginPage.passwordInput.value = null;
     ui.elements.content.loginModule.pages.createAccountPage.usernameInput.value = null;
@@ -448,7 +538,7 @@ ui.elements.topBar.createGameButton.addEventListener('click', () => {
   ui.showOverlay();
 });
 ui.elements.topBar.friendsButton.addEventListener('click', () => {
-  ui.refreshFriendsPage();
+  ui.refreshFriendsList();
   ui.showFriendsPage();
   ui.showOverlay();
 });
@@ -469,9 +559,18 @@ ui.elements.overlay.root.addEventListener('click', () => {
 ui.elements.overlay.window.addEventListener('click', e => {
   e.stopPropagation();
 });
+ui.elements.overlay.friendsPage.addFriendSection.idInput.addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    await ui.parseInputAndRequestFriendship();
+  }
+});
+ui.elements.overlay.friendsPage.addFriendSection.addFriendButton.addEventListener('click', async () => {
+  await ui.parseInputAndRequestFriendship();
+});
 ui.elements.overlay.accountPage.modifyButton.addEventListener('click', () => {
   ui.refreshModifyAccountPage();
   ui.showModifyAccountPage();
+  ui.elements.overlay.modifyAccountPage.usernameInput.focus();
 });
 ui.elements.overlay.modifyAccountPage.usernameInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
@@ -526,7 +625,9 @@ ui.hide(ui.elements.overlay.invitationEntryPage.root);
 ui.hide(ui.elements.overlay.pendingGameEntryPage.root);
 ui.hide(ui.elements.overlay.createGamePage.root);
 ui.hide(ui.elements.overlay.friendsPage.root);
-ui.elements.overlay.friendsPage.friendEntryTemplate.remove();
+ui.elements.overlay.friendsPage.incomingFriendshipRequestEntryTemplate.remove();
+ui.elements.overlay.friendsPage.confirmedFriendshipEntryTemplate.remove();
+ui.elements.overlay.friendsPage.outgoingFriendshipRequestEntryTemplate.remove();
 ui.hide(ui.elements.overlay.accountPage.root);
 ui.hide(ui.elements.overlay.modifyAccountPage.root);
 ui.hide(ui.elements.notification.root);

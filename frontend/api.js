@@ -197,6 +197,7 @@ const api = {
       if (api.internal.session == null) {
         return;
       }
+      await api.internal.disconnectSocket();
       await api.internal.requestLogout();
       api.internal.session = null;
       api.internal.account = null;
@@ -208,7 +209,7 @@ const api = {
       }
       api.internal.session = await api.internal.requestLogin(username, password);
       api.internal.account = await api.internal.requestReadAccount(null);
-      // TODO: Connect WebSocket
+      await api.internal.connectSocket();
       await api.internal.updateFriends();
     },
 
@@ -277,6 +278,14 @@ const api = {
 
   deleteAccount: async (accountId) => {
     await api.internal.deleteAccount(accountId);
+  },
+
+  requestFriendship: async (accountId) => {
+    await api.internal.requestRequestFriendship(accountId);
+  },
+
+  terminateFriendship: async (accountId) => {
+    await api.internal.requestTerminateFriendship(accountId);
   },
 
   initialize: async (incomingSocketMessageHandlers) => {
