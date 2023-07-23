@@ -26,7 +26,7 @@ public class AuthenticationController {
     public ResponseEntity<Session> login(Authentication authentication, @RequestBody(required = false) Credentials credentials) {
         Session session = authenticationService.login(authentication, credentials);
         long maxAge = (session.getExpirationTime() - session.getCreationTime()) / 1000;
-        String xAuthorizationCookieHeaderValue = "X-Authorization=" + session.getToken() + "; Max-Age=" + maxAge;
+        String xAuthorizationCookieHeaderValue = "X-Authorization=" + session.getToken() + "; Max-Age=" + maxAge + "; SameSite=Strict";
         HttpHeaders headers = new HttpHeaders();
         headers.add("Set-Cookie", xAuthorizationCookieHeaderValue);
         return new ResponseEntity<>(session, headers, HttpStatus.OK);
@@ -42,7 +42,7 @@ public class AuthenticationController {
             }
         }
         authenticationService.logout(authentication, all);
-        String xAuthorizationCookieHeaderValue = "X-Authorization=; Max-Age=0";
+        String xAuthorizationCookieHeaderValue = "X-Authorization=; Max-Age=0; SameSite=Strict";
         HttpHeaders headers = new HttpHeaders();
         headers.add("Set-Cookie", xAuthorizationCookieHeaderValue);
         return new ResponseEntity<>(null, headers, HttpStatus.OK);

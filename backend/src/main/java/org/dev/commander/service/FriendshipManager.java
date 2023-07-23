@@ -9,6 +9,7 @@ import org.dev.commander.service.exception.ConflictException;
 import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.NotAuthenticatedException;
 import org.dev.commander.service.exception.NotFoundException;
+import org.dev.commander.websocket.ObjectDispatcher;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -49,11 +50,13 @@ public class FriendshipManager implements FriendshipService {
         private final FriendshipRepository friendshipRepository;
         private final AccountService accountService;
         private final AuthorizationService authorizationService;
+        private final ObjectDispatcher objectDispatcher;
 
-        public Inner(FriendshipRepository friendshipRepository, AccountService accountService, AuthorizationService authorizationService) {
+        public Inner(FriendshipRepository friendshipRepository, AccountService accountService, AuthorizationService authorizationService, ObjectDispatcher objectDispatcher) {
             this.friendshipRepository = friendshipRepository;
             this.accountService = accountService;
             this.authorizationService = authorizationService;
+            this.objectDispatcher = objectDispatcher;
         }
 
         public Friendships listFriendships(Authentication authentication) {
