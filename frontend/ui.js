@@ -331,7 +331,7 @@ const ui = {
       ui.elements.overlay.accountPage.publicName.innerHTML = null;
     } else {
       ui.elements.overlay.accountPage.id.innerHTML = account.id;
-      ui.elements.overlay.accountPage.username.innerHTML = account.username;
+      ui.elements.overlay.accountPage.username.innerHTML = account.loginName;
       ui.elements.overlay.accountPage.publicName.innerHTML = account.publicName;
     }
   },
