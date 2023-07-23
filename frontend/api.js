@@ -18,12 +18,20 @@ const api = {
       const url = 'ws://' + api.internal.endpoint + '/api/ws';
       const socket = new WebSocket(url);
       await new Promise((resolve, reject) => {
+        const errorEventHandler = () => {
+          reject();
+        };
+        socket.addEventListener('error', errorEventHandler);
         socket.addEventListener('open', () => {
+          socket.removeEventListener('error', errorEventHandler);
           resolve();
         });
-        socket.addEventListener('error', () => {
-          reject();
-        });
+      });
+      socket.addEventListener('close', () => {
+        api.internal.socket = null;
+      });
+      socket.addEventListener('error', () => {
+        api.internal.socket = null;
       });
       socket.addEventListener('message', e => {
         for (const handler of api.internal.incomingSocketMessageHandlers) {
@@ -33,21 +41,12 @@ const api = {
       api.internal.socket = socket;
     },
 
-    disconnectSocket: async () => {
+    disconnectSocket: () => {
       if (api.internal.socket == null) {
         return;
       }
-      const socket = api.internal.socket;
+      api.internal.socket.close();
       api.internal.socket = null;
-      await new Promise(resolve => {
-        socket.addEventListener('close', () => {
-          resolve();
-        });
-        socket.addEventListener('error', () => {
-          resolve();
-        });
-        socket.close();
-      });
     },
 
     sendObjectOverSocket: (obj) => {
@@ -197,7 +196,7 @@ const api = {
       if (api.internal.session == null) {
         return;
       }
-      await api.internal.disconnectSocket();
+      api.internal.disconnectSocket();
       await api.internal.requestLogout();
       api.internal.session = null;
       api.internal.account = null;
