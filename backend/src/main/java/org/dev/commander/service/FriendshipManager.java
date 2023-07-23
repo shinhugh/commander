@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import org.dev.commander.model.Account;
 import org.dev.commander.model.Friendship;
 import org.dev.commander.model.Friendships;
+import org.dev.commander.model.WebSocketMessage;
 import org.dev.commander.repository.FriendshipRepository;
 import org.dev.commander.service.exception.ConflictException;
 import org.dev.commander.service.exception.IllegalArgumentException;
@@ -134,12 +135,20 @@ public class FriendshipManager implements FriendshipService {
                 friendship.setAccepted(false);
                 friendship.setCreationTime(currentTimeMillis());
                 friendshipRepository.save(friendship);
-                // TODO: Notify via WebSocket
+                // TODO: Will message go out before save happens (because of @Transactional)? (It should not)
+                WebSocketMessage message = new WebSocketMessage();
+                message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
+                objectDispatcher.sendObject(clientAccount.getId(), message);
+                objectDispatcher.sendObject(accountId, message);
                 return;
             }
             if (!friendship.getAccepted() && Objects.equals(friendship.getRespondingAccountId(), clientAccount.getId())) {
                 friendship.setAccepted(true);
-                // TODO: Notify via WebSocket
+                // TODO: Will message go out before modification happens (because of @Transactional)? (It should not)
+                WebSocketMessage message = new WebSocketMessage();
+                message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
+                objectDispatcher.sendObject(clientAccount.getId(), message);
+                objectDispatcher.sendObject(accountId, message);
                 return;
             }
             throw new ConflictException();
@@ -166,7 +175,11 @@ public class FriendshipManager implements FriendshipService {
                 throw new NotFoundException();
             }
             friendshipRepository.delete(friendship);
-            // TODO: Notify via WebSocket
+            // TODO: Will message go out before delete happens (because of @Transactional)? (It should not)
+            WebSocketMessage message = new WebSocketMessage();
+            message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
+            objectDispatcher.sendObject(clientAccount.getId(), message);
+            objectDispatcher.sendObject(accountId, message);
         }
 
         private Friendship cloneFriendship(Friendship friendship) {

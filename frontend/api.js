@@ -6,7 +6,7 @@ const api = {
 
     socket: null,
 
-    incomingSocketMessageHandlers: [ ],
+    friendshipChangeHandler: null,
 
     session: null,
 
@@ -33,10 +33,8 @@ const api = {
       socket.addEventListener('error', () => {
         api.internal.socket = null;
       });
-      socket.addEventListener('message', e => {
-        for (const handler of api.internal.incomingSocketMessageHandlers) {
-          handler(e.data); // TODO: Is e.data correct? Expecting string
-        }
+      socket.addEventListener('message', async e => {
+        await api.internal.handleSocketEvent(JSON.parse(e.data));
       });
       api.internal.socket = socket;
     },
@@ -237,12 +235,21 @@ const api = {
       }
     },
 
-    initialize: async (incomingSocketMessageHandlers) => {
-      if (incomingSocketMessageHandlers != null) {
-        for (const handler of incomingSocketMessageHandlers) {
-          api.internal.incomingSocketMessageHandlers.push(handler);
-        }
+    handleFriendshipChange: async () => {
+      await api.internal.updateFriends();
+      api.internal.friendshipChangeHandler();
+    },
+
+    handleSocketEvent: async e => {
+      switch (e.type) {
+        case 'friendships_change':
+          await api.internal.handleFriendshipChange();
+          break;
       }
+    },
+
+    initialize: async (friendshipChangeHandler) => {
+      api.internal.friendshipChangeHandler = friendshipChangeHandler;
       try {
         await api.internal.login(null, null);
       }
@@ -287,8 +294,8 @@ const api = {
     await api.internal.requestTerminateFriendship(accountId);
   },
 
-  initialize: async (incomingSocketMessageHandlers) => {
-    await api.internal.initialize(incomingSocketMessageHandlers);
+  initialize: async (friendshipChangeHandler) => {
+    await api.internal.initialize(friendshipChangeHandler);
   }
 
 };

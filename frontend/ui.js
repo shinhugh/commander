@@ -462,10 +462,6 @@ const ui = {
     ui.handleLogout();
   },
 
-  handleIncomingSocketMessage: (message) => {
-    console.log(message); // DEBUG
-  },
-
   handleLogout: () => {
     ui.hideOverlay();
     ui.hideTopBarButtons();
@@ -491,6 +487,10 @@ const ui = {
     ui.elements.content.loginModule.pages.createAccountPage.usernameInput.value = null;
     ui.elements.content.loginModule.pages.createAccountPage.passwordInput.value = null;
     ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.value = null;
+  },
+
+  handleFriendshipChange: () => {
+    ui.refreshFriendsList();
   }
 
 };
@@ -636,7 +636,7 @@ ui.hide(ui.elements.overlay.modifyAccountPage.root);
 ui.hide(ui.elements.notification.root);
 
 (async () => {
-  await api.initialize([ui.handleIncomingSocketMessage]);
+  await api.initialize(ui.handleFriendshipChange);
   if (api.getLoggedInAccount() != null) {
     ui.handleLogin();
   } else {
