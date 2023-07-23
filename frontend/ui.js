@@ -414,6 +414,9 @@ const ui = {
         case '404':
           ui.notify('User not found');
           break;
+        case '409':
+          ui.notify('Request exists for specified user');
+          break;
         default:
           ui.notify('Failed to add friend');
           break;
