@@ -22,8 +22,8 @@ public class AccountController {
     }
 
     @PostMapping
-    public Account createAccount(Authentication authentication, @RequestBody(required = false) Account account) {
-        return accountService.createAccount(authentication, account);
+    public Account createAccount(@RequestBody(required = false) Account account) {
+        return accountService.createAccount(account);
     }
 
     @PutMapping

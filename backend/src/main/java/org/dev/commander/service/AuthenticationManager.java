@@ -65,7 +65,7 @@ public class AuthenticationManager implements AuthenticationService, Authorizati
     }
 
     @Override
-    public Account createAccount(Authentication authentication, Account account) throws IllegalArgumentException, ConflictException {
+    public Account createAccount(Account account) throws IllegalArgumentException, ConflictException {
         try {
             return inner.createAccount(account);
         }
