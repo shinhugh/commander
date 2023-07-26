@@ -38,6 +38,7 @@ public class AccountManager implements AccountService {
         catch (DataIntegrityViolationException ex) {
             throw new ConflictException();
         }
+        // TODO: If external transactional service calls this method, account may have not been created yet, but handlers will be called
         for (AccountEventHandler accountEventHandler : accountEventHandlers) {
             accountEventHandler.handleCreateAccount(newAccount);
         }
@@ -55,6 +56,7 @@ public class AccountManager implements AccountService {
         }
         Account preUpdateAccount = accountUpdate.getPreUpdateAccount();
         Account postUpdateAccount = accountUpdate.getPostUpdateAccount();
+        // TODO: If external transactional service calls this method, account may have not been updated yet, but handlers will be called
         for (AccountEventHandler accountEventHandler : accountEventHandlers) {
             accountEventHandler.handleUpdateAccount(preUpdateAccount, postUpdateAccount);
         }
@@ -64,6 +66,7 @@ public class AccountManager implements AccountService {
     @Override
     public void deleteAccount(long id) throws IllegalArgumentException, NotFoundException {
         Account deletedAccount = inner.deleteAccount(id);
+        // TODO: If external transactional service calls this method, account may have not been deleted yet, but handlers will be called
         for (AccountEventHandler accountEventHandler : accountEventHandlers) {
             accountEventHandler.handleDeleteAccount(deletedAccount);
         }

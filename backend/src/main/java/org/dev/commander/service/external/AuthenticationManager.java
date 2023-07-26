@@ -24,6 +24,7 @@ public class AuthenticationManager implements AuthenticationService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    // TODO: Consider moving much of this logic into SessionManager
     @Override
     public Session login(Authentication authentication, Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException {
         if (authentication != null) {
@@ -52,6 +53,7 @@ public class AuthenticationManager implements AuthenticationService {
         return session;
     }
 
+    // TODO: Consider moving much of this logic into SessionManager
     @Override
     public void logout(Authentication authentication, Boolean all) {
         if (authentication == null) {
