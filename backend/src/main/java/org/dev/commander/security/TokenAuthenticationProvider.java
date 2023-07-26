@@ -2,8 +2,9 @@ package org.dev.commander.security;
 
 import org.dev.commander.model.Account;
 import org.dev.commander.model.Session;
-import org.dev.commander.service.AuthenticationService;
 import org.dev.commander.service.exception.NotFoundException;
+import org.dev.commander.service.internal.AccountService;
+import org.dev.commander.service.internal.SessionService;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -22,10 +23,12 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
             new SimpleGrantedAuthority("USER"),
             new SimpleGrantedAuthority("ADMIN")
     );
-    private final AuthenticationService authenticationService;
+    private final SessionService sessionService;
+    private final AccountService accountService;
 
-    TokenAuthenticationProvider(AuthenticationService authenticationService) {
-        this.authenticationService = authenticationService;
+    TokenAuthenticationProvider(SessionService sessionService, AccountService accountService) {
+        this.sessionService = sessionService;
+        this.accountService = accountService;
     }
 
     @Override
@@ -37,8 +40,8 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
         Session session;
         Account account;
         try {
-            session = authenticationService.identifySession(token);
-            account = authenticationService.identifyAccount(token);
+            session = identifySession(token);
+            account = identifyAccount(token);
         }
         catch (NotFoundException ex) {
             throw new InvalidTokenException();
@@ -50,6 +53,27 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
     @Override
     public boolean supports(Class<?> authentication) {
         return authentication == TokenAuthenticationToken.class;
+    }
+
+    private Session identifySession(String token) {
+        List<Session> sessions = sessionService.readSessions(token, null);
+        if (sessions.isEmpty()) {
+            return null;
+        }
+        return sessions.get(0);
+    }
+
+    private Account identifyAccount(String token) {
+        Session session = identifySession(token);
+        if (session == null) {
+            return null;
+        }
+        List<Account> accounts = accountService.readAccounts(session.getAccountId(), null);
+        if (accounts.isEmpty()) {
+            sessionService.deleteSession(token);
+            return null;
+        }
+        return accounts.get(0);
     }
 
     private Set<GrantedAuthority> translateAuthoritiesFlagToSet(int flag) {

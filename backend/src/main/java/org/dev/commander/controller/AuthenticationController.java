@@ -2,7 +2,7 @@ package org.dev.commander.controller;
 
 import org.dev.commander.model.Credentials;
 import org.dev.commander.model.Session;
-import org.dev.commander.service.AuthenticationService;
+import org.dev.commander.service.external.AuthenticationService;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;

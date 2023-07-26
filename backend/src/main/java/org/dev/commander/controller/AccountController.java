@@ -1,10 +1,12 @@
 package org.dev.commander.controller;
 
 import org.dev.commander.model.Account;
-import org.dev.commander.service.AccountService;
+import org.dev.commander.service.external.AccountService;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/account")
@@ -17,13 +19,13 @@ public class AccountController {
     }
 
     @GetMapping
-    public Account readAccount(Authentication authentication, @RequestParam(name = "id", required = false) Long id) {
-        return accountService.readAccount(authentication, id);
+    public List<Account> readAccount(Authentication authentication, @RequestParam(name = "id", required = false) Long id) {
+        return accountService.readAccounts(authentication, id);
     }
 
     @PostMapping
-    public Account createAccount(@RequestBody(required = false) Account account) {
-        return accountService.createAccount(account);
+    public Account createAccount(Authentication authentication, @RequestBody(required = false) Account account) {
+        return accountService.createAccount(authentication, account);
     }
 
     @PutMapping

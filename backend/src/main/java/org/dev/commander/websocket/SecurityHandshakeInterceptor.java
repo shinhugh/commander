@@ -1,7 +1,7 @@
 package org.dev.commander.websocket;
 
-import org.dev.commander.service.AuthenticationService;
-import org.dev.commander.service.exception.NotFoundException;
+import org.dev.commander.model.Session;
+import org.dev.commander.service.internal.SessionService;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.security.core.Authentication;
@@ -10,14 +10,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
+import java.util.List;
 import java.util.Map;
 
 @Component
 public class SecurityHandshakeInterceptor implements HandshakeInterceptor {
-    private final AuthenticationService authenticationService;
+    private final SessionService sessionService;
 
-    public SecurityHandshakeInterceptor(AuthenticationService authenticationService) {
-        this.authenticationService = authenticationService;
+    public SecurityHandshakeInterceptor(SessionService sessionService) {
+        this.sessionService = sessionService;
     }
 
     // TODO: Send status code 401 if this method returns false (currently sends 200)
@@ -27,19 +28,18 @@ public class SecurityHandshakeInterceptor implements HandshakeInterceptor {
         if (authentication == null) {
             return false;
         }
-        Object credentials = authentication.getCredentials();
-        if (credentials == null || credentials.getClass() != String.class) {
-            return false;
-        }
-        try {
-            authenticationService.identifySession((String) credentials);
-        }
-        catch (NotFoundException ex) {
-            return false;
-        }
-        return true;
+        String token = (String) authentication.getCredentials();
+        return identifySession(token) != null;
     }
 
     @Override
     public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Exception exception) { }
+
+    private Session identifySession(String token) {
+        List<Session> sessions = sessionService.readSessions(token, null);
+        if (sessions.isEmpty()) {
+            return null;
+        }
+        return sessions.get(0);
+    }
 }
