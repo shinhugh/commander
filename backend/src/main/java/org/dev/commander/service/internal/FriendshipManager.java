@@ -1,224 +1,93 @@
 package org.dev.commander.service.internal;
 
+import org.dev.commander.model.Account;
 import org.dev.commander.model.Friendships;
+import org.dev.commander.model.WebSocketMessage;
+import org.dev.commander.repository.FriendshipRepository;
 import org.dev.commander.service.exception.ConflictException;
 import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.NotFoundException;
+import org.dev.commander.websocket.ObjectDispatcher;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class FriendshipManager implements FriendshipService {
+public class FriendshipManager implements FriendshipService, AccountEventHandler {
+    private final Inner inner;
+    private final ObjectDispatcher objectDispatcher;
+
+    public FriendshipManager(Inner inner, ObjectDispatcher objectDispatcher, AccountService accountService) {
+        this.inner = inner;
+        this.objectDispatcher = objectDispatcher;
+        accountService.registerAccountEventHandler(this);
+    }
+
     @Override
     public Friendships listFriendships(long accountId) throws IllegalArgumentException, NotFoundException {
-        // TODO: Implement
-        throw new RuntimeException("Not implemented");
+        return inner.listFriendships(accountId);
     }
 
     @Override
     public void requestFriendship(long requestingAccountId, long respondingAccountId) throws IllegalArgumentException, NotFoundException, ConflictException {
-        // TODO: Implement
-        throw new RuntimeException("Not implemented");
+        inner.requestFriendship(requestingAccountId, respondingAccountId);
+        // TODO: Catch JPA exception and throw ConflictException?
+        WebSocketMessage message = new WebSocketMessage();
+        message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
+        objectDispatcher.sendObject(requestingAccountId, message);
+        objectDispatcher.sendObject(respondingAccountId, message);
     }
 
     @Override
     public void terminateFriendship(long accountAId, long accountBId) throws IllegalArgumentException, NotFoundException {
-        // TODO: Implement
-        throw new RuntimeException("Not implemented");
+        inner.terminateFriendship(accountAId, accountBId);
+        WebSocketMessage message = new WebSocketMessage();
+        message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
+        objectDispatcher.sendObject(accountAId, message);
+        objectDispatcher.sendObject(accountBId, message);
     }
 
-//    private final Inner inner;
-//
-//    public FriendshipManager(Inner inner) {
-//        this.inner = inner;
-//    }
-//
-//    @Override
-//    public Friendships listFriendships(Authentication authentication) throws NotAuthenticatedException {
-//        return inner.listFriendships(authentication);
-//    }
-//
-//    @Override
-//    public void requestFriendship(Authentication authentication, Long accountId) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException, ConflictException {
-//        inner.requestFriendship(authentication, accountId);
-//    }
-//
-//    @Override
-//    public void terminateFriendship(Authentication authentication, Long accountId) throws NotAuthenticatedException, IllegalArgumentException, NotFoundException {
-//        inner.terminateFriendship(authentication, accountId);
-//    }
-//
-//    @Override
-//    public void terminateAllFriendships(Authentication authentication) throws NotAuthenticatedException {
-//        inner.terminateAllFriendships(authentication);
-//    }
-//
-//    @Component
-//    @Transactional
-//    public static class Inner {
-//        private final FriendshipRepository friendshipRepository;
-//        private final AccountService accountService;
-//        private final IdentificationService identificationService;
-//        private final ObjectDispatcher objectDispatcher;
-//
-//        public Inner(FriendshipRepository friendshipRepository, AccountService accountService, IdentificationService identificationService, ObjectDispatcher objectDispatcher) {
-//            this.friendshipRepository = friendshipRepository;
-//            this.accountService = accountService;
-//            this.identificationService = identificationService;
-//            this.objectDispatcher = objectDispatcher;
-//            // TODO: Subscribe to account update and handle by notifying friends via WebSocket
-//            // TODO: Subscribe to account delete and handle by deleting friendships and notifying friends via WebSocket
-//        }
-//
-//        public Friendships listFriendships(Authentication authentication) {
-//            Account clientAccount = identificationService.identifyAccount(authentication);
-//            if (clientAccount == null) {
-//                throw new NotAuthenticatedException();
-//            }
-//            Friendships friendships = new Friendships();
-//            friendships.setConfirmedFriendships(new ArrayList<>());
-//            friendships.setOutgoingRequests(new ArrayList<>());
-//            friendships.setIncomingRequests(new ArrayList<>());
-//            List<Friendship> friendshipList = friendshipRepository.findByRequestingAccountIdOrRespondingAccountId(clientAccount.getId(), clientAccount.getId());
-//            for (Iterator<Friendship> it = friendshipList.iterator(); it.hasNext();) {
-//                Friendship friendship = it.next();
-//                boolean accepted = friendship.getAccepted();
-//                boolean outgoing = Objects.equals(friendship.getRequestingAccountId(), clientAccount.getId());
-//                long friendAccountId = outgoing ? friendship.getRespondingAccountId() : friendship.getRequestingAccountId();
-//                Account friendAccount;
-//                try {
-//                    friendAccount = accountService.readAccounts(authentication, friendAccountId);
-//                }
-//                catch (NotFoundException ex) {
-//                    it.remove();
-//                    continue;
-//                }
-//                friendship = cloneFriendship(friendship);
-//                friendship.setRequestingAccountId(null);
-//                friendship.setRespondingAccountId(null);
-//                friendship.setAccepted(null);
-//                friendship.setFriendAccount(friendAccount);
-//                if (accepted) {
-//                    friendships.getConfirmedFriendships().add(friendship);
-//                    continue;
-//                }
-//                if (outgoing) {
-//                    friendships.getOutgoingRequests().add(friendship);
-//                    continue;
-//                }
-//                friendships.getIncomingRequests().add(friendship);
-//            }
-//            if (friendships.getConfirmedFriendships().isEmpty()) {
-//                friendships.setConfirmedFriendships(null);
-//            }
-//            if (friendships.getOutgoingRequests().isEmpty()) {
-//                friendships.setOutgoingRequests(null);
-//            }
-//            if (friendships.getIncomingRequests().isEmpty()) {
-//                friendships.setIncomingRequests(null);
-//            }
-//            return friendships;
-//        }
-//
-//        public void requestFriendship(Authentication authentication, Long accountId) {
-//            Account clientAccount = identificationService.identifyAccount(authentication);
-//            if (clientAccount == null) {
-//                throw new NotAuthenticatedException();
-//            }
-//            if (accountId == null || accountId <= 0 || accountId.equals(clientAccount.getId())) {
-//                throw new IllegalArgumentException();
-//            }
-//            Friendship.Key key = new Friendship.Key();
-//            key.setRequestingAccountId(clientAccount.getId());
-//            key.setRespondingAccountId(accountId);
-//            Friendship friendship = friendshipRepository.findById(key).orElse(null);
-//            if (friendship == null) {
-//                key.setRequestingAccountId(accountId);
-//                key.setRespondingAccountId(clientAccount.getId());
-//                friendship = friendshipRepository.findById(key).orElse(null);
-//            }
-//            if (friendship == null) {
-//                accountService.readAccounts(authentication, accountId);
-//                friendship = new Friendship();
-//                friendship.setRequestingAccountId(clientAccount.getId());
-//                friendship.setRespondingAccountId(accountId);
-//                friendship.setAccepted(false);
-//                friendship.setCreationTime(currentTimeMillis());
-//                friendshipRepository.save(friendship);
-//                // TODO: Will message go out before save happens (because of @Transactional)? (It should not)
-//                WebSocketMessage message = new WebSocketMessage();
-//                message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
-//                objectDispatcher.sendObject(clientAccount.getId(), message);
-//                objectDispatcher.sendObject(accountId, message);
-//                return;
-//            }
-//            if (!friendship.getAccepted() && Objects.equals(friendship.getRespondingAccountId(), clientAccount.getId())) {
-//                friendship.setAccepted(true);
-//                // TODO: Will message go out before modification happens (because of @Transactional)? (It should not)
-//                WebSocketMessage message = new WebSocketMessage();
-//                message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
-//                objectDispatcher.sendObject(clientAccount.getId(), message);
-//                objectDispatcher.sendObject(accountId, message);
-//                return;
-//            }
-//            throw new ConflictException();
-//        }
-//
-//        public void terminateFriendship(Authentication authentication, Long accountId) {
-//            Account clientAccount = identificationService.identifyAccount(authentication);
-//            if (clientAccount == null) {
-//                throw new NotAuthenticatedException();
-//            }
-//            if (accountId == null || accountId <= 0 || accountId.equals(clientAccount.getId())) {
-//                throw new IllegalArgumentException();
-//            }
-//            Friendship.Key key = new Friendship.Key();
-//            key.setRequestingAccountId(clientAccount.getId());
-//            key.setRespondingAccountId(accountId);
-//            Friendship friendship = friendshipRepository.findById(key).orElse(null);
-//            if (friendship == null) {
-//                key.setRequestingAccountId(accountId);
-//                key.setRespondingAccountId(clientAccount.getId());
-//                friendship = friendshipRepository.findById(key).orElse(null);
-//            }
-//            if (friendship == null) {
-//                throw new NotFoundException();
-//            }
-//            friendshipRepository.delete(friendship);
-//            // TODO: Will message go out before delete happens (because of @Transactional)? (It should not)
-//            WebSocketMessage message = new WebSocketMessage();
-//            message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
-//            objectDispatcher.sendObject(clientAccount.getId(), message);
-//            objectDispatcher.sendObject(accountId, message);
-//        }
-//
-//        public void terminateAllFriendships(Authentication authentication) {
-//            Account clientAccount = identificationService.identifyAccount(authentication);
-//            if (clientAccount == null) {
-//                throw new NotAuthenticatedException();
-//            }
-//            List<Friendship> friendships = friendshipRepository.findByRequestingAccountIdOrRespondingAccountId(clientAccount.getId(), clientAccount.getId());
-//            List<Long> friendIds = new ArrayList<>();
-//            for (Friendship friendship : friendships) {
-//                friendIds.add(friendship.getFriendAccount().getId());
-//            }
-//            friendshipRepository.deleteByRequestingAccountIdOrRespondingAccountId(clientAccount.getId(), clientAccount.getId());
-//            // TODO: Will message go out before deletes happen (because of @Transactional)? (It should not)
-//            WebSocketMessage message = new WebSocketMessage();
-//            message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
-//            objectDispatcher.sendObject(clientAccount.getId(), message);
-//            for (Long friendId : friendIds) {
-//                objectDispatcher.sendObject(friendId, message);
-//            }
-//        }
-//
-//        private Friendship cloneFriendship(Friendship friendship) {
-//            Friendship clone = new Friendship();
-//            clone.setRequestingAccountId(friendship.getRequestingAccountId());
-//            clone.setRespondingAccountId(friendship.getRespondingAccountId());
-//            clone.setAccepted(friendship.getAccepted());
-//            clone.setCreationTime(friendship.getCreationTime());
-//            clone.setFriendAccount(friendship.getFriendAccount());
-//            return clone;
-//        }
-//    }
+    @Override
+    public void handleCreateAccount(Account newAccount) { }
+
+    @Override
+    public void handleUpdateAccount(Account preUpdateAccount, Account postUpdateAccount) { }
+
+    @Override
+    public void handleDeleteAccount(Account deletedAccount) {
+        inner.handleDeleteAccount(deletedAccount);
+    }
+
+    @Component
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public static class Inner {
+        private final FriendshipRepository friendshipRepository;
+        private final AccountService accountService;
+
+        public Inner(FriendshipRepository friendshipRepository, AccountService accountService) {
+            this.friendshipRepository = friendshipRepository;
+            this.accountService = accountService;
+        }
+
+        public Friendships listFriendships(long accountId) {
+            // TODO: Implement
+            throw new RuntimeException("Not implemented");
+        }
+
+        public void requestFriendship(long requestingAccountId, long respondingAccountId) {
+            // TODO: Implement
+            throw new RuntimeException("Not implemented");
+        }
+
+        public void terminateFriendship(long accountAId, long accountBId) {
+            // TODO: Implement
+            throw new RuntimeException("Not implemented");
+        }
+
+        public void handleDeleteAccount(Account deletedAccount) {
+            // TODO: Implement
+            throw new RuntimeException("Not implemented");
+        }
+    }
 }
