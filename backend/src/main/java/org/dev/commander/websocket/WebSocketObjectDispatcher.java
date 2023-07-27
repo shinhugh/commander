@@ -6,6 +6,7 @@ import org.dev.commander.model.Account;
 import org.dev.commander.model.Session;
 import org.dev.commander.security.TokenAuthenticationToken;
 import org.dev.commander.service.internal.SessionEventHandler;
+import org.dev.commander.service.internal.SessionService;
 import org.dev.commander.websocket.exception.IllegalArgumentException;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,10 @@ public class WebSocketObjectDispatcher extends TextWebSocketHandler implements O
     private final Map<String, WebSocketSession> sessionTokenToConnectionMap = new HashMap<>();
     private final Map<Long, Set<String>> accountIdToSessionTokenMap = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public WebSocketObjectDispatcher(SessionService sessionService) {
+        sessionService.registerSessionEventHandler(this);
+    }
 
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) {
