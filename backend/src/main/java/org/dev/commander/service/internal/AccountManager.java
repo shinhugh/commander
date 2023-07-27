@@ -1,6 +1,5 @@
 package org.dev.commander.service.internal;
 
-import jakarta.transaction.Transactional;
 import org.dev.commander.model.Account;
 import org.dev.commander.repository.AccountRepository;
 import org.dev.commander.service.exception.ConflictException;
@@ -10,6 +9,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -77,7 +78,7 @@ public class AccountManager implements AccountService {
     }
 
     @Component
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public static class Inner {
         private static final int LOGIN_NAME_LENGTH_MIN = 4;
         private static final int LOGIN_NAME_LENGTH_MAX = 16;

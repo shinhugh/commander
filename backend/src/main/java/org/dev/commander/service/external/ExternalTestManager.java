@@ -1,10 +1,11 @@
 package org.dev.commander.service.external;
 
-import jakarta.transaction.Transactional;
 import org.dev.commander.model.Session;
 import org.dev.commander.repository.SessionRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ExternalTestManager implements ExternalTestService {
@@ -20,11 +21,25 @@ public class ExternalTestManager implements ExternalTestService {
     }
 
     @Component
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public static class Inner {
+        private final InnerInner innerInner;
+
+        public Inner(InnerInner innerInner) {
+            this.innerInner = innerInner;
+        }
+
+        public void test() {
+            innerInner.test();
+        }
+    }
+
+    @Component
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public static class InnerInner {
         private final SessionRepository sessionRepository;
 
-        public Inner(SessionRepository sessionRepository) {
+        public InnerInner(SessionRepository sessionRepository) {
             this.sessionRepository = sessionRepository;
         }
 
