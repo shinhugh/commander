@@ -11,9 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class AccountManager implements AccountService {
@@ -100,15 +99,31 @@ public class AccountManager implements AccountService {
         }
 
         public List<Account> readAccounts(Long id, String loginName) {
-            // TODO: Include loginName in query
-            if (id == null || id <= 0) {
+            List<Account> accounts = null;
+            if (id != null && id > 0) {
+                Account account = accountRepository.findById(id).orElse(null);
+                if (account == null) {
+                    return List.of();
+                }
+                accounts = new ArrayList<>();
+                accounts.add(account);
+            }
+            if (loginName != null && loginName.length() > 0) {
+                if (accounts == null) {
+                    Account account = accountRepository.findByLoginName(loginName).orElse(null);
+                    if (account == null) {
+                        return List.of();
+                    }
+                    accounts = new ArrayList<>();
+                    accounts.add(account);
+                } else {
+                    accounts = accounts.stream().filter(a -> Objects.equals(a.getLoginName(), loginName)).collect(Collectors.toList());
+                }
+            }
+            if (accounts == null) {
                 throw new IllegalArgumentException();
             }
-            Account account = accountRepository.findById(id).orElse(null);
-            if (account == null) {
-                return List.of();
-            }
-            return List.of(account);
+            return accounts;
         }
 
         public Account createAccount(Account account) {

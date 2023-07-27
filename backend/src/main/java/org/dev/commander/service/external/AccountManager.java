@@ -63,8 +63,25 @@ public class AccountManager implements AccountService {
         if (!verifyClientIsOwnerOrAdmin(authentication, existingAccount)) {
             throw new NotAuthorizedException();
         }
-        // TODO: Only admin should be able to specify authorities
-        // TODO: Interpret null fields as "don't change"
+        account = cloneAccount(account);
+        if (!identificationService.verifyAtLeastOneAuthority(authentication, Set.of("ADMIN"))) {
+            account.setAuthorities(existingAccount.getAuthorities());
+        }
+        if (account.getId() == null) {
+            account.setId(existingAccount.getId());
+        }
+        if (account.getLoginName() == null) {
+            account.setLoginName(existingAccount.getLoginName());
+        }
+        if (account.getPassword() == null) {
+            account.setPassword(existingAccount.getPassword());
+        }
+        if (account.getAuthorities() == null) {
+            account.setAuthorities(existingAccount.getAuthorities());
+        }
+        if (account.getPublicName() == null) {
+            account.setPublicName(existingAccount.getPublicName());
+        }
         account = accountService.updateAccount(id, account);
         account.setPassword(null);
         return account;
@@ -90,6 +107,16 @@ public class AccountManager implements AccountService {
             throw new NotAuthorizedException();
         }
         accountService.deleteAccount(id);
+    }
+
+    private Account cloneAccount(Account account) {
+        Account clone = new Account();
+        clone.setId(account.getId());
+        clone.setLoginName(account.getLoginName());
+        clone.setPassword(account.getPassword());
+        clone.setAuthorities(account.getAuthorities());
+        clone.setPublicName(account.getPublicName());
+        return clone;
     }
 
     private boolean verifyClientIsOwnerOrAdmin(Authentication authentication, Account account) {

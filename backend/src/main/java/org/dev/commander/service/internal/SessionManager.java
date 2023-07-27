@@ -10,10 +10,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.System.currentTimeMillis;
 
@@ -35,6 +33,7 @@ public class SessionManager implements SessionService, AccountEventHandler {
     @Override
     public Session createSession(Session session) throws IllegalArgumentException {
         Session newSession = inner.createSession(session);
+        // TODO: If external transactional service calls this method, session may have not been created yet, but handlers will be called
         for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
             sessionEventHandler.handleCreateSession(newSession);
         }
@@ -46,6 +45,7 @@ public class SessionManager implements SessionService, AccountEventHandler {
         SessionUpdate sessionUpdate = inner.updateSession(token, session);
         Session preUpdateSession = sessionUpdate.getPreUpdateSession();
         Session postUpdateSession = sessionUpdate.getPostUpdateSession();
+        // TODO: If external transactional service calls this method, session may have not been updated yet, but handlers will be called
         for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
             sessionEventHandler.handleUpdateSession(preUpdateSession, postUpdateSession);
         }
@@ -55,6 +55,7 @@ public class SessionManager implements SessionService, AccountEventHandler {
     @Override
     public void deleteSession(String token) throws IllegalArgumentException, NotFoundException {
         Session deletedSession = inner.deleteSession(token);
+        // TODO: If external transactional service calls this method, session may have not been deleted yet, but handlers will be called
         for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
             sessionEventHandler.handleDeleteSession(deletedSession);
         }
@@ -113,23 +114,28 @@ public class SessionManager implements SessionService, AccountEventHandler {
         }
 
         public List<Session> readSessions(String token, Long accountId) {
-            // TODO: Implement
-            List<Session> sessions = new ArrayList<>();
+            List<Session> sessions = null;
             if (token != null && token.length() > 0) {
                 Session session = sessionRepository.findById(token).orElse(null);
                 if (session == null) {
                     return List.of();
                 }
-                if (session.getExpirationTime() <= currentTimeMillis()) {
-                    sessionRepository.delete(session);
-                    return List.of();
-                }
+                sessions = new ArrayList<>();
                 sessions.add(session);
             }
-            if (accountId != null) {
-
+            if (accountId != null && accountId > 0) {
+                if (sessions == null) {
+                    sessions = new ArrayList<>(sessionRepository.findByAccountId(accountId));
+                } else {
+                    sessions = sessions.stream().filter(s -> Objects.equals(s.getAccountId(), accountId)).collect(Collectors.toList());
+                }
             }
-            throw new IllegalArgumentException();
+            if (sessions == null) {
+                throw new IllegalArgumentException();
+            }
+            long currentTime = currentTimeMillis();
+            sessions.removeIf(s -> s.getExpirationTime() <= currentTime);
+            return sessions;
         }
 
         public Session createSession(Session session) {
