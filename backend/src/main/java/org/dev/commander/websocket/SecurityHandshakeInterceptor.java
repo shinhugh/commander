@@ -30,6 +30,9 @@ public class SecurityHandshakeInterceptor implements HandshakeInterceptor {
             return false;
         }
         String token = (String) authentication.getCredentials();
+        if (token == null || token.length() == 0) {
+            return false;
+        }
         return identifySession(token) != null;
     }
 

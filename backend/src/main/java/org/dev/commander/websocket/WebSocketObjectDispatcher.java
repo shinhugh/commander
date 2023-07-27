@@ -64,7 +64,7 @@ public class WebSocketObjectDispatcher extends TextWebSocketHandler implements O
     }
 
     @Override
-    public void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) throws IOException {
+    public void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) {
         // TODO: Parse message as JSON
         // TODO: Delegate parsed message to appropriate service
     }
