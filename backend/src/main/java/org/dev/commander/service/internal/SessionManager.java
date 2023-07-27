@@ -35,21 +35,14 @@ public class SessionManager implements SessionService, AccountEventHandler {
 
     @Override
     public Session login(Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException {
-        Session session = inner.login(credentials);
-        for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
-            sessionEventHandler.handleLogin(session);
-        }
-        return session;
+        ChangesAndReturnValue<Session> changes = inner.login(credentials);
+        return handleChanges(changes);
     }
 
     @Override
     public void logout(String token, Long accountId) {
-        List<Session> deletedSessions = inner.logout(token, accountId);
-        for (Session deletedSession : deletedSessions) {
-            for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
-                sessionEventHandler.handleLogout(deletedSession);
-            }
-        }
+        ChangesAndReturnValue<Void> changes = inner.logout(token, accountId);
+        handleChanges(changes);
     }
 
     @Override
@@ -62,32 +55,38 @@ public class SessionManager implements SessionService, AccountEventHandler {
 
     @Override
     public void handleUpdateAccount(Account preUpdateAccount, Account postUpdateAccount) {
-        List<Session> deletedSessions = inner.handleUpdateAccount(preUpdateAccount, postUpdateAccount);
-        for (Session deletedSession : deletedSessions) {
-            for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
-                sessionEventHandler.handleLogout(deletedSession);
-            }
-        }
+        ChangesAndReturnValue<Void> changes = inner.handleUpdateAccount(preUpdateAccount, postUpdateAccount);
+        handleChanges(changes);
     }
 
     @Override
     public void handleDeleteAccount(Account deleteAccount) {
-        List<Session> deletedSessions = inner.handleDeleteAccount(deleteAccount);
-        for (Session deletedSession : deletedSessions) {
-            for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
-                sessionEventHandler.handleLogout(deletedSession);
-            }
-        }
+        ChangesAndReturnValue<Void> changes = inner.handleDeleteAccount(deleteAccount);
+        handleChanges(changes);
     }
 
     @Scheduled(fixedRate = 60000)
     public void purgeExpiredSessions() {
-        List<Session> deletedSessions = inner.purgeExpiredSessions();
-        for (Session deletedSession : deletedSessions) {
-            for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
-                sessionEventHandler.handleLogout(deletedSession);
+        ChangesAndReturnValue<Void> changes = inner.purgeExpiredSessions();
+        handleChanges(changes);
+    }
+
+    private <T> T handleChanges(ChangesAndReturnValue<T> changes) {
+        if (changes.getCreatedSessions() != null) {
+            for (Session createdSession : changes.getCreatedSessions()) {
+                for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
+                    sessionEventHandler.handleLogin(createdSession);
+                }
             }
         }
+        if (changes.getDeletedSessions() != null) {
+            for (Session deletedSession : changes.getDeletedSessions()) {
+                for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
+                    sessionEventHandler.handleLogout(deletedSession);
+                }
+            }
+        }
+        return changes.getReturnValue();
     }
 
     @Component
@@ -96,8 +95,6 @@ public class SessionManager implements SessionService, AccountEventHandler {
         private static final int SESSION_TOKEN_LENGTH = 128;
         private static final String SESSION_TOKEN_ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         private static final long SESSION_DURATION = 86400000L;
-        private static final int AUTHORITIES_MAX = 3;
-        private static final int USER_AUTHORITY_ORDER = 0;
         private final SessionRepository sessionRepository;
         private final AccountService accountService;
         private final PasswordEncoder passwordEncoder;
@@ -133,7 +130,7 @@ public class SessionManager implements SessionService, AccountEventHandler {
             return sessions;
         }
 
-        public Session login(Credentials credentials) {
+        public ChangesAndReturnValue<Session> login(Credentials credentials) {
             if (credentials == null || credentials.getUsername() == null || credentials.getPassword() == null) {
                 throw new IllegalArgumentException();
             }
@@ -157,61 +154,32 @@ public class SessionManager implements SessionService, AccountEventHandler {
             session.setAuthorities(account.getAuthorities());
             session.setCreationTime(creationTime);
             session.setExpirationTime(expirationTime);
-            return sessionRepository.save(session);
+            session = sessionRepository.save(session);
+            return new ChangesAndReturnValue<>(session, List.of(session), null);
         }
 
-        public List<Session> logout(String token, Long accountId) {
+        public ChangesAndReturnValue<Void> logout(String token, Long accountId) {
             // TODO: Implement
             throw new RuntimeException("Not implemented");
         }
 
-        public List<Session> handleUpdateAccount(Account preUpdateAccount, Account postUpdateAccount) {
+        public ChangesAndReturnValue<Void> handleUpdateAccount(Account preUpdateAccount, Account postUpdateAccount) {
             List<Session> sessions = sessionRepository.findByAccountId(preUpdateAccount.getId());
             sessionRepository.deleteByAccountId(preUpdateAccount.getId());
-            return sessions;
+            return new ChangesAndReturnValue<>(null, null, sessions);
         }
 
-        public List<Session> handleDeleteAccount(Account deletedAccount) {
+        public ChangesAndReturnValue<Void> handleDeleteAccount(Account deletedAccount) {
             List<Session> sessions = sessionRepository.findByAccountId(deletedAccount.getId());
             sessionRepository.deleteByAccountId(deletedAccount.getId());
-            return sessions;
+            return new ChangesAndReturnValue<>(null, null, sessions);
         }
 
-        public List<Session> purgeExpiredSessions() {
+        public ChangesAndReturnValue<Void> purgeExpiredSessions() {
             long currentTime = currentTimeMillis();
             List<Session> expiredSessions = sessionRepository.findByExpirationTimeLessThanEqual(currentTime);
             sessionRepository.deleteByExpirationTimeLessThanEqual(currentTime);
-            return expiredSessions;
-        }
-
-        private Session cloneSession(Session session) {
-            Session clone = new Session();
-            clone.setToken(session.getToken());
-            clone.setAccountId(session.getAccountId());
-            clone.setAuthorities(session.getAuthorities());
-            clone.setCreationTime(session.getCreationTime());
-            clone.setExpirationTime(session.getExpirationTime());
-            return clone;
-        }
-
-        private boolean validateSession(Session session) {
-            Long accountId = session.getAccountId();
-            Integer authorities = session.getAuthorities();
-            Long creationTime = session.getCreationTime();
-            Long expirationTime = session.getExpirationTime();
-            if (accountId == null || accountId <= 0) {
-                return false;
-            }
-            if (authorities == null || (authorities >> USER_AUTHORITY_ORDER) % 2 != 1 || authorities > AUTHORITIES_MAX) {
-                return false;
-            }
-            if (creationTime == null || creationTime < 0) {
-                return false;
-            }
-            if (expirationTime == null || expirationTime < 0 || expirationTime < creationTime) {
-                return false;
-            }
-            return true;
+            return new ChangesAndReturnValue<>(null, null, expiredSessions);
         }
 
         private String generateToken() {
@@ -220,6 +188,30 @@ public class SessionManager implements SessionService, AccountEventHandler {
                 result.append(SESSION_TOKEN_ALLOWED_CHARS.charAt((int) (Math.random() * SESSION_TOKEN_ALLOWED_CHARS.length())));
             }
             return result.toString();
+        }
+    }
+
+    private static class ChangesAndReturnValue<T> {
+        private final T returnValue;
+        private final List<Session> createdSessions;
+        private final List<Session> deletedSessions;
+
+        public ChangesAndReturnValue(T returnValue, List<Session> createdSessions, List<Session> deletedSessions) {
+            this.returnValue = returnValue;
+            this.createdSessions = createdSessions;
+            this.deletedSessions = deletedSessions;
+        }
+
+        public T getReturnValue() {
+            return returnValue;
+        }
+
+        public List<Session> getCreatedSessions() {
+            return createdSessions;
+        }
+
+        public List<Session> getDeletedSessions() {
+            return deletedSessions;
         }
     }
 }

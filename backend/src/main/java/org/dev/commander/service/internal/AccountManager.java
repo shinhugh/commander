@@ -31,47 +31,62 @@ public class AccountManager implements AccountService {
 
     @Override
     public Account createAccount(Account account) throws IllegalArgumentException, ConflictException {
-        Account newAccount;
+        ChangesAndReturnValue<Account> changes;
         try {
-            newAccount = inner.createAccount(account);
+            changes = inner.createAccount(account);
         }
         catch (DataIntegrityViolationException ex) {
             throw new ConflictException();
         }
-        for (AccountEventHandler accountEventHandler : accountEventHandlers) {
-            accountEventHandler.handleCreateAccount(newAccount);
-        }
-        return newAccount;
+        return handleChanges(changes);
     }
 
     @Override
     public Account updateAccount(long id, Account account) throws IllegalArgumentException, NotFoundException, ConflictException {
-        AccountUpdate accountUpdate;
+        ChangesAndReturnValue<Account> changes;
         try {
-            accountUpdate = inner.updateAccount(id, account);
+            changes = inner.updateAccount(id, account);
         }
         catch (DataIntegrityViolationException ex) {
             throw new ConflictException();
         }
-        Account preUpdateAccount = accountUpdate.getPreUpdateAccount();
-        Account postUpdateAccount = accountUpdate.getPostUpdateAccount();
-        for (AccountEventHandler accountEventHandler : accountEventHandlers) {
-            accountEventHandler.handleUpdateAccount(preUpdateAccount, postUpdateAccount);
-        }
-        return postUpdateAccount;
+        return handleChanges(changes);
     }
 
     @Override
     public void deleteAccount(long id) throws IllegalArgumentException, NotFoundException {
-        Account deletedAccount = inner.deleteAccount(id);
-        for (AccountEventHandler accountEventHandler : accountEventHandlers) {
-            accountEventHandler.handleDeleteAccount(deletedAccount);
-        }
+        ChangesAndReturnValue<Void> changes = inner.deleteAccount(id);
+        handleChanges(changes);
     }
 
     @Override
     public void registerAccountEventHandler(AccountEventHandler accountEventHandler) {
         accountEventHandlers.add(accountEventHandler);
+    }
+
+    private <T> T handleChanges(ChangesAndReturnValue<T> changes) {
+        if (changes.getCreatedAccounts() != null) {
+            for (Account createdAccount : changes.getCreatedAccounts()) {
+                for (AccountEventHandler accountEventHandler : accountEventHandlers) {
+                    accountEventHandler.handleCreateAccount(createdAccount);
+                }
+            }
+        }
+        if (changes.getUpdatedAccounts() != null) {
+            for (Map.Entry<Account, Account> entry : changes.getUpdatedAccounts().entrySet()) {
+                for (AccountEventHandler accountEventHandler : accountEventHandlers) {
+                    accountEventHandler.handleUpdateAccount(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+        if (changes.getDeletedAccounts() != null) {
+            for (Account deletedAccount : changes.getDeletedAccounts()) {
+                for (AccountEventHandler accountEventHandler : accountEventHandlers) {
+                    accountEventHandler.handleDeleteAccount(deletedAccount);
+                }
+            }
+        }
+        return changes.getReturnValue();
     }
 
     @Component
@@ -124,7 +139,7 @@ public class AccountManager implements AccountService {
             return accounts;
         }
 
-        public Account createAccount(Account account) {
+        public ChangesAndReturnValue<Account> createAccount(Account account) {
             account = cloneAccount(account);
             int authorities = (int) Math.pow(2, USER_AUTHORITY_ORDER);
             account.setAuthorities(authorities);
@@ -133,10 +148,11 @@ public class AccountManager implements AccountService {
             }
             account.setId(null);
             account.setPassword(passwordEncoder.encode(account.getPassword()));
-            return accountRepository.save(account);
+            account = accountRepository.save(account);
+            return new ChangesAndReturnValue<>(account, List.of(account), null, null);
         }
 
-        public AccountUpdate updateAccount(long id, Account account) {
+        public ChangesAndReturnValue<Account> updateAccount(long id, Account account) {
             account = cloneAccount(account);
             if (id <= 0) {
                 throw new IllegalArgumentException();
@@ -150,16 +166,16 @@ public class AccountManager implements AccountService {
             existingAccount.setPassword(passwordEncoder.encode(account.getPassword()));
             existingAccount.setAuthorities(account.getAuthorities());
             existingAccount.setPublicName(account.getPublicName());
-            return new AccountUpdate(oldAccount, existingAccount);
+            return new ChangesAndReturnValue<>(existingAccount, null, Map.of(oldAccount, existingAccount), null);
         }
 
-        public Account deleteAccount(long id) {
+        public ChangesAndReturnValue<Void> deleteAccount(long id) {
             if (id <= 0) {
                 throw new IllegalArgumentException();
             }
             Account account = accountRepository.findById(id).orElseThrow(NotFoundException::new);
             accountRepository.delete(account);
-            return account;
+            return new ChangesAndReturnValue<>(null, null, null, List.of(account));
         }
 
         private Account cloneAccount(Account account) {
@@ -202,21 +218,33 @@ public class AccountManager implements AccountService {
         }
     }
 
-    private static class AccountUpdate {
-        private final Account preUpdateAccount;
-        private final Account postUpdateAccount;
+    private static class ChangesAndReturnValue<T> {
+        private final T returnValue;
+        private final List<Account> createdAccounts;
+        private final Map<Account, Account> updatedAccounts;
+        private final List<Account> deletedAccounts;
 
-        public AccountUpdate(Account preUpdateAccount, Account postUpdateAccount) {
-            this.preUpdateAccount = preUpdateAccount;
-            this.postUpdateAccount = postUpdateAccount;
+        public ChangesAndReturnValue(T returnValue, List<Account> createdAccounts, Map<Account, Account> updatedAccounts, List<Account> deletedAccounts) {
+            this.returnValue = returnValue;
+            this.createdAccounts = createdAccounts;
+            this.updatedAccounts = updatedAccounts;
+            this.deletedAccounts = deletedAccounts;
         }
 
-        public Account getPreUpdateAccount() {
-            return preUpdateAccount;
+        public T getReturnValue() {
+            return returnValue;
         }
 
-        public Account getPostUpdateAccount() {
-            return postUpdateAccount;
+        public List<Account> getCreatedAccounts() {
+            return createdAccounts;
+        }
+
+        public Map<Account, Account> getUpdatedAccounts() {
+            return updatedAccounts;
+        }
+
+        public List<Account> getDeletedAccounts() {
+            return deletedAccounts;
         }
     }
 }
