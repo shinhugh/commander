@@ -159,8 +159,28 @@ public class SessionManager implements SessionService, AccountEventHandler {
         }
 
         public ChangesAndReturnValue<Void> logout(String token, Long accountId) {
-            // TODO: Implement
-            throw new RuntimeException("Not implemented");
+            List<Session> sessions = null;
+            if (token != null && token.length() > 0) {
+                sessions = new ArrayList<>();
+                Session session = sessionRepository.findById(token).orElse(null);
+                if (session != null) {
+                    sessions.add(session);
+                }
+            }
+            if (accountId != null && accountId > 0) {
+                if (sessions == null) {
+                    sessions = sessionRepository.findByAccountId(accountId);
+                } else {
+                    sessions = sessions.stream().filter(s -> Objects.equals(s.getAccountId(), accountId)).collect(Collectors.toList());
+                }
+            }
+            if (sessions == null) {
+                throw new IllegalArgumentException();
+            }
+            for (Session session : sessions) {
+                sessionRepository.delete(session);
+            }
+            return new ChangesAndReturnValue<>(null, null, sessions);
         }
 
         public ChangesAndReturnValue<Void> handleUpdateAccount(Account preUpdateAccount, Account postUpdateAccount) {

@@ -114,21 +114,19 @@ public class AccountManager implements AccountService {
         public List<Account> readAccounts(Long id, String loginName) {
             List<Account> accounts = null;
             if (id != null && id > 0) {
-                Account account = accountRepository.findById(id).orElse(null);
-                if (account == null) {
-                    return List.of();
-                }
                 accounts = new ArrayList<>();
-                accounts.add(account);
+                Account account = accountRepository.findById(id).orElse(null);
+                if (account != null) {
+                    accounts.add(account);
+                }
             }
             if (loginName != null && loginName.length() > 0) {
                 if (accounts == null) {
-                    Account account = accountRepository.findByLoginName(loginName).orElse(null);
-                    if (account == null) {
-                        return List.of();
-                    }
                     accounts = new ArrayList<>();
-                    accounts.add(account);
+                    Account account = accountRepository.findByLoginName(loginName).orElse(null);
+                    if (account != null) {
+                        accounts.add(account);
+                    }
                 } else {
                     accounts = accounts.stream().filter(a -> Objects.equals(a.getLoginName(), loginName)).collect(Collectors.toList());
                 }
