@@ -2,7 +2,7 @@ package org.dev.commander.security;
 
 import org.dev.commander.model.Account;
 import org.dev.commander.model.Session;
-import org.dev.commander.service.exception.NotFoundException;
+import org.dev.commander.security.exception.InvalidTokenException;
 import org.dev.commander.service.internal.AccountService;
 import org.dev.commander.service.internal.SessionService;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -37,13 +37,12 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
             return null;
         }
         String token = (String) authentication.getCredentials();
-        Session session;
-        Account account;
-        try {
-            session = identifySession(token);
-            account = identifyAccount(token);
+        Session session = identifySession(token);
+        if (session == null) {
+            throw new InvalidTokenException();
         }
-        catch (NotFoundException ex) {
+        Account account = identifyAccount(token);
+        if (account == null) {
             throw new InvalidTokenException();
         }
         Set<GrantedAuthority> authorities = translateAuthoritiesFlagToSet(session.getAuthorities());
@@ -70,7 +69,6 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
         }
         List<Account> accounts = accountService.readAccounts(session.getAccountId(), null);
         if (accounts.isEmpty()) {
-            sessionService.deleteSession(token);
             return null;
         }
         return accounts.get(0);

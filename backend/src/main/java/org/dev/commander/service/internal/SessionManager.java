@@ -1,11 +1,14 @@
 package org.dev.commander.service.internal;
 
 import org.dev.commander.model.Account;
+import org.dev.commander.model.Credentials;
 import org.dev.commander.model.Session;
 import org.dev.commander.repository.SessionRepository;
 import org.dev.commander.service.exception.IllegalArgumentException;
+import org.dev.commander.service.exception.NotAuthenticatedException;
 import org.dev.commander.service.exception.NotFoundException;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -32,33 +35,19 @@ public class SessionManager implements SessionService, AccountEventHandler {
     }
 
     @Override
-    public Session createSession(Session session) throws IllegalArgumentException {
-        Session newSession = inner.createSession(session);
-        // TODO: If external transactional service calls this method, session may have not been created yet, but handlers will be called
+    public Session login(Credentials credentials) throws IllegalArgumentException {
+        Session session = inner.login(credentials);
         for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
-            sessionEventHandler.handleCreateSession(newSession);
+            sessionEventHandler.handleLogin(session);
         }
-        return newSession;
+        return session;
     }
 
     @Override
-    public Session updateSession(String token, Session session) throws IllegalArgumentException, NotFoundException {
-        SessionUpdate sessionUpdate = inner.updateSession(token, session);
-        Session preUpdateSession = sessionUpdate.getPreUpdateSession();
-        Session postUpdateSession = sessionUpdate.getPostUpdateSession();
-        // TODO: If external transactional service calls this method, session may have not been updated yet, but handlers will be called
+    public void logout(String token) throws IllegalArgumentException, NotFoundException {
+        Session deletedSession = inner.logout(token);
         for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
-            sessionEventHandler.handleUpdateSession(preUpdateSession, postUpdateSession);
-        }
-        return postUpdateSession;
-    }
-
-    @Override
-    public void deleteSession(String token) throws IllegalArgumentException, NotFoundException {
-        Session deletedSession = inner.deleteSession(token);
-        // TODO: If external transactional service calls this method, session may have not been deleted yet, but handlers will be called
-        for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
-            sessionEventHandler.handleDeleteSession(deletedSession);
+            sessionEventHandler.handleLogout(deletedSession);
         }
     }
 
@@ -75,7 +64,7 @@ public class SessionManager implements SessionService, AccountEventHandler {
         List<Session> deletedSessions = inner.handleUpdateAccount(preUpdateAccount, postUpdateAccount);
         for (Session deletedSession : deletedSessions) {
             for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
-                sessionEventHandler.handleDeleteSession(deletedSession);
+                sessionEventHandler.handleLogout(deletedSession);
             }
         }
     }
@@ -85,7 +74,7 @@ public class SessionManager implements SessionService, AccountEventHandler {
         List<Session> deletedSessions = inner.handleDeleteAccount(deleteAccount);
         for (Session deletedSession : deletedSessions) {
             for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
-                sessionEventHandler.handleDeleteSession(deletedSession);
+                sessionEventHandler.handleLogout(deletedSession);
             }
         }
     }
@@ -95,7 +84,7 @@ public class SessionManager implements SessionService, AccountEventHandler {
         List<Session> deletedSessions = inner.purgeExpiredSessions();
         for (Session deletedSession : deletedSessions) {
             for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
-                sessionEventHandler.handleDeleteSession(deletedSession);
+                sessionEventHandler.handleLogout(deletedSession);
             }
         }
     }
@@ -109,9 +98,13 @@ public class SessionManager implements SessionService, AccountEventHandler {
         private static final int AUTHORITIES_MAX = 3;
         private static final int USER_AUTHORITY_ORDER = 0;
         private final SessionRepository sessionRepository;
+        private final AccountService accountService;
+        private final PasswordEncoder passwordEncoder;
 
-        public Inner(SessionRepository sessionRepository) {
+        public Inner(SessionRepository sessionRepository, AccountService accountService, PasswordEncoder passwordEncoder) {
             this.sessionRepository = sessionRepository;
+            this.accountService = accountService;
+            this.passwordEncoder = passwordEncoder;
         }
 
         public List<Session> readSessions(String token, Long accountId) {
@@ -139,41 +132,34 @@ public class SessionManager implements SessionService, AccountEventHandler {
             return sessions;
         }
 
-        public Session createSession(Session session) {
-            session = cloneSession(session);
-            long creationTime = currentTimeMillis();
-            long expirationTime = creationTime + SESSION_DURATION;
-            session.setCreationTime(creationTime);
-            session.setExpirationTime(expirationTime);
-            if (!validateSession(session)) {
+        public Session login(Credentials credentials) {
+            if (credentials == null || credentials.getUsername() == null || credentials.getPassword() == null) {
                 throw new IllegalArgumentException();
+            }
+            List<Account> accounts = accountService.readAccounts(null, credentials.getUsername());
+            if (accounts.isEmpty()) {
+                throw new NotAuthenticatedException();
+            }
+            Account account = accounts.get(0);
+            if (!passwordEncoder.matches(credentials.getPassword(), account.getPassword())) {
+                throw new NotAuthenticatedException();
             }
             String token;
             do {
                 token = generateToken();
             } while (sessionRepository.existsById(token));
+            long creationTime = currentTimeMillis();
+            long expirationTime = creationTime + SESSION_DURATION;
+            Session session = new Session();
             session.setToken(token);
+            session.setAccountId(account.getId());
+            session.setAuthorities(account.getAuthorities());
+            session.setCreationTime(creationTime);
+            session.setExpirationTime(expirationTime);
             return sessionRepository.save(session);
         }
 
-        public SessionUpdate updateSession(String token, Session session) {
-            session = cloneSession(session);
-            if (token == null || token.length() == 0) {
-                throw new IllegalArgumentException();
-            }
-            Session existingSession = sessionRepository.findById(token).orElseThrow(NotFoundException::new);
-            session.setAccountId(existingSession.getAccountId());
-            session.setAuthorities(existingSession.getAuthorities());
-            session.setCreationTime(existingSession.getCreationTime());
-            if (!validateSession(session)) {
-                throw new IllegalArgumentException();
-            }
-            Session oldSession = cloneSession(existingSession);
-            existingSession.setExpirationTime(session.getExpirationTime());
-            return new SessionUpdate(oldSession, existingSession);
-        }
-
-        public Session deleteSession(String token) {
+        public Session logout(String token) {
             if (token == null || token.length() == 0) {
                 throw new IllegalArgumentException();
             }
@@ -240,24 +226,6 @@ public class SessionManager implements SessionService, AccountEventHandler {
                 result.append(SESSION_TOKEN_ALLOWED_CHARS.charAt((int) (Math.random() * SESSION_TOKEN_ALLOWED_CHARS.length())));
             }
             return result.toString();
-        }
-    }
-
-    private static class SessionUpdate {
-        private final Session preUpdateSession;
-        private final Session postUpdateSession;
-
-        public SessionUpdate(Session preUpdateAccount, Session postUpdateAccount) {
-            this.preUpdateSession = preUpdateAccount;
-            this.postUpdateSession = postUpdateAccount;
-        }
-
-        public Session getPreUpdateSession() {
-            return preUpdateSession;
-        }
-
-        public Session getPostUpdateSession() {
-            return postUpdateSession;
         }
     }
 }
