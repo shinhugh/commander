@@ -8,5 +8,5 @@ import org.springframework.security.core.Authentication;
 
 public interface ExternalAuthenticationService {
     Session login(Authentication authentication, Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException;
-    void logout(Authentication authentication, Boolean all);
+    void logout(Authentication authentication, boolean all);
 }

@@ -5,7 +5,6 @@ import org.dev.commander.model.Credentials;
 import org.dev.commander.model.Session;
 import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.NotAuthenticatedException;
-import org.dev.commander.service.exception.NotFoundException;
 import org.dev.commander.service.internal.SessionService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -34,24 +33,13 @@ public class ExternalAuthenticationManager implements ExternalAuthenticationServ
         return session;
     }
 
-    // TODO: Consider moving much of this logic into SessionManager
     @Override
-    public void logout(Authentication authentication, Boolean all) {
+    public void logout(Authentication authentication, boolean all) {
         if (authentication == null) {
             return;
         }
-        if (all != null && all) {
-            long accountId = ((Account) authentication.getPrincipal()).getId();
-            List<Session> sessions = sessionService.readSessions(null, accountId);
-            for (Session session : sessions) {
-                sessionService.logout(session.getToken());
-            }
-        } else {
-            String sessionToken = (String) authentication.getCredentials();
-            try {
-                sessionService.logout(sessionToken);
-            }
-            catch (NotFoundException ignored) { }
-        }
+        String sessionToken = (String) authentication.getCredentials();
+        long accountId = ((Account) authentication.getPrincipal()).getId();
+        sessionService.logout(all ? null : sessionToken, all ? accountId : null);
     }
 }

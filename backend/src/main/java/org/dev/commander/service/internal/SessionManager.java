@@ -6,7 +6,6 @@ import org.dev.commander.model.Session;
 import org.dev.commander.repository.SessionRepository;
 import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.NotAuthenticatedException;
-import org.dev.commander.service.exception.NotFoundException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -35,7 +34,7 @@ public class SessionManager implements SessionService, AccountEventHandler {
     }
 
     @Override
-    public Session login(Credentials credentials) throws IllegalArgumentException {
+    public Session login(Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException {
         Session session = inner.login(credentials);
         for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
             sessionEventHandler.handleLogin(session);
@@ -44,10 +43,12 @@ public class SessionManager implements SessionService, AccountEventHandler {
     }
 
     @Override
-    public void logout(String token) throws IllegalArgumentException, NotFoundException {
-        Session deletedSession = inner.logout(token);
-        for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
-            sessionEventHandler.handleLogout(deletedSession);
+    public void logout(String token, Long accountId) {
+        List<Session> deletedSessions = inner.logout(token, accountId);
+        for (Session deletedSession : deletedSessions) {
+            for (SessionEventHandler sessionEventHandler : sessionEventHandlers) {
+                sessionEventHandler.handleLogout(deletedSession);
+            }
         }
     }
 
@@ -159,16 +160,9 @@ public class SessionManager implements SessionService, AccountEventHandler {
             return sessionRepository.save(session);
         }
 
-        public Session logout(String token) {
-            if (token == null || token.length() == 0) {
-                throw new IllegalArgumentException();
-            }
-            Session session = sessionRepository.findById(token).orElseThrow(NotFoundException::new);
-            sessionRepository.delete(session);
-            if (session.getExpirationTime() <= currentTimeMillis()) {
-                throw new NotFoundException();
-            }
-            return session;
+        public List<Session> logout(String token, Long accountId) {
+            // TODO: Implement
+            throw new RuntimeException("Not implemented");
         }
 
         public List<Session> handleUpdateAccount(Account preUpdateAccount, Account postUpdateAccount) {
