@@ -3,8 +3,11 @@ package org.dev.commander.websocket;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.dev.commander.model.Account;
+import org.dev.commander.model.Session;
 import org.dev.commander.security.TokenAuthenticationToken;
+import org.dev.commander.service.internal.SessionEventHandler;
 import org.dev.commander.websocket.exception.IllegalArgumentException;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -17,17 +20,13 @@ import java.util.*;
 
 // TODO: Make thread-safe
 @Component
-public class WebSocketObjectDispatcher extends TextWebSocketHandler implements ObjectDispatcher, WebSocketRegistrar {
+public class WebSocketObjectDispatcher extends TextWebSocketHandler implements ObjectDispatcher, SessionEventHandler {
     private final Map<String, WebSocketSession> sessionTokenToConnectionMap = new HashMap<>();
     private final Map<Long, Set<String>> accountIdToSessionTokenMap = new HashMap<>();
-    private final Map<String, Long> sessionTokenToAccountIdMap = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) {
-        if (session == null) {
-            return;
-        }
+    public void afterConnectionEstablished(@NonNull WebSocketSession session) {
         Principal principal = session.getPrincipal();
         if (principal == null || principal.getClass() != TokenAuthenticationToken.class) {
             try {
@@ -42,14 +41,10 @@ public class WebSocketObjectDispatcher extends TextWebSocketHandler implements O
         sessionTokenToConnectionMap.put(sessionToken, session);
         accountIdToSessionTokenMap.putIfAbsent(accountId, new HashSet<>());
         accountIdToSessionTokenMap.get(accountId).add(sessionToken);
-        sessionTokenToAccountIdMap.put(sessionToken, accountId);
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        if (session == null) {
-            return;
-        }
+    public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus status) {
         Principal principal = session.getPrincipal();
         if (principal == null || principal.getClass() != TokenAuthenticationToken.class) {
             try {
@@ -61,7 +56,6 @@ public class WebSocketObjectDispatcher extends TextWebSocketHandler implements O
         TokenAuthenticationToken authenticationToken = (TokenAuthenticationToken) principal;
         String sessionToken = (String) authenticationToken.getCredentials();
         long accountId = ((Account) authenticationToken.getPrincipal()).getId();
-        sessionTokenToAccountIdMap.remove(sessionToken);
         accountIdToSessionTokenMap.get(accountId).remove(sessionToken);
         if (accountIdToSessionTokenMap.get(accountId).isEmpty()) {
             accountIdToSessionTokenMap.remove(accountId);
@@ -70,7 +64,7 @@ public class WebSocketObjectDispatcher extends TextWebSocketHandler implements O
     }
 
     @Override
-    public void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
+    public void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) throws IOException {
         // TODO: Parse message as JSON
         // TODO: Delegate parsed message to appropriate service
     }
@@ -95,7 +89,6 @@ public class WebSocketObjectDispatcher extends TextWebSocketHandler implements O
                 connection.sendMessage(new TextMessage(message));
             }
             catch (IOException ex) {
-                sessionTokenToAccountIdMap.remove(sessionToken);
                 it.remove();
                 sessionTokenToConnectionMap.remove(sessionToken);
                 try {
@@ -110,13 +103,19 @@ public class WebSocketObjectDispatcher extends TextWebSocketHandler implements O
     }
 
     @Override
-    public void closeConnectionForSession(String sessionToken) {
-        Long accountId = sessionTokenToAccountIdMap.get(sessionToken);
-        if (accountId == null) {
-            return;
+    public void handleLogin(Session newSession) { }
+
+    @Override
+    public void handleLogout(Session deletedSession) {
+        String sessionToken = deletedSession.getToken();
+        long accountId = deletedSession.getAccountId();
+        Set<String> accountSessionTokens = accountIdToSessionTokenMap.get(accountId);
+        if (accountSessionTokens != null) {
+            accountSessionTokens.remove(sessionToken);
+            if (accountSessionTokens.isEmpty()) {
+                accountIdToSessionTokenMap.remove(accountId);
+            }
         }
-        sessionTokenToAccountIdMap.remove(sessionToken);
-        accountIdToSessionTokenMap.get(accountId).remove(sessionToken);
         WebSocketSession connection = sessionTokenToConnectionMap.remove(sessionToken);
         if (connection != null) {
             try {
@@ -124,24 +123,5 @@ public class WebSocketObjectDispatcher extends TextWebSocketHandler implements O
             }
             catch (IOException ignored) { }
         }
-    }
-
-    @Override
-    public void closeConnectionsForAccount(long accountId) {
-        Set<String> sessionTokens = accountIdToSessionTokenMap.get(accountId);
-        if (sessionTokens == null) {
-            return;
-        }
-        for (String sessionToken : sessionTokens) {
-            sessionTokenToAccountIdMap.remove(sessionToken);
-            WebSocketSession connection = sessionTokenToConnectionMap.remove(sessionToken);
-            if (connection != null) {
-                try {
-                    connection.close();
-                }
-                catch (IOException ignored) { }
-            }
-        }
-        accountIdToSessionTokenMap.remove(accountId);
     }
 }
