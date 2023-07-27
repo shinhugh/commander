@@ -1,9 +1,31 @@
-package org.dev.commander.service.external;
+package org.dev.commander.service.internal;
 
+import org.dev.commander.model.Friendships;
+import org.dev.commander.service.exception.ConflictException;
+import org.dev.commander.service.exception.IllegalArgumentException;
+import org.dev.commander.service.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
 public class FriendshipManager implements FriendshipService {
+    @Override
+    public Friendships listFriendships(long accountId) throws IllegalArgumentException, NotFoundException {
+        // TODO: Implement
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public void requestFriendship(long requestingAccountId, long respondingAccountId) throws IllegalArgumentException, NotFoundException, ConflictException {
+        // TODO: Implement
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public void terminateFriendship(long accountAId, long accountBId) throws IllegalArgumentException, NotFoundException {
+        // TODO: Implement
+        throw new RuntimeException("Not implemented");
+    }
+
 //    private final Inner inner;
 //
 //    public FriendshipManager(Inner inner) {
