@@ -186,13 +186,13 @@ public class SessionManager implements SessionService, AccountEventHandler {
 
         public List<Session> handleUpdateAccount(Account preUpdateAccount, Account postUpdateAccount) {
             List<Session> sessions = sessionRepository.findByAccountId(preUpdateAccount.getId());
-            sessionRepository.deleteByAccountId(preUpdateAccount.getId()); // TODO: Does this affect the sessions array?
+            sessionRepository.deleteByAccountId(preUpdateAccount.getId());
             return sessions;
         }
 
         public List<Session> handleDeleteAccount(Account deletedAccount) {
             List<Session> sessions = sessionRepository.findByAccountId(deletedAccount.getId());
-            sessionRepository.deleteByAccountId(deletedAccount.getId()); // TODO: Does this affect the sessions array?
+            sessionRepository.deleteByAccountId(deletedAccount.getId());
             return sessions;
         }
 

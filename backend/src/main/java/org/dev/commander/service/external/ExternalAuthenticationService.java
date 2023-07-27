@@ -6,7 +6,7 @@ import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.NotAuthenticatedException;
 import org.springframework.security.core.Authentication;
 
-public interface AuthenticationService {
+public interface ExternalAuthenticationService {
     Session login(Authentication authentication, Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException;
     void logout(Authentication authentication, Boolean all);
 }

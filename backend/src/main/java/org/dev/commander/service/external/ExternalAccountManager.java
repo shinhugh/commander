@@ -3,6 +3,7 @@ package org.dev.commander.service.external;
 import org.dev.commander.model.Account;
 import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.*;
+import org.dev.commander.service.internal.AccountService;
 import org.dev.commander.service.internal.IdentificationService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -11,11 +12,11 @@ import java.util.List;
 import java.util.Set;
 
 @Service
-public class AccountManager implements AccountService {
-    private final org.dev.commander.service.internal.AccountService accountService;
+public class ExternalAccountManager implements ExternalAccountService {
+    private final AccountService accountService;
     private final IdentificationService identificationService;
 
-    public AccountManager(org.dev.commander.service.internal.AccountService accountService, IdentificationService identificationService) {
+    public ExternalAccountManager(AccountService accountService, IdentificationService identificationService) {
         this.accountService = accountService;
         this.identificationService = identificationService;
     }

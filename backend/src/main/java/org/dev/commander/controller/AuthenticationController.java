@@ -2,7 +2,7 @@ package org.dev.commander.controller;
 
 import org.dev.commander.model.Credentials;
 import org.dev.commander.model.Session;
-import org.dev.commander.service.external.AuthenticationService;
+import org.dev.commander.service.external.ExternalAuthenticationService;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -16,15 +16,15 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 @Order(-1)
 public class AuthenticationController {
-    private final AuthenticationService authenticationService;
+    private final ExternalAuthenticationService externalAuthenticationService;
 
-    public AuthenticationController(AuthenticationService authenticationService) {
-        this.authenticationService = authenticationService;
+    public AuthenticationController(ExternalAuthenticationService externalAuthenticationService) {
+        this.externalAuthenticationService = externalAuthenticationService;
     }
 
     @PostMapping
     public ResponseEntity<Session> login(Authentication authentication, @RequestBody(required = false) Credentials credentials) {
-        Session session = authenticationService.login(authentication, credentials);
+        Session session = externalAuthenticationService.login(authentication, credentials);
         long maxAge = (session.getExpirationTime() - session.getCreationTime()) / 1000;
         String xAuthorizationCookieHeaderValue = "X-Authorization=" + session.getToken() + "; Max-Age=" + maxAge + "; SameSite=Strict";
         HttpHeaders headers = new HttpHeaders();
@@ -41,7 +41,7 @@ public class AuthenticationController {
                 all = true;
             }
         }
-        authenticationService.logout(authentication, all);
+        externalAuthenticationService.logout(authentication, all);
         String xAuthorizationCookieHeaderValue = "X-Authorization=; Max-Age=0; SameSite=Strict";
         HttpHeaders headers = new HttpHeaders();
         headers.add("Set-Cookie", xAuthorizationCookieHeaderValue);
