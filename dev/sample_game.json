@@ -1,0 +1,79 @@
+{
+  "id": 1,
+  "players": {
+    "1": {
+      "accountId": 1,
+      "name": "Qwer"
+    },
+    "2": {
+      "accountId": 2,
+      "name": "Asdf"
+    },
+    "3": {
+      "accountId": 3,
+      "name": "Zxcv"
+    }
+  },
+  "space": {
+    "width": 4,
+    "height": 4
+  },
+  "terrain": [
+    [
+      "grass",
+      "grass",
+      "grass",
+      "grass"
+    ],
+    [
+      "grass",
+      "water",
+      "water",
+      "grass"
+    ],
+    [
+      "grass",
+      "water",
+      "water",
+      "grass"
+    ],
+    [
+      "grass",
+      "grass",
+      "grass",
+      "grass"
+    ]
+  ],
+  "facilities": {
+    "1": {
+      "playerId": "1",
+      "type": "barracks",
+      "posX": 0,
+      "posY": 3,
+      "hp": 100
+    }
+  },
+  "units": {
+    "1": {
+      "playerId": "1",
+      "type": "grunt",
+      "posX": 0,
+      "posY": 0,
+      "hp": 100
+    },
+    "2": {
+      "playerId": "2",
+      "type": "grunt",
+      "posX": 3,
+      "posY": 0,
+      "hp": 50
+    },
+    "3": {
+      "playerId": "3",
+      "type": "grunt",
+      "posX": 3,
+      "posY": 3,
+      "hp": 20
+    }
+  }
+}

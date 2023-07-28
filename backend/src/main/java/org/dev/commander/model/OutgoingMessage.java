@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class WebSocketMessage {
+public class OutgoingMessage<T> {
     private Type type;
-    private Object payload;
+    private T payload;
 
     public Type getType() {
         return type;
@@ -16,11 +16,11 @@ public class WebSocketMessage {
         this.type = type;
     }
 
-    public Object getPayload() {
+    public T getPayload() {
         return payload;
     }
 
-    public void setPayload(Object payload) {
+    public void setPayload(T payload) {
         this.payload = payload;
     }
 

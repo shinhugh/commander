@@ -3,7 +3,7 @@ package org.dev.commander.service.internal;
 import org.dev.commander.model.Account;
 import org.dev.commander.model.Friendship;
 import org.dev.commander.model.Friendships;
-import org.dev.commander.model.WebSocketMessage;
+import org.dev.commander.model.OutgoingMessage;
 import org.dev.commander.repository.FriendshipRepository;
 import org.dev.commander.service.exception.ConflictException;
 import org.dev.commander.service.exception.IllegalArgumentException;
@@ -53,8 +53,8 @@ public class FriendshipManager implements FriendshipService, AccountEventHandler
     @Override
     public void requestFriendship(long requestingAccountId, long respondingAccountId) throws IllegalArgumentException, NotFoundException, ConflictException {
         Set<Long> affectedAccountIds = inner.requestFriendship(requestingAccountId, respondingAccountId);
-        WebSocketMessage message = new WebSocketMessage();
-        message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
+        OutgoingMessage<Void> message = new OutgoingMessage<>();
+        message.setType(OutgoingMessage.Type.FRIENDSHIPS_CHANGE);
         for (long accountId : affectedAccountIds) {
             objectDispatcher.sendObject(accountId, message);
         }
@@ -63,8 +63,8 @@ public class FriendshipManager implements FriendshipService, AccountEventHandler
     @Override
     public void terminateFriendship(long accountAId, long accountBId) throws IllegalArgumentException, NotFoundException {
         Set<Long> affectedAccountIds = inner.terminateFriendship(accountAId, accountBId);
-        WebSocketMessage message = new WebSocketMessage();
-        message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
+        OutgoingMessage<Void> message = new OutgoingMessage<>();
+        message.setType(OutgoingMessage.Type.FRIENDSHIPS_CHANGE);
         for (long accountId : affectedAccountIds) {
             objectDispatcher.sendObject(accountId, message);
         }
@@ -79,8 +79,8 @@ public class FriendshipManager implements FriendshipService, AccountEventHandler
     @Override
     public void handleDeleteAccount(Account deletedAccount) {
         Set<Long> affectedAccountIds = inner.handleDeleteAccount(deletedAccount);
-        WebSocketMessage message = new WebSocketMessage();
-        message.setType(WebSocketMessage.Type.FRIENDSHIPS_CHANGE);
+        OutgoingMessage<Void> message = new OutgoingMessage<>();
+        message.setType(OutgoingMessage.Type.FRIENDSHIPS_CHANGE);
         for (long accountId : affectedAccountIds) {
             objectDispatcher.sendObject(accountId, message);
         }
