@@ -147,11 +147,10 @@ public class AccountManager implements AccountService {
             account.setId(null);
             account.setPassword(passwordEncoder.encode(account.getPassword()));
             account = accountRepository.save(account);
-            return new ChangesAndReturnValue<>(account, List.of(account), null, null);
+            return new ChangesAndReturnValue<>(account, Set.of(account), null, null);
         }
 
         public ChangesAndReturnValue<Account> updateAccount(long id, Account account) {
-            account = cloneAccount(account);
             if (id <= 0) {
                 throw new IllegalArgumentException();
             }
@@ -173,7 +172,7 @@ public class AccountManager implements AccountService {
             }
             Account account = accountRepository.findById(id).orElseThrow(NotFoundException::new);
             accountRepository.delete(account);
-            return new ChangesAndReturnValue<>(null, null, null, List.of(account));
+            return new ChangesAndReturnValue<>(null, null, null, Set.of(account));
         }
 
         private Account cloneAccount(Account account) {
@@ -218,11 +217,11 @@ public class AccountManager implements AccountService {
 
     private static class ChangesAndReturnValue<T> {
         private final T returnValue;
-        private final List<Account> createdAccounts;
+        private final Set<Account> createdAccounts;
         private final Map<Account, Account> updatedAccounts;
-        private final List<Account> deletedAccounts;
+        private final Set<Account> deletedAccounts;
 
-        public ChangesAndReturnValue(T returnValue, List<Account> createdAccounts, Map<Account, Account> updatedAccounts, List<Account> deletedAccounts) {
+        public ChangesAndReturnValue(T returnValue, Set<Account> createdAccounts, Map<Account, Account> updatedAccounts, Set<Account> deletedAccounts) {
             this.returnValue = returnValue;
             this.createdAccounts = createdAccounts;
             this.updatedAccounts = updatedAccounts;
@@ -233,7 +232,7 @@ public class AccountManager implements AccountService {
             return returnValue;
         }
 
-        public List<Account> getCreatedAccounts() {
+        public Set<Account> getCreatedAccounts() {
             return createdAccounts;
         }
 
@@ -241,7 +240,7 @@ public class AccountManager implements AccountService {
             return updatedAccounts;
         }
 
-        public List<Account> getDeletedAccounts() {
+        public Set<Account> getDeletedAccounts() {
             return deletedAccounts;
         }
     }

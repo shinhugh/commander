@@ -1,11 +1,14 @@
 package org.dev.commander.service.external;
 
-import org.dev.commander.model.Session;
 import org.dev.commander.repository.SessionRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Service
 public class ExternalTestManager implements ExternalTestService {
@@ -44,13 +47,16 @@ public class ExternalTestManager implements ExternalTestService {
         }
 
         public void test() {
-            Session session = new Session();
-            session.setToken("abc");
-            session.setAccountId(1L);
-            session.setAuthorities(1);
-            session.setCreationTime(1L);
-            session.setExpirationTime(2L);
-            sessionRepository.save(session);
+            try {
+                List<Integer> list = List.of(1, 2, 1);
+                Set<Integer> set = new HashSet<>(list);
+                for (int element : set) {
+                    System.out.println("@@ " + element);
+                }
+            }
+            catch (Exception ex) {
+                System.out.println("@@ " + ex.getClass());
+            }
         }
     }
 }

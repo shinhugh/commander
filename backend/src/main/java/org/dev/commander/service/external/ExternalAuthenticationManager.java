@@ -21,13 +21,16 @@ public class ExternalAuthenticationManager implements ExternalAuthenticationServ
 
     @Override
     public Session login(Authentication authentication, Credentials credentials) throws IllegalArgumentException, NotAuthenticatedException {
+        Session session = null;
         if (authentication != null) {
             List<Session> sessions = sessionService.readSessions((String) authentication.getCredentials(), null);
             if (!sessions.isEmpty()) {
-                return sessions.get(0);
+                session = sessions.get(0);
             }
         }
-        Session session = sessionService.login(credentials);
+        if (session == null) {
+            session = sessionService.login(credentials);
+        }
         session.setAccountId(null);
         session.setAuthorities(null);
         return session;

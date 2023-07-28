@@ -1,6 +1,7 @@
 package org.dev.commander.service.external;
 
 import org.dev.commander.model.Account;
+import org.dev.commander.model.Friendship;
 import org.dev.commander.model.Friendships;
 import org.dev.commander.service.exception.ConflictException;
 import org.dev.commander.service.exception.IllegalArgumentException;
@@ -27,7 +28,23 @@ public class ExternalFriendshipManager implements ExternalFriendshipService {
         if (clientAccount == null) {
             throw new NotAuthenticatedException();
         }
-        return friendshipService.listFriendships(clientAccount.getId());
+        Friendships friendships = friendshipService.listFriendships(clientAccount.getId());
+        if (friendships.getConfirmedFriendships() != null) {
+            for (Friendship friendship : friendships.getConfirmedFriendships()) {
+                stripFieldsFromAccount(friendship.getFriendAccount());
+            }
+        }
+        if (friendships.getOutgoingRequests() != null) {
+            for (Friendship friendship : friendships.getOutgoingRequests()) {
+                stripFieldsFromAccount(friendship.getFriendAccount());
+            }
+        }
+        if (friendships.getIncomingRequests() != null) {
+            for (Friendship friendship : friendships.getIncomingRequests()) {
+                stripFieldsFromAccount(friendship.getFriendAccount());
+            }
+        }
+        return friendships;
     }
 
     @Override
@@ -52,5 +69,11 @@ public class ExternalFriendshipManager implements ExternalFriendshipService {
             throw new IllegalArgumentException();
         }
         friendshipService.terminateFriendship(clientAccount.getId(), accountId);
+    }
+
+    private void stripFieldsFromAccount(Account account) {
+        account.setLoginName(null);
+        account.setPassword(null);
+        account.setAuthorities(null);
     }
 }

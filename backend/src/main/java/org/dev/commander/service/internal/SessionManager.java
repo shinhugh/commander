@@ -155,13 +155,13 @@ public class SessionManager implements SessionService, AccountEventHandler {
             session.setCreationTime(creationTime);
             session.setExpirationTime(expirationTime);
             session = sessionRepository.save(session);
-            return new ChangesAndReturnValue<>(session, List.of(session), null);
+            return new ChangesAndReturnValue<>(session, Set.of(session), null);
         }
 
         public ChangesAndReturnValue<Void> logout(String token, Long accountId) {
-            List<Session> sessions = null;
+            Set<Session> sessions = null;
             if (token != null && token.length() > 0) {
-                sessions = new ArrayList<>();
+                sessions = new HashSet<>();
                 Session session = sessionRepository.findById(token).orElse(null);
                 if (session != null) {
                     sessions.add(session);
@@ -169,9 +169,9 @@ public class SessionManager implements SessionService, AccountEventHandler {
             }
             if (accountId != null && accountId > 0) {
                 if (sessions == null) {
-                    sessions = sessionRepository.findByAccountId(accountId);
+                    sessions = new HashSet<>(sessionRepository.findByAccountId(accountId));
                 } else {
-                    sessions = sessions.stream().filter(s -> Objects.equals(s.getAccountId(), accountId)).collect(Collectors.toList());
+                    sessions = sessions.stream().filter(s -> Objects.equals(s.getAccountId(), accountId)).collect(Collectors.toSet());
                 }
             }
             if (sessions == null) {
@@ -184,22 +184,22 @@ public class SessionManager implements SessionService, AccountEventHandler {
         }
 
         public ChangesAndReturnValue<Void> handleUpdateAccount(Account preUpdateAccount, Account postUpdateAccount) {
-            List<Session> sessions = sessionRepository.findByAccountId(preUpdateAccount.getId());
+            Set<Session> sessions = new HashSet<>(sessionRepository.findByAccountId(preUpdateAccount.getId()));
             sessionRepository.deleteByAccountId(preUpdateAccount.getId());
             return new ChangesAndReturnValue<>(null, null, sessions);
         }
 
         public ChangesAndReturnValue<Void> handleDeleteAccount(Account deletedAccount) {
-            List<Session> sessions = sessionRepository.findByAccountId(deletedAccount.getId());
+            Set<Session> sessions = new HashSet<>(sessionRepository.findByAccountId(deletedAccount.getId()));
             sessionRepository.deleteByAccountId(deletedAccount.getId());
             return new ChangesAndReturnValue<>(null, null, sessions);
         }
 
         public ChangesAndReturnValue<Void> purgeExpiredSessions() {
             long currentTime = currentTimeMillis();
-            List<Session> expiredSessions = sessionRepository.findByExpirationTimeLessThanEqual(currentTime);
+            Set<Session> sessions = new HashSet<>(sessionRepository.findByExpirationTimeLessThanEqual(currentTime));
             sessionRepository.deleteByExpirationTimeLessThanEqual(currentTime);
-            return new ChangesAndReturnValue<>(null, null, expiredSessions);
+            return new ChangesAndReturnValue<>(null, null, sessions);
         }
 
         private String generateToken() {
@@ -213,10 +213,10 @@ public class SessionManager implements SessionService, AccountEventHandler {
 
     private static class ChangesAndReturnValue<T> {
         private final T returnValue;
-        private final List<Session> createdSessions;
-        private final List<Session> deletedSessions;
+        private final Set<Session> createdSessions;
+        private final Set<Session> deletedSessions;
 
-        public ChangesAndReturnValue(T returnValue, List<Session> createdSessions, List<Session> deletedSessions) {
+        public ChangesAndReturnValue(T returnValue, Set<Session> createdSessions, Set<Session> deletedSessions) {
             this.returnValue = returnValue;
             this.createdSessions = createdSessions;
             this.deletedSessions = deletedSessions;
@@ -226,11 +226,11 @@ public class SessionManager implements SessionService, AccountEventHandler {
             return returnValue;
         }
 
-        public List<Session> getCreatedSessions() {
+        public Set<Session> getCreatedSessions() {
             return createdSessions;
         }
 
-        public List<Session> getDeletedSessions() {
+        public Set<Session> getDeletedSessions() {
             return deletedSessions;
         }
     }

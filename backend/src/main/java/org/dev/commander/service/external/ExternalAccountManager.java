@@ -42,7 +42,9 @@ public class ExternalAccountManager implements ExternalAccountService {
 
     @Override
     public Account createAccount(Authentication authentication, Account account) throws IllegalArgumentException, ConflictException {
-        return accountService.createAccount(account);
+        account = accountService.createAccount(account);
+        account.setPassword(null);
+        return account;
     }
 
     @Override
