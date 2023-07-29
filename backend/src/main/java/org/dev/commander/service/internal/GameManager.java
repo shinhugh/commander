@@ -8,6 +8,7 @@ import org.dev.commander.websocket.IncomingMessageHandler;
 import org.dev.commander.websocket.IncomingMessageReceiver;
 import org.dev.commander.websocket.OutgoingMessageSender;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ public class GameManager implements IncomingMessageHandler {
     }
 
     @Override
-    public void handleIncomingMessage(IncomingMessage<?> message) {
+    public void handleIncomingMessage(Authentication authentication, IncomingMessage<?> message) {
         // TODO: Check type and return if wrong type
         // TODO: Handle game input
     }
@@ -139,6 +140,9 @@ public class GameManager implements IncomingMessageHandler {
         }
 
         private static GameState cloneGameState(GameState gameState) {
+            if (gameState == null) {
+                return null;
+            }
             GameState clone = new GameState();
             // TODO: Deep copy `gameState`
             return clone;

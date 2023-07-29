@@ -113,6 +113,9 @@ public class ExternalAccountManager implements ExternalAccountService {
     }
 
     private Account cloneAccount(Account account) {
+        if (account == null) {
+            return null;
+        }
         Account clone = new Account();
         clone.setId(account.getId());
         clone.setLoginName(account.getLoginName());

@@ -21,9 +21,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        if (registry.getClass() == ServletWebSocketHandlerRegistry.class) {
-            ((ServletWebSocketHandlerRegistry) registry).setOrder(-1);
-        }
+        ((ServletWebSocketHandlerRegistry) registry).setOrder(-1);
         registry
                 .addHandler(webSocketManager, "/api/ws")
                 .addInterceptors(securityHandshakeInterceptor);

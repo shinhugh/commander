@@ -176,6 +176,9 @@ public class AccountManager implements AccountService {
         }
 
         private Account cloneAccount(Account account) {
+            if (account == null) {
+                return null;
+            }
             Account clone = new Account();
             clone.setId(account.getId());
             clone.setLoginName(account.getLoginName());

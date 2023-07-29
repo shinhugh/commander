@@ -33,7 +33,7 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        if (authentication == null || authentication.getClass() != TokenAuthenticationToken.class) {
+        if (authentication == null) {
             return null;
         }
         String token = (String) authentication.getCredentials();
