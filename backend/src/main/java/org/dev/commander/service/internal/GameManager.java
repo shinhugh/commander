@@ -1,5 +1,6 @@
 package org.dev.commander.service.internal;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.dev.commander.model.IncomingMessage;
 import org.dev.commander.model.game.GameInput;
 import org.dev.commander.model.game.GameState;
@@ -27,6 +28,7 @@ public class GameManager implements IncomingMessageHandler {
     private static final long BROADCAST_INTERVAL = 1500; // TODO: Set to ~100
     private final OutgoingMessageSender outgoingMessageSender;
     private final GameEntry game = generateGameEntry();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GameManager(OutgoingMessageSender outgoingMessageSender, IncomingMessageReceiver incomingMessageReceiver) {
         this.outgoingMessageSender = outgoingMessageSender;
@@ -35,9 +37,11 @@ public class GameManager implements IncomingMessageHandler {
     }
 
     @Override
-    public void handleIncomingMessage(Authentication authentication, IncomingMessage<?> message) {
-        // TODO: Check type and return if wrong type
-        // TODO: Handle game input
+    public void handleIncomingMessage(Authentication authentication, IncomingMessage message) {
+        switch (message.getType()) {
+            case GAME_JOIN -> handleGameJoinMessage(authentication, message);
+            case GAME_INPUT -> handleGameInputMessage(authentication, message);
+        }
     }
 
     @Scheduled(fixedRate = PROCESS_INTERVAL)
@@ -49,6 +53,21 @@ public class GameManager implements IncomingMessageHandler {
     public void broadcast() {
         GameState snapshot = game.snapshot();
         // TODO: Use outgoingMessageSender to broadcast snapshot to all appropriate clients
+    }
+
+    private void handleGameJoinMessage(Authentication authentication, IncomingMessage message) {
+        // TODO: Implement
+    }
+
+    private void handleGameInputMessage(Authentication authentication, IncomingMessage message) {
+        GameInput input;
+        try {
+            input = objectMapper.convertValue(message.getPayload(), GameInput.class);
+        }
+        catch (IllegalArgumentException ex) {
+            return;
+        }
+        // TODO
     }
 
     private static GameEntry generateGameEntry() {

@@ -1,14 +1,14 @@
 package org.dev.commander.model.game;
 
 public class GameInput {
-    private long playerId;
+    private Long playerId;
     private Direction movementDirection;
 
-    public long getPlayerId() {
+    public Long getPlayerId() {
         return playerId;
     }
 
-    public void setPlayerId(long playerId) {
+    public void setPlayerId(Long playerId) {
         this.playerId = playerId;
     }
 

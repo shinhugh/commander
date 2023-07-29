@@ -113,7 +113,13 @@ public class WebSocketManager extends TextWebSocketHandler implements OutgoingMe
         if (authenticationToken == null) {
             return;
         }
-        IncomingMessage<?> incomingMessage = null; // TODO: Parse message as JSON into IncomingMessage
+        IncomingMessage incomingMessage;
+        try {
+            incomingMessage = objectMapper.readValue(message.getPayload(), IncomingMessage.class);
+        }
+        catch (JsonProcessingException ex) {
+            return;
+        }
         Set<IncomingMessageHandler> handlers;
         incomingMessageHandlersReadLock.lock();
         try {

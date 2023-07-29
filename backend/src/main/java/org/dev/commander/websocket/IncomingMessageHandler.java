@@ -4,5 +4,5 @@ import org.dev.commander.model.IncomingMessage;
 import org.springframework.security.core.Authentication;
 
 public interface IncomingMessageHandler {
-    void handleIncomingMessage(Authentication authentication, IncomingMessage<?> message);
+    void handleIncomingMessage(Authentication authentication, IncomingMessage message);
 }

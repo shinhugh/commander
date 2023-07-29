@@ -1,8 +1,12 @@
 package org.dev.commander.model;
 
-public class IncomingMessage<T> {
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.Map;
+
+public class IncomingMessage {
     private Type type;
-    private T payload;
+    private Map<String, ?> payload;
 
     public Type getType() {
         return type;
@@ -12,15 +16,18 @@ public class IncomingMessage<T> {
         this.type = type;
     }
 
-    public T getPayload() {
+    public Map<String, ?> getPayload() {
         return payload;
     }
 
-    public void setPayload(T payload) {
+    public void setPayload(Map<String, ?> payload) {
         this.payload = payload;
     }
 
     public enum Type {
-        GAME_ACTION
+        @JsonProperty("game_join")
+        GAME_JOIN,
+        @JsonProperty("game_input")
+        GAME_INPUT
     }
 }
