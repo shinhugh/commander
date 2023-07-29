@@ -1,7 +1,9 @@
 package org.dev.commander.service.internal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.dev.commander.model.Account;
 import org.dev.commander.model.IncomingMessage;
+import org.dev.commander.model.OutgoingMessage;
 import org.dev.commander.model.game.GameInput;
 import org.dev.commander.model.game.GameState;
 import org.dev.commander.model.game.Space;
@@ -12,9 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -22,16 +22,23 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.lang.System.currentTimeMillis;
 
+// TODO: Handle connection cutoff by removing mappings and removing player's character from map
 @Service
 public class GameManager implements IncomingMessageHandler {
     private static final long PROCESS_INTERVAL = 1000; // TODO: Set to ~50
     private static final long BROADCAST_INTERVAL = 1500; // TODO: Set to ~100
     private final OutgoingMessageSender outgoingMessageSender;
-    private final GameEntry game = generateGameEntry();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final GameEntry game = generateGameEntry();
+    private final Map<Long, String> accountIdToSessionTokenMap = new HashMap<>();
+    private final Lock accountIdToSessionTokenMapReadLock;
+    private final Lock accountIdToSessionTokenMapWriteLock;
 
     public GameManager(OutgoingMessageSender outgoingMessageSender, IncomingMessageReceiver incomingMessageReceiver) {
         this.outgoingMessageSender = outgoingMessageSender;
+        ReadWriteLock accountIdToSessionTokenMapReadWriteLock = new ReentrantReadWriteLock();
+        accountIdToSessionTokenMapReadLock = accountIdToSessionTokenMapReadWriteLock.readLock();
+        accountIdToSessionTokenMapWriteLock = accountIdToSessionTokenMapReadWriteLock.writeLock();
         incomingMessageReceiver.registerIncomingMessageHandler(this);
         game.resetProcessingPoint();
     }
@@ -65,11 +72,31 @@ public class GameManager implements IncomingMessageHandler {
     }
 
     private void handleGameJoin(Authentication authentication) {
-        // TODO: Implement
+        long accountId = ((Account) authentication.getPrincipal()).getId();
+        String sessionToken = (String) authentication.getCredentials();
+        String evictedSessionToken;
+        accountIdToSessionTokenMapWriteLock.lock();
+        try {
+            evictedSessionToken = accountIdToSessionTokenMap.get(accountId);
+            accountIdToSessionTokenMap.put(accountId, sessionToken);
+        }
+        finally {
+            accountIdToSessionTokenMapWriteLock.unlock();
+        }
+        if (evictedSessionToken != null) {
+            OutgoingMessage<Void> message = new OutgoingMessage<>();
+            message.setType(OutgoingMessage.Type.GAME_EVICTION);
+            outgoingMessageSender.sendObjectBySessionToken(evictedSessionToken, message);
+        }
     }
 
     private void handleGameInput(Authentication authentication, GameInput input) {
-        // TODO: Implement
+        Long playerId = input.getPlayerId();
+        if (playerId == null || playerId <= 0) {
+            return;
+        }
+        // TODO: Verify that authentication matches with playerId
+        game.input(input);
     }
 
     private static GameEntry generateGameEntry() {
@@ -154,6 +181,7 @@ public class GameManager implements IncomingMessageHandler {
 
         private static void processDuration(GameState gameState, long duration) {
             // TODO: Process `gameState` according to the passage of `duration` ms
+            // TODO: If a player hasn't queued a GameInput for a certain period of time, reset their character's movement
         }
 
         private static void processInput(GameState gameState, GameInput input) {

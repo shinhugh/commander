@@ -26,3 +26,17 @@ TODO
 
 - if a time period passes with no input from client, reset certain properties
   under corresponding player (e.g. movement)
+
+JSON
+
+{
+    "type": "game_join"
+}
+
+{
+    "type": "game_input",
+    "payload": {
+        "playerId": 1,
+        "movementDirection": "up"
+    }
+}
