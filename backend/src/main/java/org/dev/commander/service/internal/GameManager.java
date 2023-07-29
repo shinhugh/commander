@@ -39,8 +39,17 @@ public class GameManager implements IncomingMessageHandler {
     @Override
     public void handleIncomingMessage(Authentication authentication, IncomingMessage message) {
         switch (message.getType()) {
-            case GAME_JOIN -> handleGameJoinMessage(authentication, message);
-            case GAME_INPUT -> handleGameInputMessage(authentication, message);
+            case GAME_JOIN -> handleGameJoin(authentication);
+            case GAME_INPUT -> {
+                GameInput input;
+                try {
+                    input = objectMapper.convertValue(message.getPayload(), GameInput.class);
+                }
+                catch (IllegalArgumentException ex) {
+                    return;
+                }
+                handleGameInput(authentication, input);
+            }
         }
     }
 
@@ -55,19 +64,12 @@ public class GameManager implements IncomingMessageHandler {
         // TODO: Use outgoingMessageSender to broadcast snapshot to all appropriate clients
     }
 
-    private void handleGameJoinMessage(Authentication authentication, IncomingMessage message) {
+    private void handleGameJoin(Authentication authentication) {
         // TODO: Implement
     }
 
-    private void handleGameInputMessage(Authentication authentication, IncomingMessage message) {
-        GameInput input;
-        try {
-            input = objectMapper.convertValue(message.getPayload(), GameInput.class);
-        }
-        catch (IllegalArgumentException ex) {
-            return;
-        }
-        // TODO
+    private void handleGameInput(Authentication authentication, GameInput input) {
+        // TODO: Implement
     }
 
     private static GameEntry generateGameEntry() {
