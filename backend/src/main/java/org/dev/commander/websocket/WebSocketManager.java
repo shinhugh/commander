@@ -76,7 +76,10 @@ public class WebSocketManager extends TextWebSocketHandler implements OutgoingMe
     }
 
     @Override
-    public void sendObject(long accountId, Object object) throws IllegalArgumentException {
+    public void sendObjectByAccountId(long accountId, Object object) throws IllegalArgumentException {
+        if (accountId <= 0) {
+            throw new IllegalArgumentException();
+        }
         Set<String> sessionTokens = accountIdToSessionTokenMap.get(accountId);
         if (sessionTokens == null) {
             return;
@@ -105,6 +108,36 @@ public class WebSocketManager extends TextWebSocketHandler implements OutgoingMe
         }
         if (sessionTokens.isEmpty()) {
             accountIdToSessionTokenMap.remove(accountId);
+        }
+    }
+
+    @Override
+    public void sendObjectBySessionToken(String sessionToken, Object object) throws IllegalArgumentException {
+        if (sessionToken == null || sessionToken.length() == 0) {
+            throw new IllegalArgumentException();
+        }
+        WebSocketSession connection = sessionTokenToConnectionMap.get(sessionToken);
+        if (connection == null) {
+            return;
+        }
+        String message;
+        try {
+            message = objectMapper.writeValueAsString(object);
+        }
+        catch (JsonProcessingException ex) {
+            throw new IllegalArgumentException();
+        }
+        try {
+            connection.sendMessage(new TextMessage(message));
+        }
+        catch (IOException ex) {
+            // TODO: Remove mapping of account ID to session token
+            // TODO: Remove account ID key if value is empty
+            sessionTokenToConnectionMap.remove(sessionToken);
+            try {
+                connection.close();
+            }
+            catch (IOException ignored) { }
         }
     }
 

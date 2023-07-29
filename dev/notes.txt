@@ -20,3 +20,9 @@
 TODO
 
 - custom HTTP responses for all errors (404, 405, etc)
+
+- only allow one WebSocket connection per account to send/receive game data
+  multiple connections per account can exist, but only one will be used for game
+
+- if a time period passes with no input from client, reset certain properties
+  under corresponding player (e.g. movement)

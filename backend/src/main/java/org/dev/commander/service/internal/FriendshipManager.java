@@ -56,7 +56,7 @@ public class FriendshipManager implements FriendshipService, AccountEventHandler
         OutgoingMessage<Void> message = new OutgoingMessage<>();
         message.setType(OutgoingMessage.Type.FRIENDSHIPS_CHANGE);
         for (long accountId : affectedAccountIds) {
-            outgoingMessageSender.sendObject(accountId, message);
+            outgoingMessageSender.sendObjectByAccountId(accountId, message);
         }
     }
 
@@ -66,7 +66,7 @@ public class FriendshipManager implements FriendshipService, AccountEventHandler
         OutgoingMessage<Void> message = new OutgoingMessage<>();
         message.setType(OutgoingMessage.Type.FRIENDSHIPS_CHANGE);
         for (long accountId : affectedAccountIds) {
-            outgoingMessageSender.sendObject(accountId, message);
+            outgoingMessageSender.sendObjectByAccountId(accountId, message);
         }
     }
 
@@ -82,7 +82,7 @@ public class FriendshipManager implements FriendshipService, AccountEventHandler
         OutgoingMessage<Void> message = new OutgoingMessage<>();
         message.setType(OutgoingMessage.Type.FRIENDSHIPS_CHANGE);
         for (long accountId : affectedAccountIds) {
-            outgoingMessageSender.sendObject(accountId, message);
+            outgoingMessageSender.sendObjectByAccountId(accountId, message);
         }
     }
 
