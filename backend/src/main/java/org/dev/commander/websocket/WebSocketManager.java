@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.dev.commander.model.Account;
 import org.dev.commander.model.IncomingMessage;
+import org.dev.commander.model.OutgoingMessage;
 import org.dev.commander.model.Session;
 import org.dev.commander.security.TokenAuthenticationToken;
 import org.dev.commander.service.internal.SessionEventHandler;
@@ -26,7 +27,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Component
-public class WebSocketManager extends TextWebSocketHandler implements OutgoingMessageSender, IncomingMessageReceiver, SessionEventHandler {
+public class WebSocketManager extends TextWebSocketHandler implements MessageBroker, SessionEventHandler {
     private final Map<String, WebSocketSession> sessionTokenToConnectionMap = new HashMap<>();
     private final Lock sessionTokenToConnectionMapReadLock;
     private final Lock sessionTokenToConnectionMapWriteLock;
@@ -134,7 +135,7 @@ public class WebSocketManager extends TextWebSocketHandler implements OutgoingMe
     }
 
     @Override
-    public void sendObjectByAccountId(long accountId, Object object) throws IllegalArgumentException {
+    public void sendMessageByAccountId(long accountId, OutgoingMessage<?> object) throws IllegalArgumentException {
         if (accountId <= 0) {
             throw new IllegalArgumentException();
         }
@@ -181,7 +182,7 @@ public class WebSocketManager extends TextWebSocketHandler implements OutgoingMe
     }
 
     @Override
-    public void sendObjectBySessionToken(String sessionToken, Object object) throws IllegalArgumentException {
+    public void sendMessageBySessionToken(String sessionToken, OutgoingMessage<?> object) throws IllegalArgumentException {
         if (sessionToken == null || sessionToken.length() == 0) {
             throw new IllegalArgumentException();
         }

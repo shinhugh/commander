@@ -8,8 +8,7 @@ import org.dev.commander.model.game.GameInput;
 import org.dev.commander.model.game.GameState;
 import org.dev.commander.model.game.Space;
 import org.dev.commander.websocket.IncomingMessageHandler;
-import org.dev.commander.websocket.IncomingMessageReceiver;
-import org.dev.commander.websocket.OutgoingMessageSender;
+import org.dev.commander.websocket.MessageBroker;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -27,19 +26,19 @@ import static java.lang.System.currentTimeMillis;
 public class GameManager implements IncomingMessageHandler {
     private static final long PROCESS_INTERVAL = 1000; // TODO: Set to ~50
     private static final long BROADCAST_INTERVAL = 1500; // TODO: Set to ~100
-    private final OutgoingMessageSender outgoingMessageSender;
+    private final MessageBroker messageBroker;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final GameEntry game = generateGameEntry();
     private final Map<Long, String> accountIdToSessionTokenMap = new HashMap<>();
     private final Lock accountIdToSessionTokenMapReadLock;
     private final Lock accountIdToSessionTokenMapWriteLock;
 
-    public GameManager(OutgoingMessageSender outgoingMessageSender, IncomingMessageReceiver incomingMessageReceiver) {
-        this.outgoingMessageSender = outgoingMessageSender;
+    public GameManager(MessageBroker messageBroker) {
+        this.messageBroker = messageBroker;
         ReadWriteLock accountIdToSessionTokenMapReadWriteLock = new ReentrantReadWriteLock();
         accountIdToSessionTokenMapReadLock = accountIdToSessionTokenMapReadWriteLock.readLock();
         accountIdToSessionTokenMapWriteLock = accountIdToSessionTokenMapReadWriteLock.writeLock();
-        incomingMessageReceiver.registerIncomingMessageHandler(this);
+        this.messageBroker.registerIncomingMessageHandler(this);
         game.resetProcessingPoint();
     }
 
@@ -86,7 +85,7 @@ public class GameManager implements IncomingMessageHandler {
         if (evictedSessionToken != null) {
             OutgoingMessage<Void> message = new OutgoingMessage<>();
             message.setType(OutgoingMessage.Type.GAME_EVICTION);
-            outgoingMessageSender.sendObjectBySessionToken(evictedSessionToken, message);
+            messageBroker.sendMessageBySessionToken(evictedSessionToken, message);
         }
     }
 
