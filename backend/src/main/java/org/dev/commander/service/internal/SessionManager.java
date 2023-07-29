@@ -20,6 +20,7 @@ import static java.lang.System.currentTimeMillis;
 
 @Service
 public class SessionManager implements SessionService, AccountEventHandler {
+    private static final long PURGE_INTERVAL = 30000;
     private final Inner inner;
     private final Set<SessionEventHandler> sessionEventHandlers = new HashSet<>();
 
@@ -65,7 +66,7 @@ public class SessionManager implements SessionService, AccountEventHandler {
         handleChanges(changes);
     }
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = PURGE_INTERVAL)
     public void purgeExpiredSessions() {
         ChangesAndReturnValue<Void> changes = inner.purgeExpiredSessions();
         handleChanges(changes);

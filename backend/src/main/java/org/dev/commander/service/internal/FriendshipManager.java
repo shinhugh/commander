@@ -8,7 +8,7 @@ import org.dev.commander.repository.FriendshipRepository;
 import org.dev.commander.service.exception.ConflictException;
 import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.NotFoundException;
-import org.dev.commander.websocket.ObjectDispatcher;
+import org.dev.commander.websocket.OutgoingMessageSender;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -21,11 +21,11 @@ import static java.lang.System.currentTimeMillis;
 @Service
 public class FriendshipManager implements FriendshipService, AccountEventHandler {
     private final Inner inner;
-    private final ObjectDispatcher objectDispatcher;
+    private final OutgoingMessageSender outgoingMessageSender;
 
-    public FriendshipManager(Inner inner, ObjectDispatcher objectDispatcher, AccountService accountService) {
+    public FriendshipManager(Inner inner, OutgoingMessageSender outgoingMessageSender, AccountService accountService) {
         this.inner = inner;
-        this.objectDispatcher = objectDispatcher;
+        this.outgoingMessageSender = outgoingMessageSender;
         accountService.registerAccountEventHandler(this);
     }
 
@@ -56,7 +56,7 @@ public class FriendshipManager implements FriendshipService, AccountEventHandler
         OutgoingMessage<Void> message = new OutgoingMessage<>();
         message.setType(OutgoingMessage.Type.FRIENDSHIPS_CHANGE);
         for (long accountId : affectedAccountIds) {
-            objectDispatcher.sendObject(accountId, message);
+            outgoingMessageSender.sendObject(accountId, message);
         }
     }
 
@@ -66,7 +66,7 @@ public class FriendshipManager implements FriendshipService, AccountEventHandler
         OutgoingMessage<Void> message = new OutgoingMessage<>();
         message.setType(OutgoingMessage.Type.FRIENDSHIPS_CHANGE);
         for (long accountId : affectedAccountIds) {
-            objectDispatcher.sendObject(accountId, message);
+            outgoingMessageSender.sendObject(accountId, message);
         }
     }
 
@@ -82,7 +82,7 @@ public class FriendshipManager implements FriendshipService, AccountEventHandler
         OutgoingMessage<Void> message = new OutgoingMessage<>();
         message.setType(OutgoingMessage.Type.FRIENDSHIPS_CHANGE);
         for (long accountId : affectedAccountIds) {
-            objectDispatcher.sendObject(accountId, message);
+            outgoingMessageSender.sendObject(accountId, message);
         }
     }
 

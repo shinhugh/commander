@@ -21,12 +21,13 @@ import java.util.*;
 
 // TODO: Make thread-safe
 @Component
-public class WebSocketObjectDispatcher extends TextWebSocketHandler implements ObjectDispatcher, SessionEventHandler {
+public class WebSocketManager extends TextWebSocketHandler implements OutgoingMessageSender, IncomingMessageReceiver, SessionEventHandler {
     private final Map<String, WebSocketSession> sessionTokenToConnectionMap = new HashMap<>();
     private final Map<Long, Set<String>> accountIdToSessionTokenMap = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final Set<IncomingMessageHandler> incomingMessageHandlers = new HashSet<>();
 
-    public WebSocketObjectDispatcher(SessionService sessionService) {
+    public WebSocketManager(SessionService sessionService) {
         sessionService.registerSessionEventHandler(this);
     }
 
@@ -71,7 +72,7 @@ public class WebSocketObjectDispatcher extends TextWebSocketHandler implements O
     @Override
     public void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) {
         // TODO: Parse message as JSON into IncomingMessage
-        // TODO: Delegate to appropriate service
+        // TODO: Invoke all registered handlers
     }
 
     @Override
@@ -105,6 +106,11 @@ public class WebSocketObjectDispatcher extends TextWebSocketHandler implements O
         if (sessionTokens.isEmpty()) {
             accountIdToSessionTokenMap.remove(accountId);
         }
+    }
+
+    @Override
+    public void registerIncomingMessageHandler(IncomingMessageHandler incomingMessageHandler) {
+        incomingMessageHandlers.add(incomingMessageHandler);
     }
 
     @Override
