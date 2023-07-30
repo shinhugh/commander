@@ -33,7 +33,10 @@ const ui = {
         }
       },
       gameModule: {
-        root: document.getElementById('content_game_module')
+        root: document.getElementById('content_game_module'),
+        game: {
+          root: document.getElementById('content_game_module_game')
+        }
       }
     },
     topBar: {

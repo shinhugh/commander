@@ -5,3 +5,15 @@
   top: 4rem;
   left: 0;
 }
+
+#content_game_module_game {
+  /* TODO: Dynamic height and width with fixed 1:1 aspect ratio */
+  height: 700px;
+  width: 700px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  color: black;
+}
