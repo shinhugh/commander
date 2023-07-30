@@ -150,6 +150,7 @@ public class AccountManager implements AccountService {
             return new ChangesAndReturnValue<>(account, Set.of(account), null, null);
         }
 
+        // TODO: Interpret null fields as "do not modify"
         public ChangesAndReturnValue<Account> updateAccount(long id, Account account) {
             if (id <= 0) {
                 throw new IllegalArgumentException();

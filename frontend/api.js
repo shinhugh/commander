@@ -95,7 +95,7 @@ const api = {
       throw new Error(response.status);
     },
 
-    requestReadAccount: async (accountId) => {
+    requestReadAccounts: async (accountId) => {
       let parameters = null;
       if (accountId != null) {
         parameters = {
@@ -205,13 +205,14 @@ const api = {
         return;
       }
       api.internal.session = await api.internal.requestLogin(username, password);
-      api.internal.account = await api.internal.requestReadAccount(null);
+      const accounts = await api.internal.requestReadAccounts(null);
+      api.internal.account = accounts.length > 0 ? accounts[0] : null;
       await api.internal.connectSocket();
       await api.internal.updateFriends();
     },
 
-    readAccount: async (accountId) => {
-      return await api.internal.requestReadAccount(accountId);
+    readAccounts: async (accountId) => {
+      return await api.internal.requestReadAccounts(accountId);
     },
 
     createAccount: async (username, password, publicName) => {
@@ -278,8 +279,8 @@ const api = {
     await api.internal.login(username, password);
   },
 
-  readAccount: async (accountId) => {
-    return await api.internal.readAccount(accountId);
+  readAccounts: async (accountId) => {
+    return await api.internal.readAccounts(accountId);
   },
 
   createAccount: async (username, password, publicName) => {

@@ -17,12 +17,13 @@
 
 - database is not affected until method returns in a transactional class
 
+- Holding down WASD repeatedly sends GameInput with Direction enum
+  Server handles by interpreting each GameInput as move character in specified
+  direction for the next ~50ms
+
 TODO
 
 - custom HTTP responses for all errors (404, 405, etc)
-
-- only allow one WebSocket connection per account to send/receive game data
-  multiple connections per account can exist, but only one will be used for game
 
 - if a time period passes with no input from client, reset certain properties
   under corresponding player (e.g. movement)

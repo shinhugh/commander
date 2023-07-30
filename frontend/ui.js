@@ -431,22 +431,19 @@ const ui = {
       ui.notify('Cannot add self as friend');
       return;
     }
-    let account;
+    let accounts;
     try {
-      account = await api.readAccount(accountId);
+      accounts = await api.readAccounts(accountId);
     }
     catch (e) {
-      switch (e.message) {
-        case '404':
-          ui.notify('User not found');
-          break;
-        default:
-          ui.notify('Failed to search for user');
-          break;
-      }
+      ui.notify('Failed to search for user');
       return;
     }
-    ui.elements.overlay.friendsPage.addFriendSection.result.name.innerHTML = account.publicName;
+    if (accounts.length == 0) {
+      ui.notify('User not found');
+      return;
+    }
+    ui.elements.overlay.friendsPage.addFriendSection.result.name.innerHTML = accounts[0].publicName;
     ui.elements.overlay.friendsPage.addFriendSection.result.addFriendButton.removeEventListener('click', ui.state.addFriendButtonHandler);
     ui.state.addFriendButtonHandler = async () => {
       try {
@@ -475,9 +472,12 @@ const ui = {
   },
 
   parseInputAndUpdateAccount: async () => {
-    const username = ui.elements.overlay.modifyAccountPage.usernameInput.value;
-    const password = ui.elements.overlay.modifyAccountPage.passwordInput.value;
-    const publicName = ui.elements.overlay.modifyAccountPage.publicNameInput.value;
+    let username = ui.elements.overlay.modifyAccountPage.usernameInput.value;
+    username = username.length > 0 ? username : null;
+    let password = ui.elements.overlay.modifyAccountPage.passwordInput.value;
+    password = password.length > 0 ? password : null;
+    let publicName = ui.elements.overlay.modifyAccountPage.publicNameInput.value;
+    publicName = publicName.length > 0 ? publicName : null;
     try {
       await api.updateAccount(null, username, password, null, publicName);
     }

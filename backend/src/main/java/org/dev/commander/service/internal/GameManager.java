@@ -220,7 +220,6 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
 
         private static void processDuration(GameState gameState, long duration) {
             // TODO: Process `gameState` according to the passage of `duration` ms
-            // TODO: If a player hasn't queued a GameInput for a certain period of time, reset their character's movement
         }
 
         private static void processInput(GameState gameState, GameInput input) {
