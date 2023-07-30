@@ -23,8 +23,8 @@ import static java.lang.System.currentTimeMillis;
 
 @Service
 public class GameManager implements ConnectionEventHandler, IncomingMessageHandler {
-    private static final long PROCESS_INTERVAL = 1000; // TODO: Set to ~50
-    private static final long BROADCAST_INTERVAL = 1500; // TODO: Set to ~100
+    private static final long PROCESS_INTERVAL = 5000; // TODO: Set to ~50
+    private static final long BROADCAST_INTERVAL = 8000; // TODO: Set to ~100
     private final MessageBroker messageBroker;
     private final IdentificationService identificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
