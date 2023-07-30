@@ -119,7 +119,8 @@ public class SessionManager implements SessionService, AccountEventHandler {
             if (accountId != null && accountId > 0) {
                 if (sessions == null) {
                     sessions = new ArrayList<>(sessionRepository.findByAccountId(accountId));
-                } else {
+                }
+                else {
                     sessions = sessions.stream().filter(s -> Objects.equals(s.getAccountId(), accountId)).collect(Collectors.toList());
                 }
             }
@@ -171,7 +172,8 @@ public class SessionManager implements SessionService, AccountEventHandler {
             if (accountId != null && accountId > 0) {
                 if (sessions == null) {
                     sessions = new HashSet<>(sessionRepository.findByAccountId(accountId));
-                } else {
+                }
+                else {
                     sessions = sessions.stream().filter(s -> Objects.equals(s.getAccountId(), accountId)).collect(Collectors.toSet());
                 }
             }

@@ -129,7 +129,8 @@ public class FriendshipManager implements FriendshipService, AccountEventHandler
                 }
                 else if (outgoing) {
                     friendships.getOutgoingRequests().add(friendship);
-                } else {
+                }
+                else {
                     friendships.getIncomingRequests().add(friendship);
                 }
             }
@@ -159,7 +160,7 @@ public class FriendshipManager implements FriendshipService, AccountEventHandler
                 friendship = friendshipRepository.findById(key).orElse(null);
             }
             if (friendship == null) {
-                if (accountService.readAccounts(respondingAccountId, null).isEmpty()) {
+                if (accountService.readAccounts(requestingAccountId, null).isEmpty() || accountService.readAccounts(respondingAccountId, null).isEmpty()) {
                     throw new NotFoundException();
                 }
                 friendship = new Friendship();

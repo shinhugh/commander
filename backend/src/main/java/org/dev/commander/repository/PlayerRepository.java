@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface PlayerRepository extends CrudRepository<Player, Long> {
     Optional<Player> findByAccountId(long accountId);
+    void deleteByAccountId(long accountId);
 }

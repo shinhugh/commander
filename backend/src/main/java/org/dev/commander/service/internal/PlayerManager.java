@@ -3,12 +3,16 @@ package org.dev.commander.service.internal;
 import org.dev.commander.model.Account;
 import org.dev.commander.model.game.Player;
 import org.dev.commander.repository.PlayerRepository;
+import org.dev.commander.service.exception.IllegalArgumentException;
+import org.dev.commander.service.exception.NotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PlayerManager implements PlayerService, AccountEventHandler {
@@ -44,24 +48,69 @@ public class PlayerManager implements PlayerService, AccountEventHandler {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     private static class Inner {
         private final PlayerRepository playerRepository;
+        private final AccountService accountService;
 
-        public Inner(PlayerRepository playerRepository) {
+        public Inner(PlayerRepository playerRepository, AccountService accountService) {
             this.playerRepository = playerRepository;
+            this.accountService = accountService;
         }
 
         public List<Player> readPlayers(Long id, Long accountId) {
-            // TODO: Read players
-            throw new RuntimeException("Not implemented");
+            List<Player> players = null;
+            if (id != null && id > 0) {
+                players = new ArrayList<>();
+                Player player = playerRepository.findById(id).orElse(null);
+                if (player != null) {
+                    players.add(player);
+                }
+            }
+            if (accountId != null && accountId > 0) {
+                if (players == null) {
+                    players = new ArrayList<>();
+                    Player player = playerRepository.findByAccountId(accountId).orElse(null);
+                    if (player != null) {
+                        players.add(player);
+                    }
+                }
+                else {
+                    players = players.stream().filter(p -> p.getAccountId() == accountId).collect(Collectors.toList());
+                }
+            }
+            if (players == null) {
+                throw new IllegalArgumentException();
+            }
+            return players;
         }
 
         public Player createPlayer(Player player) {
-            // TODO: Create player
-            throw new RuntimeException("Not implemented");
+            player = clonePlayer(player);
+            if (!validatePlayer(player)) {
+                throw new IllegalArgumentException();
+            }
+            if (accountService.readAccounts(player.getAccountId(), null).isEmpty()) {
+                throw new NotFoundException();
+            }
+            player.setId(0);
+            return playerRepository.save(player);
         }
 
         public void handleDeleteAccount(Account deletedAccount) {
-            // TODO: Delete corresponding player
-            throw new RuntimeException("Not implemented");
+            playerRepository.deleteByAccountId(deletedAccount.getId());
+        }
+
+        private Player clonePlayer(Player player) {
+            Player clone = new Player();
+            clone.setId(player.getId());
+            clone.setAccountId(player.getAccountId());
+            return clone;
+        }
+
+        private boolean validatePlayer(Player player) {
+            long accountId = player.getAccountId();
+            if (accountId <= 0) {
+                return false;
+            }
+            return true;
         }
     }
 }

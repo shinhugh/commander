@@ -114,7 +114,8 @@ public class AccountManager implements AccountService {
                     if (account != null) {
                         accounts.add(account);
                     }
-                } else {
+                }
+                else {
                     accounts = accounts.stream().filter(a -> Objects.equals(a.getLoginName(), loginName)).collect(Collectors.toList());
                 }
             }
