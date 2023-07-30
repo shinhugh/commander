@@ -69,22 +69,7 @@ public class ExternalAccountManager implements ExternalAccountService {
         }
         account = cloneAccount(account);
         if (!identificationService.verifyAtLeastOneAuthority(authentication, Set.of("ADMIN"))) {
-            account.setAuthorities(existingAccount.getAuthorities());
-        }
-        if (account.getId() == null) {
-            account.setId(existingAccount.getId());
-        }
-        if (account.getLoginName() == null) {
-            account.setLoginName(existingAccount.getLoginName());
-        }
-        if (account.getPassword() == null) {
-            account.setPassword(existingAccount.getPassword());
-        }
-        if (account.getAuthorities() == null) {
-            account.setAuthorities(existingAccount.getAuthorities());
-        }
-        if (account.getPublicName() == null) {
-            account.setPublicName(existingAccount.getPublicName());
+            account.setAuthorities(null);
         }
         account = accountService.updateAccount(id, account);
         account.setPassword(null);

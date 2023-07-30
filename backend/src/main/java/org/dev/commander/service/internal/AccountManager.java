@@ -141,7 +141,7 @@ public class AccountManager implements AccountService {
             account = cloneAccount(account);
             int authorities = (int) Math.pow(2, USER_AUTHORITY_ORDER);
             account.setAuthorities(authorities);
-            if (!validateAccount(account)) {
+            if (!validateAccount(account, false)) {
                 throw new IllegalArgumentException();
             }
             account.setId(null);
@@ -150,20 +150,27 @@ public class AccountManager implements AccountService {
             return new ChangesAndReturnValue<>(account, Set.of(account), null, null);
         }
 
-        // TODO: Interpret null fields as "do not modify"
         public ChangesAndReturnValue<Account> updateAccount(long id, Account account) {
             if (id <= 0) {
                 throw new IllegalArgumentException();
             }
             Account existingAccount = accountRepository.findById(id).orElseThrow(NotFoundException::new);
-            if (!validateAccount(account)) {
+            if (!validateAccount(account, true)) {
                 throw new IllegalArgumentException();
             }
             Account oldAccount = cloneAccount(existingAccount);
-            existingAccount.setLoginName(account.getLoginName());
-            existingAccount.setPassword(passwordEncoder.encode(account.getPassword()));
-            existingAccount.setAuthorities(account.getAuthorities());
-            existingAccount.setPublicName(account.getPublicName());
+            if (account.getLoginName() != null) {
+                existingAccount.setLoginName(account.getLoginName());
+            }
+            if (account.getPassword() != null) {
+                existingAccount.setPassword(passwordEncoder.encode(account.getPassword()));
+            }
+            if (account.getAuthorities() != null) {
+                existingAccount.setAuthorities(account.getAuthorities());
+            }
+            if (account.getPublicName() != null) {
+                existingAccount.setPublicName(account.getPublicName());
+            }
             return new ChangesAndReturnValue<>(existingAccount, null, Map.of(oldAccount, existingAccount), null);
         }
 
@@ -189,21 +196,24 @@ public class AccountManager implements AccountService {
             return clone;
         }
 
-        private boolean validateAccount(Account account) {
+        private boolean validateAccount(Account account, boolean allowNullFields) {
             String loginName = account.getLoginName();
             String password = account.getPassword();
             Integer authorities = account.getAuthorities();
             String publicName = account.getPublicName();
-            if (loginName == null || loginName.length() < LOGIN_NAME_LENGTH_MIN || loginName.length() > LOGIN_NAME_LENGTH_MAX || !verifyAllowedChars(loginName, LOGIN_NAME_ALLOWED_CHARS)) {
+            if (!allowNullFields && (loginName == null || password == null || authorities == null || publicName == null)) {
                 return false;
             }
-            if (password == null || password.length() < PASSWORD_LENGTH_MIN || password.length() > PASSWORD_LENGTH_MAX || !verifyAllowedChars(password, PASSWORD_ALLOWED_CHARS)) {
+            if (loginName != null && (loginName.length() < LOGIN_NAME_LENGTH_MIN || loginName.length() > LOGIN_NAME_LENGTH_MAX || !verifyAllowedChars(loginName, LOGIN_NAME_ALLOWED_CHARS))) {
                 return false;
             }
-            if (authorities == null || (authorities >> USER_AUTHORITY_ORDER) % 2 != 1 || authorities > AUTHORITIES_MAX) {
+            if (password != null && (password.length() < PASSWORD_LENGTH_MIN || password.length() > PASSWORD_LENGTH_MAX || !verifyAllowedChars(password, PASSWORD_ALLOWED_CHARS))) {
                 return false;
             }
-            if (publicName == null || publicName.length() < PUBLIC_NAME_LENGTH_MIN || publicName.length() > PUBLIC_NAME_LENGTH_MAX || !verifyAllowedChars(publicName, PUBLIC_NAME_ALLOWED_CHARS)) {
+            if (authorities != null && ((authorities >> USER_AUTHORITY_ORDER) % 2 != 1 || authorities > AUTHORITIES_MAX)) {
+                return false;
+            }
+            if (publicName != null && (publicName.length() < PUBLIC_NAME_LENGTH_MIN || publicName.length() > PUBLIC_NAME_LENGTH_MAX || !verifyAllowedChars(publicName, PUBLIC_NAME_ALLOWED_CHARS))) {
                 return false;
             }
             return true;
