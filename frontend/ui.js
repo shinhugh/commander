@@ -204,18 +204,6 @@ const ui = {
     ui.show(ui.elements.overlay.modifyAccountPage.root);
   },
 
-  addActiveGameEntry: (gameEntry) => {
-    // TODO: Implement
-  },
-
-  addInvitationEntry: (gameEntry) => {
-    // TODO: Implement
-  },
-
-  addPendingGameEntry: (gameEntry) => {
-    // TODO: Implement
-  },
-
   addIncomingFriendshipRequestEntry: (friendEntry) => {
     const entry = ui.elements.overlay.friendsPage.incomingFriendshipRequestEntryTemplate.cloneNode(true);
     entry.getElementsByClassName('friend_entry_name')[0].innerHTML = friendEntry.friendAccount.publicName;
@@ -475,7 +463,6 @@ const ui = {
     ui.showLoginPage();
     ui.showLoginModule();
     ui.elements.content.loginModule.pages.loginPage.usernameInput.focus();
-    // TODO: Implement function for refreshing lists
     ui.refreshFriendsList();
     ui.clearFriendshipSearchResult();
     ui.elements.overlay.friendsPage.addFriendSection.idInput.value = null;
@@ -496,6 +483,11 @@ const ui = {
 
   handleFriendshipChange: () => {
     ui.refreshFriendsList();
+  },
+
+  handleGameSnapshot: (snapshot) => {
+    // TODO: Paint representation of game state
+    console.log(snapshot); // DEBUG
   }
 
 };
@@ -635,7 +627,7 @@ ui.hide(ui.elements.overlay.modifyAccountPage.root);
 ui.hide(ui.elements.notification.root);
 
 (async () => {
-  await api.initialize(ui.handleFriendshipChange);
+  await api.initialize(ui.handleFriendshipChange, ui.handleGameSnapshot);
   if (api.getLoggedInAccount() != null) {
     ui.handleLogin();
   } else {

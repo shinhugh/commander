@@ -8,11 +8,15 @@ const api = {
 
     friendshipChangeHandler: null,
 
+    gameSnapshotHandler: null,
+
     session: null,
 
     account: null,
 
     friends: null,
+
+    gameState: null,
 
     connectSocket: async () => {
       const url = 'ws://' + api.internal.endpoint + '/api/ws';
@@ -48,9 +52,10 @@ const api = {
     },
 
     sendObjectOverSocket: (obj) => {
-      if (api.internal.socket != null) {
-        api.internal.socket.send(JSON.stringify(obj));
+      if (api.internal.socket == null) {
+        throw new Error('No socket connection');
       }
+      api.internal.socket.send(JSON.stringify(obj));
     },
 
     makeRequest: async (path, method, parameters, contentType, body) => {
@@ -190,6 +195,12 @@ const api = {
       throw new Error(response.status);
     },
 
+    sendJoinGame: () => {
+      api.internal.sendObjectOverSocket({
+        type: 'game_join'
+      });
+    },
+
     logout: async () => {
       if (api.internal.session == null) {
         return;
@@ -205,10 +216,15 @@ const api = {
         return;
       }
       api.internal.session = await api.internal.requestLogin(username, password);
-      const accounts = await api.internal.requestReadAccounts(null);
+      const accounts = await api.internal.readAccounts(null);
       api.internal.account = accounts.length > 0 ? accounts[0] : null;
-      await api.internal.connectSocket();
-      await api.internal.updateFriends();
+      await Promise.allSettled([
+        (async () => {
+          await api.internal.connectSocket();
+          api.internal.joinGame();
+        })(),
+        api.internal.updateFriends()
+      ]);
     },
 
     readAccounts: async (accountId) => {
@@ -227,10 +243,26 @@ const api = {
       await api.internal.requestDeleteAccount(accountId);
     },
 
+    listFriendships: async () => {
+      await api.internal.requestListFriendships();
+    },
+
+    requestFriendship: async (accountId) => {
+      await api.internal.requestRequestFriendship(accountId);
+    },
+
+    terminateFriendship: async (accountId) => {
+      await api.internal.requestTerminateFriendship(accountId);
+    },
+
+    joinGame: () => {
+      api.internal.sendJoinGame();
+    },
+
     updateFriends: async () => {
       if (api.internal.session != null) {
         try {
-          api.internal.friends = await api.internal.requestListFriendships();
+          api.internal.friends = await api.internal.listFriendships();
         }
         catch {
           api.internal.friends = null;
@@ -242,7 +274,12 @@ const api = {
 
     handleFriendshipChange: async () => {
       await api.internal.updateFriends();
-      api.internal.friendshipChangeHandler();
+      api.internal.friendshipChangeHandler?.();
+    },
+
+    handleGameSnapshot: (snapshot) => {
+      api.internal.gameState = snapshot;
+      api.internal.gameSnapshotHandler?.(snapshot);
     },
 
     handleSocketEvent: async e => {
@@ -250,11 +287,15 @@ const api = {
         case 'friendships_change':
           await api.internal.handleFriendshipChange();
           break;
+        case 'game_snapshot':
+          api.internal.handleGameSnapshot(e.payload);
+          break;
       }
     },
 
-    initialize: async (friendshipChangeHandler) => {
+    initialize: async (friendshipChangeHandler, gameSnapshotHandler) => {
       api.internal.friendshipChangeHandler = friendshipChangeHandler;
+      api.internal.gameSnapshotHandler = gameSnapshotHandler;
       try {
         await api.internal.login(null, null);
       }
@@ -296,15 +337,19 @@ const api = {
   },
 
   requestFriendship: async (accountId) => {
-    await api.internal.requestRequestFriendship(accountId);
+    await api.internal.requestFriendship(accountId);
   },
 
   terminateFriendship: async (accountId) => {
-    await api.internal.requestTerminateFriendship(accountId);
+    await api.internal.terminateFriendship(accountId);
   },
 
-  initialize: async (friendshipChangeHandler) => {
-    await api.internal.initialize(friendshipChangeHandler);
+  joinGame: () => {
+    api.internal.joinGame();
+  },
+
+  initialize: async (friendshipChangeHandler, gameSnapshotHandler) => {
+    await api.internal.initialize(friendshipChangeHandler, gameSnapshotHandler);
   }
 
 };
