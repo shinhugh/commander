@@ -7,6 +7,7 @@ import org.dev.commander.model.OutgoingMessage;
 import org.dev.commander.model.game.GameInput;
 import org.dev.commander.model.game.GameState;
 import org.dev.commander.model.game.Space;
+import org.dev.commander.websocket.ConnectionEventHandler;
 import org.dev.commander.websocket.IncomingMessageHandler;
 import org.dev.commander.websocket.MessageBroker;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,9 +22,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.lang.System.currentTimeMillis;
 
-// TODO: Handle connection cutoff by removing mappings and removing player's character from map
 @Service
-public class GameManager implements IncomingMessageHandler {
+public class GameManager implements ConnectionEventHandler, IncomingMessageHandler {
     private static final long PROCESS_INTERVAL = 1000; // TODO: Set to ~50
     private static final long BROADCAST_INTERVAL = 1500; // TODO: Set to ~100
     private final MessageBroker messageBroker;
@@ -38,8 +38,17 @@ public class GameManager implements IncomingMessageHandler {
         ReadWriteLock accountIdToSessionTokenMapReadWriteLock = new ReentrantReadWriteLock();
         accountIdToSessionTokenMapReadLock = accountIdToSessionTokenMapReadWriteLock.readLock();
         accountIdToSessionTokenMapWriteLock = accountIdToSessionTokenMapReadWriteLock.writeLock();
+        this.messageBroker.registerConnectionEventHandler(this);
         this.messageBroker.registerIncomingMessageHandler(this);
         game.resetProcessingPoint();
+    }
+
+    @Override
+    public void handleEstablishedConnection(Authentication authentication) { }
+
+    @Override
+    public void handleClosedConnection(Authentication authentication) {
+        // TODO: Handle connection cutoff by removing mappings and removing player's character from map
     }
 
     @Override

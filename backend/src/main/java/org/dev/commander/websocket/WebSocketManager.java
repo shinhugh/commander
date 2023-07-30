@@ -35,6 +35,9 @@ public class WebSocketManager extends TextWebSocketHandler implements MessageBro
     private final Lock accountIdToSessionTokenMapReadLock;
     private final Lock accountIdToSessionTokenMapWriteLock;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final Set<ConnectionEventHandler> connectionEventHandlers = new HashSet<>();
+    private final Lock connectionEventHandlersReadLock;
+    private final Lock connectionEventHandlersWriteLock;
     private final Set<IncomingMessageHandler> incomingMessageHandlers = new HashSet<>();
     private final Lock incomingMessageHandlersReadLock;
     private final Lock incomingMessageHandlersWriteLock;
@@ -46,6 +49,9 @@ public class WebSocketManager extends TextWebSocketHandler implements MessageBro
         ReadWriteLock accountIdToSessionTokenMapReadWriteLock = new ReentrantReadWriteLock();
         accountIdToSessionTokenMapReadLock = accountIdToSessionTokenMapReadWriteLock.readLock();
         accountIdToSessionTokenMapWriteLock = accountIdToSessionTokenMapReadWriteLock.writeLock();
+        ReadWriteLock connectionEventHandlersReadWriteLock = new ReentrantReadWriteLock();
+        connectionEventHandlersReadLock = connectionEventHandlersReadWriteLock.readLock();
+        connectionEventHandlersWriteLock = connectionEventHandlersReadWriteLock.writeLock();
         ReadWriteLock incomingMessageHandlersReadWriteLock = new ReentrantReadWriteLock();
         incomingMessageHandlersReadLock = incomingMessageHandlersReadWriteLock.readLock();
         incomingMessageHandlersWriteLock = incomingMessageHandlersReadWriteLock.writeLock();
@@ -54,16 +60,16 @@ public class WebSocketManager extends TextWebSocketHandler implements MessageBro
 
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) {
-        TokenAuthenticationToken authenticationToken = (TokenAuthenticationToken) session.getPrincipal();
-        if (authenticationToken == null) {
+        TokenAuthenticationToken authentication = (TokenAuthenticationToken) session.getPrincipal();
+        if (authentication == null) {
             try {
                 session.close();
             }
             catch (IOException ignored) { }
             return;
         }
-        String sessionToken = (String) authenticationToken.getCredentials();
-        long accountId = ((Account) authenticationToken.getPrincipal()).getId();
+        String sessionToken = (String) authentication.getCredentials();
+        long accountId = ((Account) authentication.getPrincipal()).getId();
         sessionTokenToConnectionMapWriteLock.lock();
         try {
             sessionTokenToConnectionMap.put(sessionToken, session);
@@ -79,16 +85,27 @@ public class WebSocketManager extends TextWebSocketHandler implements MessageBro
         finally {
             accountIdToSessionTokenMapWriteLock.unlock();
         }
+        Set<ConnectionEventHandler> handlers;
+        connectionEventHandlersReadLock.lock();
+        try {
+            handlers = new HashSet<>(connectionEventHandlers);
+        }
+        finally {
+            connectionEventHandlersReadLock.unlock();
+        }
+        for (ConnectionEventHandler handler : handlers) {
+            handler.handleEstablishedConnection(authentication);
+        }
     }
 
     @Override
     public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus status) {
-        TokenAuthenticationToken authenticationToken = (TokenAuthenticationToken) session.getPrincipal();
-        if (authenticationToken == null) {
+        TokenAuthenticationToken authentication = (TokenAuthenticationToken) session.getPrincipal();
+        if (authentication == null) {
             return;
         }
-        String sessionToken = (String) authenticationToken.getCredentials();
-        long accountId = ((Account) authenticationToken.getPrincipal()).getId();
+        String sessionToken = (String) authentication.getCredentials();
+        long accountId = ((Account) authentication.getPrincipal()).getId();
         accountIdToSessionTokenMapWriteLock.lock();
         try {
             accountIdToSessionTokenMap.get(accountId).remove(sessionToken);
@@ -106,12 +123,23 @@ public class WebSocketManager extends TextWebSocketHandler implements MessageBro
         finally {
             sessionTokenToConnectionMapWriteLock.unlock();
         }
+        Set<ConnectionEventHandler> handlers;
+        connectionEventHandlersReadLock.lock();
+        try {
+            handlers = new HashSet<>(connectionEventHandlers);
+        }
+        finally {
+            connectionEventHandlersReadLock.unlock();
+        }
+        for (ConnectionEventHandler handler : handlers) {
+            handler.handleClosedConnection(authentication);
+        }
     }
 
     @Override
     public void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) {
-        TokenAuthenticationToken authenticationToken = (TokenAuthenticationToken) session.getPrincipal();
-        if (authenticationToken == null) {
+        TokenAuthenticationToken authentication = (TokenAuthenticationToken) session.getPrincipal();
+        if (authentication == null) {
             return;
         }
         IncomingMessage incomingMessage;
@@ -130,7 +158,18 @@ public class WebSocketManager extends TextWebSocketHandler implements MessageBro
             incomingMessageHandlersReadLock.unlock();
         }
         for (IncomingMessageHandler handler : handlers) {
-            handler.handleIncomingMessage(authenticationToken, incomingMessage);
+            handler.handleIncomingMessage(authentication, incomingMessage);
+        }
+    }
+
+    @Override
+    public void registerConnectionEventHandler(ConnectionEventHandler connectionEventHandler) {
+        connectionEventHandlersWriteLock.lock();
+        try {
+            connectionEventHandlers.add(connectionEventHandler);
+        }
+        finally {
+            connectionEventHandlersWriteLock.unlock();
         }
     }
 
