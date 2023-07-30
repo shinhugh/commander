@@ -49,7 +49,18 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
 
     @Override
     public void handleClosedConnection(Authentication authentication) {
-        // TODO: Handle connection cutoff by removing mappings and removing player's character from map
+        long accountId = identificationService.identifyAccount(authentication).getId();
+        String sessionToken = (String) authentication.getCredentials();
+        accountIdToSessionTokenMapWriteLock.lock();
+        try {
+            if (Objects.equals(accountIdToSessionTokenMap.get(accountId), sessionToken)) {
+                accountIdToSessionTokenMap.remove(accountId);
+            }
+        }
+        finally {
+            accountIdToSessionTokenMapWriteLock.unlock();
+        }
+        // TODO: Game state logic (e.g. remove character)
     }
 
     @Override
@@ -77,7 +88,20 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     @Scheduled(fixedRate = BROADCAST_INTERVAL)
     public void broadcast() {
         GameState snapshot = game.snapshot();
-        // TODO: Use outgoingMessageSender to broadcast snapshot to all appropriate clients
+        OutgoingMessage<GameState> message = new OutgoingMessage<>();
+        message.setType(OutgoingMessage.Type.GAME_SNAPSHOT);
+        message.setPayload(snapshot);
+        Set<String> sessionTokens;
+        accountIdToSessionTokenMapReadLock.lock();
+        try {
+            sessionTokens = new HashSet<>(accountIdToSessionTokenMap.values());
+        }
+        finally {
+            accountIdToSessionTokenMapReadLock.unlock();
+        }
+        for (String sessionToken : sessionTokens) {
+            messageBroker.sendMessageBySessionToken(sessionToken, message);
+        }
     }
 
     private void handleGameJoin(Authentication authentication) {
@@ -92,6 +116,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         finally {
             accountIdToSessionTokenMapWriteLock.unlock();
         }
+        // TODO: Game state logic (e.g. spawn character)
         if (evictedSessionToken != null) {
             OutgoingMessage<Void> message = new OutgoingMessage<>();
             message.setType(OutgoingMessage.Type.GAME_EVICTION);
@@ -100,6 +125,11 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     }
 
     private void handleGameInput(Authentication authentication, GameInput input) {
+        long accountId = identificationService.identifyAccount(authentication).getId();
+        String sessionToken = (String) authentication.getCredentials();
+        if (!Objects.equals(accountIdToSessionTokenMap.get(accountId), sessionToken)) {
+            return;
+        }
         Long playerId = input.getPlayerId();
         if (playerId == null || playerId <= 0) {
             return;

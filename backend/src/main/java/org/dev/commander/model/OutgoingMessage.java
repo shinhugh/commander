@@ -28,6 +28,8 @@ public class OutgoingMessage<T> {
         @JsonProperty("friendships_change")
         FRIENDSHIPS_CHANGE,
         @JsonProperty("game_eviction")
-        GAME_EVICTION
+        GAME_EVICTION,
+        @JsonProperty("game_snapshot")
+        GAME_SNAPSHOT
     }
 }
