@@ -1,0 +1,7 @@
+#content_game_module {
+  height: calc(100% - 4rem);
+  width: 100%;
+  position: absolute;
+  top: 4rem;
+  left: 0;
+}

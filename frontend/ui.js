@@ -32,17 +32,12 @@ const ui = {
           }
         }
       },
-      lobbyModule: {
-        root: document.getElementById('content_lobby_module'),
-        activeGamesList: document.getElementById('content_lobby_module_active_games_list'),
-        invitationsList: document.getElementById('content_lobby_module_invitations_list'),
-        pendingGamesList: document.getElementById('content_lobby_module_pending_games_list'),
-        gameEntryTemplate: document.getElementsByClassName('game_entry')[0]
+      gameModule: {
+        root: document.getElementById('content_game_module')
       }
     },
     topBar: {
       root: document.getElementById('top_bar'),
-      createGameButton: document.getElementById('top_bar_create_game_button'),
       friendsButton: document.getElementById('top_bar_friends_button'),
       accountButton: document.getElementById('top_bar_account_button'),
       logoutButton: document.getElementById('top_bar_logout_button')
@@ -50,18 +45,6 @@ const ui = {
     overlay: {
       root: document.getElementById('overlay'),
       window: document.getElementById('overlay_window'),
-      activeGameEntryPage: {
-        root: document.getElementById('overlay_active_game_entry_page')
-      },
-      invitationEntryPage: {
-        root: document.getElementById('overlay_invitation_entry_page')
-      },
-      pendingGameEntryPage: {
-        root: document.getElementById('overlay_pending_game_entry_page')
-      },
-      createGamePage: {
-        root: document.getElementById('overlay_create_game_page')
-      },
       friendsPage: {
         root: document.getElementById('overlay_friends_page'),
         friendsList: document.getElementById('overlay_friends_page_friends_list'),
@@ -132,7 +115,7 @@ const ui = {
 
   clearContent: () => {
     ui.hide(ui.elements.content.loginModule.root);
-    ui.hide(ui.elements.content.lobbyModule.root);
+    ui.hide(ui.elements.content.gameModule.root);
   },
 
   hideOverlay: () => {
@@ -144,10 +127,6 @@ const ui = {
   },
 
   clearOverlay: () => {
-    ui.hide(ui.elements.overlay.activeGameEntryPage.root);
-    ui.hide(ui.elements.overlay.invitationEntryPage.root);
-    ui.hide(ui.elements.overlay.pendingGameEntryPage.root);
-    ui.hide(ui.elements.overlay.createGamePage.root);
     ui.hide(ui.elements.overlay.friendsPage.root);
     ui.hide(ui.elements.overlay.accountPage.root);
     ui.hide(ui.elements.overlay.modifyAccountPage.root);
@@ -176,20 +155,18 @@ const ui = {
     ui.show(ui.elements.content.loginModule.root);
   },
 
-  showLobbyModule: () => {
+  showGameModule: () => {
     ui.clearContent();
-    ui.show(ui.elements.content.lobbyModule.root);
+    ui.show(ui.elements.content.gameModule.root);
   },
 
   hideTopBarButtons: () => {
-    ui.hide(ui.elements.topBar.createGameButton);
     ui.hide(ui.elements.topBar.friendsButton);
     ui.hide(ui.elements.topBar.accountButton);
     ui.hide(ui.elements.topBar.logoutButton);
   },
 
   showTopBarButtons: () => {
-    ui.show(ui.elements.topBar.createGameButton);
     ui.show(ui.elements.topBar.friendsButton);
     ui.show(ui.elements.topBar.accountButton);
     ui.show(ui.elements.topBar.logoutButton);
@@ -207,26 +184,6 @@ const ui = {
     ui.show(ui.elements.content.loginModule.pages.createAccountPage.root);
     ui.unselect(ui.elements.content.loginModule.tabs.loginTab);
     ui.select(ui.elements.content.loginModule.tabs.createAccountTab);
-  },
-
-  showActiveGameEntryPage: () => {
-    ui.clearOverlay();
-    ui.show(ui.elements.overlay.activeGameEntryPage.root);
-  },
-
-  showInvitationEntryPage: () => {
-    ui.clearOverlay();
-    ui.show(ui.elements.overlay.invitationEntryPage.root);
-  },
-
-  showPendingGameEntryPage: () => {
-    ui.clearOverlay();
-    ui.show(ui.elements.overlay.pendingGameEntryPage.root);
-  },
-
-  showCreateGamePage: () => {
-    ui.clearOverlay();
-    ui.show(ui.elements.overlay.createGamePage.root);
   },
 
   showFriendsPage: () => {
@@ -516,9 +473,6 @@ const ui = {
     ui.showLoginModule();
     ui.elements.content.loginModule.pages.loginPage.usernameInput.focus();
     // TODO: Implement function for refreshing lists
-    ui.elements.content.lobbyModule.activeGamesList.innerHTML = null;
-    ui.elements.content.lobbyModule.invitationsList.innerHTML = null;
-    ui.elements.content.lobbyModule.pendingGamesList.innerHTML = null;
     ui.refreshFriendsList();
     ui.clearFriendshipSearchResult();
     ui.elements.overlay.friendsPage.addFriendSection.idInput.value = null;
@@ -527,7 +481,7 @@ const ui = {
   },
 
   handleLogin: () => {
-    ui.showLobbyModule();
+    ui.showGameModule();
     ui.showTopBarButtons();
     ui.refreshAccountPage();
     ui.elements.content.loginModule.pages.loginPage.usernameInput.value = null;
@@ -583,10 +537,6 @@ ui.elements.content.loginModule.pages.createAccountPage.publicNameInput.addEvent
 });
 ui.elements.content.loginModule.pages.createAccountPage.createAccountButton.addEventListener('click', async () => {
   await ui.parseInputAndCreateAccount();
-});
-ui.elements.topBar.createGameButton.addEventListener('click', () => {
-  ui.showCreateGamePage();
-  ui.showOverlay();
 });
 ui.elements.topBar.friendsButton.addEventListener('click', () => {
   ui.refreshFriendsList();
@@ -667,17 +617,11 @@ ui.elements.overlay.modifyAccountPage.saveButton.addEventListener('click', async
 ui.hide(ui.elements.content.loginModule.root);
 ui.hide(ui.elements.content.loginModule.pages.loginPage.root);
 ui.hide(ui.elements.content.loginModule.pages.createAccountPage.root);
-ui.hide(ui.elements.content.lobbyModule.root);
-ui.elements.content.lobbyModule.gameEntryTemplate.remove();
-ui.hide(ui.elements.topBar.createGameButton);
+ui.hide(ui.elements.content.gameModule.root);
 ui.hide(ui.elements.topBar.friendsButton);
 ui.hide(ui.elements.topBar.accountButton);
 ui.hide(ui.elements.topBar.logoutButton);
 ui.hide(ui.elements.overlay.root);
-ui.hide(ui.elements.overlay.activeGameEntryPage.root);
-ui.hide(ui.elements.overlay.invitationEntryPage.root);
-ui.hide(ui.elements.overlay.pendingGameEntryPage.root);
-ui.hide(ui.elements.overlay.createGamePage.root);
 ui.hide(ui.elements.overlay.friendsPage.root);
 ui.cloak(ui.elements.overlay.friendsPage.addFriendSection.result.root);
 ui.elements.overlay.friendsPage.incomingFriendshipRequestEntryTemplate.remove();

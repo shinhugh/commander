@@ -10,7 +10,8 @@
   <link rel="stylesheet" href="common.css">
   <link rel="stylesheet" href="base.css">
   <link rel="stylesheet" href="login.css">
-  <link rel="stylesheet" href="lobby.css">
+  <link rel="stylesheet" href="game.css">
+  <link rel="stylesheet" href="overlay.css">
   <script src="api.js" defer></script>
   <script src="ui.js" defer></script>
 </head>
@@ -59,38 +60,9 @@
       </div>
     </div>
 
-    <!-- Lobby module -->
-    <div id="content_lobby_module">
-      <div>
-        <div class="lobby_section">
-          <p class="title">Active games</p>
-          <div class="list_wrapper">
-            <div id="content_lobby_module_active_games_list" class="list">
-              <div class="game_entry list_entry">
-                <p class="game_entry_players"></p>
-                <div class="game_entry_right_strip">
-                  <p class="game_entry_next_turn"></p>
-                  <p class="game_entry_time"></p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div class="lobby_section">
-          <p class="title">Invitations</p>
-          <div class="list_wrapper">
-            <div id="content_lobby_module_invitations_list" class="list"></div>
-          </div>
-        </div>
-        <div class="lobby_section">
-          <p class="title">Pending games</p>
-          <div class="list_wrapper">
-            <div id="content_lobby_module_pending_games_list" class="list"></div>
-          </div>
-        </div>
-      </div>
+    <!-- Game module -->
+    <div id="content_game_module">
+      <!-- TODO -->
     </div>
 
   </div>
@@ -101,7 +73,6 @@
       <p>Commander</p>
     </div>
     <div>
-      <button id="top_bar_create_game_button">Create game</button>
       <button id="top_bar_friends_button">Friends</button>
       <button id="top_bar_account_button">Account</button>
       <button id="top_bar_logout_button">Logout</button>
@@ -111,22 +82,6 @@
   <!-- Overlay -->
   <div id="overlay">
     <div id="overlay_window">
-
-      <div id="overlay_active_game_entry_page">
-        <p>Game</p>
-      </div>
-
-      <div id="overlay_invitation_entry_page">
-        <p>Invitation</p>
-      </div>
-
-      <div id="overlay_pending_game_entry_page">
-        <p>Pending game</p>
-      </div>
-
-      <div id="overlay_create_game_page">
-        <p>New game</p>
-      </div>
 
       <div id="overlay_friends_page">
         <p class="title">Friends</p>
