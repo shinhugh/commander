@@ -26,8 +26,6 @@ TODO
 - frontend API publishes events to UI on login/logout and socket
   connection/close
 
-- function names in JS (joinGame() vs inputGameInput())
-
 JSON
 
 {

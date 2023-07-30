@@ -199,18 +199,16 @@ const api = {
       throw new Error(response.status);
     },
 
-    sendJoinGame: () => {
+    sendGameJoin: () => {
       api.internal.sendObjectOverSocket({
         type: 'game_join'
       });
     },
 
-    sendGameInput: (movementDirection) => {
+    sendGameInput: (input) => {
       api.internal.sendObjectOverSocket({
         type: 'game_input',
-        payload: {
-          movementDirection: movementDirection
-        }
+        payload: input
       });
     },
 
@@ -269,23 +267,23 @@ const api = {
     },
 
     joinGame: () => {
-      api.internal.sendJoinGame();
+      api.internal.sendGameJoin();
     },
 
-    inputGameInput: (movementDirection) => {
-      api.internal.sendGameInput(movementDirection);
-    },
-
-    inputDirectionalGameInput: (direction) => {
+    moveCharacter: (direction) => {
       if (direction === api.internal.lastDirectionalGameInput) {
         return;
       }
       clearInterval(api.internal.directionalGameInputInterval);
       api.internal.lastDirectionalGameInput = direction;
       if (api.internal.lastDirectionalGameInput != null) {
-        api.internal.inputGameInput(api.internal.lastDirectionalGameInput);
+        const gameInput = {
+          type: 'move',
+          movementDirection: api.internal.lastDirectionalGameInput
+        };
+        api.internal.sendGameInput(gameInput);
         api.internal.directionalGameInputInterval = setInterval(() => {
-          api.internal.inputGameInput(api.internal.lastDirectionalGameInput);
+          api.internal.sendGameInput(gameInput);
         }, 15);
       }
     },
@@ -379,8 +377,8 @@ const api = {
     api.internal.joinGame();
   },
 
-  inputDirectionalGameInput: (direction) => {
-    api.internal.inputDirectionalGameInput(direction);
+  moveCharacter: (direction) => {
+    api.internal.moveCharacter(direction);
   },
 
   initialize: async (friendshipChangeHandler, gameSnapshotHandler) => {

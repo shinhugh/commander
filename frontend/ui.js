@@ -565,7 +565,7 @@ const ui = {
         direction = 'right';
       }
     }
-    api.inputDirectionalGameInput(direction);
+    api.moveCharacter(direction);
   },
 
   handleKeyDownInGame: (e) => {

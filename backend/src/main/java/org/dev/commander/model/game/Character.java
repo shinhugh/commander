@@ -1,5 +1,6 @@
 package org.dev.commander.model.game;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -9,9 +10,12 @@ public class Character {
     private double height;
     private double posX;
     private double posY;
+    @JsonIgnore
     private Direction pendingMovementDirection;
+    @JsonIgnore
     private long pendingMovementDuration;
     private Direction orientationDirection;
+    @JsonIgnore
     private double movementSpeed;
 
     public long getPlayerId() {
