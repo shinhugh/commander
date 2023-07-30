@@ -2,7 +2,15 @@ const ui = {
 
   state: {
     notificationTimeoutId: null,
-    addFriendButtonHandler: null
+    addFriendButtonHandler: null,
+    keyWPressed: false,
+    keyWPressTime: null,
+    keyAPressed: false,
+    keyAPressTime: null,
+    keySPressed: false,
+    keySPressTime: null,
+    keyDPressed: false,
+    keyDPressTime: null
   },
 
   elements: {
@@ -460,6 +468,8 @@ const ui = {
   handleLogout: () => {
     ui.hideOverlay();
     ui.hideTopBarButtons();
+    document.removeEventListener('keydown', ui.handleKeyDownInGame);
+    document.removeEventListener('keyup', ui.handleKeyUpInGame);
     ui.showLoginPage();
     ui.showLoginModule();
     ui.elements.content.loginModule.pages.loginPage.usernameInput.focus();
@@ -474,6 +484,8 @@ const ui = {
     ui.showGameModule();
     ui.showTopBarButtons();
     ui.refreshAccountPage();
+    document.addEventListener('keydown', ui.handleKeyDownInGame);
+    document.addEventListener('keyup', ui.handleKeyUpInGame);
     ui.elements.content.loginModule.pages.loginPage.usernameInput.value = null;
     ui.elements.content.loginModule.pages.loginPage.passwordInput.value = null;
     ui.elements.content.loginModule.pages.createAccountPage.usernameInput.value = null;
@@ -487,7 +499,131 @@ const ui = {
 
   handleGameSnapshot: (snapshot) => {
     // TODO: Paint representation of game state
-    console.log(snapshot); // DEBUG
+    const boxHeight = ui.elements.content.gameModule.game.root.offsetHeight;
+    const boxWidth = ui.elements.content.gameModule.game.root.offsetWidth;
+    const scaleY = boxHeight / snapshot.space.height;
+    const scaleX = boxWidth / snapshot.space.width;
+    ui.elements.content.gameModule.game.root.innerHTML = null;
+    for (const character of Object.values(snapshot.characters)) {
+      const characterBox = document.createElement('div');
+      characterBox.style.position = 'absolute';
+      characterBox.style.top = (scaleY * character.posY) + 'px';
+      characterBox.style.left = (scaleX * character.posX) + 'px';
+      characterBox.style.height = (scaleY * character.height) + 'px';
+      characterBox.style.width = (scaleX * character.width) + 'px';
+      characterBox.style.background = 'green';
+      ui.elements.content.gameModule.game.root.appendChild(characterBox);
+    }
+  },
+
+  sendDirectionalCommand: () => {
+    let vertical = 0;
+    if (ui.state.keyWPressed && ui.state.keySPressed) {
+      if (ui.state.keyWPressTime <= ui.state.keySPressTime) {
+        vertical = 1;
+      } else {
+        vertical = -1;
+      }
+    } else if (ui.state.keyWPressed) {
+      vertical = -1;
+    } else if (ui.state.keySPressed) {
+      vertical = 1;
+    }
+    let horizontal = 0;
+    if (ui.state.keyAPressed && ui.state.keyDPressed) {
+      if (ui.state.keyAPressTime <= ui.state.keyDPressTime) {
+        horizontal = 1;
+      } else {
+        horizontal = -1;
+      }
+    } else if (ui.state.keyAPressed) {
+      horizontal = -1;
+    } else if (ui.state.keyDPressed) {
+      horizontal = 1;
+    }
+    let direction = null;
+    if (vertical < 0) {
+      if (horizontal < 0) {
+        direction = 'up_left';
+      } else if (horizontal > 0) {
+        direction = 'up_right';
+      } else {
+        direction = 'up';
+      }
+    } else if (vertical > 0) {
+      if (horizontal < 0) {
+        direction = 'down_left';
+      } else if (horizontal > 0) {
+        direction = 'down_right';
+      } else {
+        direction = 'down';
+      }
+    } else {
+      if (horizontal < 0) {
+        direction = 'left';
+      } else if (horizontal > 0) {
+        direction = 'right';
+      }
+    }
+    api.inputDirectionalGameInput(direction);
+  },
+
+  handleKeyDownInGame: (e) => {
+    switch (e.key) {
+      case 'w':
+        if (!ui.state.keyWPressed) {
+          ui.state.keyWPressTime = Date.now();
+          ui.state.keyWPressed = true;
+        }
+        ui.sendDirectionalCommand();
+        break;
+      case 'a':
+        if (!ui.state.keyAPressed) {
+          ui.state.keyAPressTime = Date.now();
+          ui.state.keyAPressed = true;
+        }
+        ui.sendDirectionalCommand();
+        break;
+      case 's':
+        if (!ui.state.keySPressed) {
+          ui.state.keySPressTime = Date.now();
+          ui.state.keySPressed = true;
+        }
+        ui.sendDirectionalCommand();
+        break;
+      case 'd':
+        if (!ui.state.keyDPressed) {
+          ui.state.keyDPressTime = Date.now();
+          ui.state.keyDPressed = true;
+        }
+        ui.sendDirectionalCommand();
+        break;
+    }
+  },
+
+  handleKeyUpInGame: (e) => {
+    switch (e.key) {
+      case 'w':
+        ui.state.keyWPressed = false;
+        ui.state.keyWPressTime = null;
+        ui.sendDirectionalCommand();
+        break;
+      case 'a':
+        ui.state.keyAPressed = false;
+        ui.state.keyAPressTime = null;
+        ui.sendDirectionalCommand();
+        break;
+      case 's':
+        ui.state.keySPressed = false;
+        ui.state.keySPressTime = null;
+        ui.sendDirectionalCommand();
+        break;
+      case 'd':
+        ui.state.keyDPressed = false;
+        ui.state.keyDPressTime = null;
+        ui.sendDirectionalCommand();
+        break;
+    }
   }
 
 };

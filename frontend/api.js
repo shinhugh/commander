@@ -18,6 +18,10 @@ const api = {
 
     gameState: null,
 
+    lastDirectionalGameInput: null,
+
+    directionalGameInputInterval: null,
+
     connectSocket: async () => {
       const url = 'ws://' + api.internal.endpoint + '/api/ws';
       const socket = new WebSocket(url);
@@ -201,6 +205,15 @@ const api = {
       });
     },
 
+    sendGameInput: (movementDirection) => {
+      api.internal.sendObjectOverSocket({
+        type: 'game_input',
+        payload: {
+          movementDirection: movementDirection
+        }
+      });
+    },
+
     logout: async () => {
       if (api.internal.session == null) {
         return;
@@ -257,6 +270,24 @@ const api = {
 
     joinGame: () => {
       api.internal.sendJoinGame();
+    },
+
+    inputGameInput: (movementDirection) => {
+      api.internal.sendGameInput(movementDirection);
+    },
+
+    inputDirectionalGameInput: (direction) => {
+      if (direction === api.internal.lastDirectionalGameInput) {
+        return;
+      }
+      clearInterval(api.internal.directionalGameInputInterval);
+      api.internal.lastDirectionalGameInput = direction;
+      if (api.internal.lastDirectionalGameInput != null) {
+        api.internal.inputGameInput(api.internal.lastDirectionalGameInput);
+        api.internal.directionalGameInputInterval = setInterval(() => {
+          api.internal.inputGameInput(api.internal.lastDirectionalGameInput);
+        }, 15);
+      }
     },
 
     updateFriends: async () => {
@@ -346,6 +377,10 @@ const api = {
 
   joinGame: () => {
     api.internal.joinGame();
+  },
+
+  inputDirectionalGameInput: (direction) => {
+    api.internal.inputDirectionalGameInput(direction);
   },
 
   initialize: async (friendshipChangeHandler, gameSnapshotHandler) => {

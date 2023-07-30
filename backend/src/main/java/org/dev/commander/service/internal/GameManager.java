@@ -3,9 +3,8 @@ package org.dev.commander.service.internal;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.dev.commander.model.IncomingMessage;
 import org.dev.commander.model.OutgoingMessage;
-import org.dev.commander.model.game.GameInput;
-import org.dev.commander.model.game.GameState;
-import org.dev.commander.model.game.Space;
+import org.dev.commander.model.game.Character;
+import org.dev.commander.model.game.*;
 import org.dev.commander.websocket.ConnectionEventHandler;
 import org.dev.commander.websocket.IncomingMessageHandler;
 import org.dev.commander.websocket.MessageBroker;
@@ -23,8 +22,8 @@ import static java.lang.System.currentTimeMillis;
 
 @Service
 public class GameManager implements ConnectionEventHandler, IncomingMessageHandler {
-    private static final long PROCESS_INTERVAL = 5000; // TODO: Set to ~50
-    private static final long BROADCAST_INTERVAL = 8000; // TODO: Set to ~100
+    private static final long PROCESS_INTERVAL = 13;
+    private static final long BROADCAST_INTERVAL = 15;
     private final MessageBroker messageBroker;
     private final IdentificationService identificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -99,7 +98,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         finally {
             accountIdToSessionTokenMapReadLock.unlock();
         }
-        for (String sessionToken : sessionTokens) {
+        for (String sessionToken : sessionTokens) { // TODO: Parallelize
             messageBroker.sendMessageBySessionToken(sessionToken, message);
         }
     }
@@ -130,27 +129,44 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         if (!Objects.equals(accountIdToSessionTokenMap.get(accountId), sessionToken)) {
             return;
         }
-        Long playerId = input.getPlayerId();
-        if (playerId == null || playerId <= 0) {
-            return;
-        }
-        // TODO: Verify that authentication matches with playerId
+        // TODO: Use authentication to populate playerId
+        input.setPlayerId(1L); // TODO: For testing only
         game.input(input);
     }
 
     private static GameEntry generateGameEntry() {
+        // TODO: Populate GameEntry from persistent storage
+        return generateMockGameEntry(); // TODO: For testing only
+    }
+
+    // TODO: For testing only
+    private static GameEntry generateMockGameEntry() {
+        Player player = new Player();
+        player.setId(1);
+        player.setAccountId(1);
+        Set<Player> players = new HashSet<>();
+        players.add(player);
         Space space = new Space();
-        space.setWidth(25);
-        space.setHeight(25);
+        space.setWidth(8);
+        space.setHeight(8);
+        Character character = new Character();
+        character.setPlayerId(1);
+        character.setWidth(1);
+        character.setHeight(1);
+        character.setMovementSpeed(1);
+        Map<Long, Character> characters = new HashMap<>();
+        characters.put(player.getId(), character);
         GameState gameState = new GameState();
-        // TODO: Initialize game state
-        gameState.setPlayers(new HashSet<>());
+        gameState.setPlayers(players);
         gameState.setSpace(space);
-        gameState.setCharacters(new HashSet<>());
+        gameState.setCharacters(characters);
         return new GameEntry(gameState);
     }
 
     private static class GameEntry {
+        private static final double DIAGONAL_MOVEMENT_SCALING = 0.707107;
+        private static final double SPEED_SCALING = 0.005;
+        private static final long MOVEMENT_DURATION_PER_INPUT = 25;
         private long lastProcessTime;
         private final List<GameInput> inputQueue = new ArrayList<>();
         private final Lock inputQueueLock = new ReentrantLock();
@@ -219,11 +235,75 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         }
 
         private static void processDuration(GameState gameState, long duration) {
-            // TODO: Process `gameState` according to the passage of `duration` ms
+            double spaceWidth = gameState.getSpace().getWidth();
+            double spaceHeight = gameState.getSpace().getHeight();
+            for (Character character : gameState.getCharacters().values()) {
+                long movementDuration = Math.min(character.getPendingMovementDuration(), duration);
+                if (movementDuration > 0) {
+                    double movementDistance = SPEED_SCALING * character.getMovementSpeed() * movementDuration;
+                    double deltaPosX = 0;
+                    double deltaPosY = 0;
+                    switch (character.getPendingMovementDirection()) {
+                        case UP -> {
+                            deltaPosY = -1 * movementDistance;
+                        }
+                        case UP_RIGHT -> {
+                            deltaPosX = DIAGONAL_MOVEMENT_SCALING * movementDistance;
+                            deltaPosY = -1 * DIAGONAL_MOVEMENT_SCALING * movementDistance;
+                        }
+                        case RIGHT -> {
+                            deltaPosX = movementDistance;
+                        }
+                        case DOWN_RIGHT -> {
+                            deltaPosX = DIAGONAL_MOVEMENT_SCALING * movementDistance;
+                            deltaPosY = DIAGONAL_MOVEMENT_SCALING * movementDistance;
+                        }
+                        case DOWN -> {
+                            deltaPosY = movementDistance;
+                        }
+                        case DOWN_LEFT -> {
+                            deltaPosX = -1 * DIAGONAL_MOVEMENT_SCALING * movementDistance;
+                            deltaPosY = DIAGONAL_MOVEMENT_SCALING * movementDistance;
+                        }
+                        case LEFT -> {
+                            deltaPosX = -1 * movementDistance;
+                        }
+                        case UP_LEFT -> {
+                            deltaPosX = -1 * DIAGONAL_MOVEMENT_SCALING * movementDistance;
+                            deltaPosY = -1 * DIAGONAL_MOVEMENT_SCALING * movementDistance;
+                        }
+                    }
+                    double posX = character.getPosX() + deltaPosX;
+                    if (posX < 0) {
+                        posX = 0;
+                    }
+                    else if (posX + character.getWidth() > spaceWidth) {
+                        posX = spaceWidth - character.getWidth();
+                    }
+                    double posY = character.getPosY() + deltaPosY;
+                    if (posY < 0) {
+                        posY = 0;
+                    }
+                    else if (posY + character.getHeight() > spaceHeight) {
+                        posY = spaceHeight - character.getHeight();
+                    }
+                    character.setPosX(posX);
+                    character.setPosY(posY);
+                    character.setPendingMovementDuration(character.getPendingMovementDuration() - movementDuration);
+                }
+            }
         }
 
         private static void processInput(GameState gameState, GameInput input) {
-            // TODO: Apply changes to `gameState` as described by `input`
+            if (input.getMovementDirection() != null) {
+                Character character = gameState.getCharacters().get(input.getPlayerId());
+                if (character == null) {
+                    return;
+                }
+                character.setPendingMovementDirection(input.getMovementDirection());
+                character.setPendingMovementDuration(MOVEMENT_DURATION_PER_INPUT);
+                character.setOrientationDirection(input.getMovementDirection());
+            }
         }
 
         private static GameState cloneGameState(GameState gameState) {
@@ -231,7 +311,35 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                 return null;
             }
             GameState clone = new GameState();
-            // TODO: Deep copy `gameState`
+            Set<Player> players = new HashSet<>();
+            for (Player player : gameState.getPlayers()) {
+                Player playerClone = new Player();
+                playerClone.setId(player.getId());
+                playerClone.setAccountId(player.getAccountId());;
+                players.add(playerClone);
+            }
+            clone.setPlayers(players);
+            Space space = new Space();
+            space.setWidth(gameState.getSpace().getWidth());
+            space.setHeight(gameState.getSpace().getHeight());
+            clone.setSpace(space);
+            Map<Long, Character> characters = new HashMap<>();
+            for (Map.Entry<Long, Character> characterEntry : gameState.getCharacters().entrySet()) {
+                long playerId = characterEntry.getKey();
+                Character character = characterEntry.getValue();
+                Character characterClone = new Character();
+                characterClone.setPlayerId(character.getPlayerId());
+                characterClone.setWidth(character.getWidth());
+                characterClone.setHeight(character.getHeight());
+                characterClone.setPosX(character.getPosX());
+                characterClone.setPosY(character.getPosY());
+                characterClone.setPendingMovementDirection(character.getPendingMovementDirection());
+                characterClone.setPendingMovementDuration(character.getPendingMovementDuration());
+                characterClone.setMovementSpeed(character.getMovementSpeed());
+                characterClone.setOrientationDirection(character.getOrientationDirection());
+                characters.put(playerId, characterClone);
+            }
+            clone.setCharacters(characters);
             return clone;
         }
     }

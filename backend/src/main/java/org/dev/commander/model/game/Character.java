@@ -6,9 +6,10 @@ public class Character {
     private double height;
     private double posX;
     private double posY;
-    private Direction movementDirection;
+    private Direction pendingMovementDirection;
+    private long pendingMovementDuration;
+    private Direction orientationDirection;
     private double movementSpeed;
-    private boolean isMoving;
 
     public long getPlayerId() {
         return playerId;
@@ -50,12 +51,28 @@ public class Character {
         this.posY = posY;
     }
 
-    public Direction getMovementDirection() {
-        return movementDirection;
+    public Direction getPendingMovementDirection() {
+        return pendingMovementDirection;
     }
 
-    public void setMovementDirection(Direction movementDirection) {
-        this.movementDirection = movementDirection;
+    public void setPendingMovementDirection(Direction pendingMovementDirection) {
+        this.pendingMovementDirection = pendingMovementDirection;
+    }
+
+    public long getPendingMovementDuration() {
+        return pendingMovementDuration;
+    }
+
+    public void setPendingMovementDuration(long pendingMovementDuration) {
+        this.pendingMovementDuration = pendingMovementDuration;
+    }
+
+    public Direction getOrientationDirection() {
+        return orientationDirection;
+    }
+
+    public void setOrientationDirection(Direction orientationDirection) {
+        this.orientationDirection = orientationDirection;
     }
 
     public double getMovementSpeed() {
@@ -64,13 +81,5 @@ public class Character {
 
     public void setMovementSpeed(double movementSpeed) {
         this.movementSpeed = movementSpeed;
-    }
-
-    public boolean isMoving() {
-        return isMoving;
-    }
-
-    public void setMoving(boolean moving) {
-        isMoving = moving;
     }
 }

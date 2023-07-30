@@ -1,11 +1,12 @@
 package org.dev.commander.model.game;
 
+import java.util.Map;
 import java.util.Set;
 
 public class GameState {
     private Set<Player> players;
     private Space space;
-    private Set<Character> characters;
+    private Map<Long, Character> characters;
 
     public Set<Player> getPlayers() {
         return players;
@@ -23,11 +24,11 @@ public class GameState {
         this.space = space;
     }
 
-    public Set<Character> getCharacters() {
+    public Map<Long, Character> getCharacters() {
         return characters;
     }
 
-    public void setCharacters(Set<Character> characters) {
+    public void setCharacters(Map<Long, Character> characters) {
         this.characters = characters;
     }
 }
