@@ -5,7 +5,6 @@ import org.dev.commander.repository.AccountRepository;
 import org.dev.commander.service.exception.ConflictException;
 import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.NotFoundException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -31,25 +30,13 @@ public class AccountManager implements AccountService {
 
     @Override
     public Account createAccount(Account account) throws IllegalArgumentException, ConflictException {
-        ChangesAndReturnValue<Account> changes;
-        try {
-            changes = inner.createAccount(account);
-        }
-        catch (DataIntegrityViolationException ex) {
-            throw new ConflictException();
-        }
+        ChangesAndReturnValue<Account> changes = inner.createAccount(account);
         return handleChanges(changes);
     }
 
     @Override
     public Account updateAccount(long id, Account account) throws IllegalArgumentException, NotFoundException, ConflictException {
-        ChangesAndReturnValue<Account> changes;
-        try {
-            changes = inner.updateAccount(id, account);
-        }
-        catch (DataIntegrityViolationException ex) {
-            throw new ConflictException();
-        }
+        ChangesAndReturnValue<Account> changes = inner.updateAccount(id, account);
         return handleChanges(changes);
     }
 
@@ -144,6 +131,9 @@ public class AccountManager implements AccountService {
             if (!validateAccount(account, false)) {
                 throw new IllegalArgumentException();
             }
+            if (accountRepository.existsByLoginNameIgnoreCase(account.getLoginName())) {
+                throw new ConflictException();
+            }
             account.setId(null);
             account.setPassword(passwordEncoder.encode(account.getPassword()));
             account = accountRepository.save(account);
@@ -157,6 +147,9 @@ public class AccountManager implements AccountService {
             Account existingAccount = accountRepository.findById(id).orElseThrow(NotFoundException::new);
             if (!validateAccount(account, true)) {
                 throw new IllegalArgumentException();
+            }
+            if (account.getLoginName() != null && accountRepository.existsByLoginNameIgnoreCase(account.getLoginName())) {
+                throw new ConflictException();
             }
             Account oldAccount = cloneAccount(existingAccount);
             if (account.getLoginName() != null) {

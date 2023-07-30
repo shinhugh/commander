@@ -1,3 +1,5 @@
+- CREATE DATABASE commander COLLATE utf8mb4_bin;
+
 - Modified /usr/lib/systemd/system/tomcat10.service:
   Line 12:
   From:

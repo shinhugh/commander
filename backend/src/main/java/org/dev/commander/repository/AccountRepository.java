@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface AccountRepository extends CrudRepository<Account, Long> {
     Optional<Account> findByLoginName(String loginName);
+    boolean existsByLoginNameIgnoreCase(String loginName);
 }
