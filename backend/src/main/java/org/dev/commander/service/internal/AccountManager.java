@@ -148,8 +148,11 @@ public class AccountManager implements AccountService {
             if (!validateAccount(account, true)) {
                 throw new IllegalArgumentException();
             }
-            if (account.getLoginName() != null && accountRepository.existsByLoginNameIgnoreCase(account.getLoginName())) {
-                throw new ConflictException();
+            if (account.getLoginName() != null) {
+                List<Account> conflictAccounts = accountRepository.findByLoginNameIgnoreCase(account.getLoginName());
+                if (!conflictAccounts.isEmpty() && !Objects.equals(conflictAccounts.get(0).getId(), existingAccount.getId())) {
+                    throw new ConflictException();
+                }
             }
             Account oldAccount = cloneAccount(existingAccount);
             if (account.getLoginName() != null) {

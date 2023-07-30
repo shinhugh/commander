@@ -651,6 +651,7 @@ ui.elements.overlay.modifyAccountPage.deleteButton.addEventListener('click', asy
     ui.notify('Failed to delete account');
     return;
   }
+  ui.notify('Successfully deleted account');
   try {
     await api.logout();
   }
