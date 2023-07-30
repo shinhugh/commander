@@ -18,6 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 
 @Component
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
@@ -34,7 +35,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         String authorizationHeader = request.getHeader("authorization");
         Cookie xAuthorizationCookie = null;
         if (request.getCookies() != null) {
-            xAuthorizationCookie = Arrays.stream(request.getCookies()).filter(c -> "X-Authorization".equals(c.getName())).findFirst().orElse(null);
+            xAuthorizationCookie = Arrays.stream(request.getCookies()).filter(c -> Objects.equals("X-Authorization", c.getName())).findFirst().orElse(null);
         }
         String token;
         if (authorizationHeader != null && authorizationHeader.indexOf("Bearer") == 0 && authorizationHeader.length() >= 8) {

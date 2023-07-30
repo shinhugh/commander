@@ -13,8 +13,7 @@ public class IdentificationManager implements IdentificationService {
         if (authentication == null) {
             return null;
         }
-        Object principal = authentication.getPrincipal();
-        return (Account) principal;
+        return (Account) authentication.getPrincipal();
     }
 
     @Override

@@ -2,11 +2,11 @@ package org.dev.commander.websocket;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.dev.commander.model.Account;
 import org.dev.commander.model.IncomingMessage;
 import org.dev.commander.model.OutgoingMessage;
 import org.dev.commander.model.Session;
 import org.dev.commander.security.TokenAuthenticationToken;
+import org.dev.commander.service.internal.IdentificationService;
 import org.dev.commander.service.internal.SessionEventHandler;
 import org.dev.commander.service.internal.SessionService;
 import org.dev.commander.websocket.exception.IllegalArgumentException;
@@ -28,6 +28,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Component
 public class WebSocketManager extends TextWebSocketHandler implements MessageBroker, SessionEventHandler {
+    private final IdentificationService identificationService;
     private final Map<String, WebSocketSession> sessionTokenToConnectionMap = new HashMap<>();
     private final Lock sessionTokenToConnectionMapReadLock;
     private final Lock sessionTokenToConnectionMapWriteLock;
@@ -42,7 +43,8 @@ public class WebSocketManager extends TextWebSocketHandler implements MessageBro
     private final Lock incomingMessageHandlersReadLock;
     private final Lock incomingMessageHandlersWriteLock;
 
-    public WebSocketManager(SessionService sessionService) {
+    public WebSocketManager(IdentificationService identificationService, SessionService sessionService) {
+        this.identificationService = identificationService;
         ReadWriteLock sessionTokenToConnectionMapReadWriteLock = new ReentrantReadWriteLock();
         sessionTokenToConnectionMapReadLock = sessionTokenToConnectionMapReadWriteLock.readLock();
         sessionTokenToConnectionMapWriteLock = sessionTokenToConnectionMapReadWriteLock.writeLock();
@@ -69,7 +71,7 @@ public class WebSocketManager extends TextWebSocketHandler implements MessageBro
             return;
         }
         String sessionToken = (String) authentication.getCredentials();
-        long accountId = ((Account) authentication.getPrincipal()).getId();
+        long accountId = identificationService.identifyAccount(authentication).getId();
         sessionTokenToConnectionMapWriteLock.lock();
         try {
             sessionTokenToConnectionMap.put(sessionToken, session);
@@ -105,7 +107,7 @@ public class WebSocketManager extends TextWebSocketHandler implements MessageBro
             return;
         }
         String sessionToken = (String) authentication.getCredentials();
-        long accountId = ((Account) authentication.getPrincipal()).getId();
+        long accountId = identificationService.identifyAccount(authentication).getId();
         accountIdToSessionTokenMapWriteLock.lock();
         try {
             accountIdToSessionTokenMap.get(accountId).remove(sessionToken);

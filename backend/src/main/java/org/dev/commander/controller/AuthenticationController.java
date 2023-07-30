@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -37,7 +38,7 @@ public class AuthenticationController {
         boolean all = false;
         if (parameters.containsKey("all")) {
             String value = parameters.get("all");
-            if ("".equals(value) || "true".equals(value) || "1".equals(value)) {
+            if (Objects.equals("", value) || Objects.equals("true", value) || Objects.equals("1", value)) {
                 all = true;
             }
         }

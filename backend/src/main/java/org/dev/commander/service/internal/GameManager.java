@@ -1,7 +1,6 @@
 package org.dev.commander.service.internal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.dev.commander.model.Account;
 import org.dev.commander.model.IncomingMessage;
 import org.dev.commander.model.OutgoingMessage;
 import org.dev.commander.model.game.GameInput;
@@ -27,14 +26,16 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     private static final long PROCESS_INTERVAL = 1000; // TODO: Set to ~50
     private static final long BROADCAST_INTERVAL = 1500; // TODO: Set to ~100
     private final MessageBroker messageBroker;
+    private final IdentificationService identificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final GameEntry game = generateGameEntry();
     private final Map<Long, String> accountIdToSessionTokenMap = new HashMap<>();
     private final Lock accountIdToSessionTokenMapReadLock;
     private final Lock accountIdToSessionTokenMapWriteLock;
 
-    public GameManager(MessageBroker messageBroker) {
+    public GameManager(MessageBroker messageBroker, IdentificationService identificationService) {
         this.messageBroker = messageBroker;
+        this.identificationService = identificationService;
         ReadWriteLock accountIdToSessionTokenMapReadWriteLock = new ReentrantReadWriteLock();
         accountIdToSessionTokenMapReadLock = accountIdToSessionTokenMapReadWriteLock.readLock();
         accountIdToSessionTokenMapWriteLock = accountIdToSessionTokenMapReadWriteLock.writeLock();
@@ -80,7 +81,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     }
 
     private void handleGameJoin(Authentication authentication) {
-        long accountId = ((Account) authentication.getPrincipal()).getId();
+        long accountId = identificationService.identifyAccount(authentication).getId();
         String sessionToken = (String) authentication.getCredentials();
         String evictedSessionToken;
         accountIdToSessionTokenMapWriteLock.lock();

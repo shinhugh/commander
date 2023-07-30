@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -27,7 +28,7 @@ public class ExternalAccountManager implements ExternalAccountService {
             if (authentication == null) {
                 throw new IllegalArgumentException();
             }
-            id = ((Account) authentication.getPrincipal()).getId();
+            id = identificationService.identifyAccount(authentication).getId();
         }
         List<Account> accounts = accountService.readAccounts(id, null);
         for (Account account : accounts) {
@@ -53,7 +54,7 @@ public class ExternalAccountManager implements ExternalAccountService {
             if (authentication == null) {
                 throw new IllegalArgumentException();
             }
-            id = ((Account) authentication.getPrincipal()).getId();
+            id = identificationService.identifyAccount(authentication).getId();
         }
         List<Account> existingAccounts = accountService.readAccounts(id, null);
         if (existingAccounts.isEmpty()) {
@@ -96,7 +97,7 @@ public class ExternalAccountManager implements ExternalAccountService {
             if (authentication == null) {
                 throw new IllegalArgumentException();
             }
-            id = ((Account) authentication.getPrincipal()).getId();
+            id = identificationService.identifyAccount(authentication).getId();
         }
         List<Account> existingAccounts = accountService.readAccounts(id, null);
         if (existingAccounts.isEmpty()) {
@@ -129,7 +130,7 @@ public class ExternalAccountManager implements ExternalAccountService {
         if (authentication == null) {
             return false;
         }
-        if (account.getLoginName().equals(authentication.getName())) {
+        if (Objects.equals(account.getId(), identificationService.identifyAccount(authentication).getId())) {
             return true;
         }
         return identificationService.verifyAtLeastOneAuthority(authentication, Set.of("ADMIN"));

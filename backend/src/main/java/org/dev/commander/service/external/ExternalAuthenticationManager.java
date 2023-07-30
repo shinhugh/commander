@@ -1,10 +1,10 @@
 package org.dev.commander.service.external;
 
-import org.dev.commander.model.Account;
 import org.dev.commander.model.Credentials;
 import org.dev.commander.model.Session;
 import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.service.exception.NotAuthenticatedException;
+import org.dev.commander.service.internal.IdentificationService;
 import org.dev.commander.service.internal.SessionService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -14,9 +14,11 @@ import java.util.List;
 @Service
 public class ExternalAuthenticationManager implements ExternalAuthenticationService {
     private final SessionService sessionService;
+    private final IdentificationService identificationService;
 
-    public ExternalAuthenticationManager(SessionService sessionService) {
+    public ExternalAuthenticationManager(SessionService sessionService, IdentificationService identificationService) {
         this.sessionService = sessionService;
+        this.identificationService = identificationService;
     }
 
     @Override
@@ -42,7 +44,7 @@ public class ExternalAuthenticationManager implements ExternalAuthenticationServ
             return;
         }
         String sessionToken = (String) authentication.getCredentials();
-        long accountId = ((Account) authentication.getPrincipal()).getId();
+        long accountId = identificationService.identifyAccount(authentication).getId();
         sessionService.logout(all ? null : sessionToken, all ? accountId : null);
     }
 }
