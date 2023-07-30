@@ -1,20 +1,13 @@
 package org.dev.commander.model.game;
 
-import java.util.Map;
-import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.Map;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class GameState {
-    private Set<Player> players;
     private Space space;
     private Map<Long, Character> characters;
-
-    public Set<Player> getPlayers() {
-        return players;
-    }
-
-    public void setPlayers(Set<Player> players) {
-        this.players = players;
-    }
 
     public Space getSpace() {
         return space;

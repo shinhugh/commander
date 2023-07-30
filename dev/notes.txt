@@ -19,16 +19,14 @@
 
 - database is not affected until method returns in a transactional class
 
-- Holding down WASD repeatedly sends GameInput with Direction enum
-  Server handles by interpreting each GameInput as move character in specified
-  direction for the next ~50ms
-
 TODO
 
 - custom HTTP responses for all errors (404, 405, etc)
 
 - frontend API publishes events to UI on login/logout and socket
   connection/close
+
+- function names in JS (joinGame() vs inputGameInput())
 
 JSON
 

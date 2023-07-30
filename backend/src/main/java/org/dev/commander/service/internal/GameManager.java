@@ -24,6 +24,7 @@ import static java.lang.System.currentTimeMillis;
 public class GameManager implements ConnectionEventHandler, IncomingMessageHandler {
     private static final long PROCESS_INTERVAL = 13;
     private static final long BROADCAST_INTERVAL = 15;
+    private final PlayerService playerService;
     private final MessageBroker messageBroker;
     private final IdentificationService identificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -31,13 +32,20 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     private final Map<Long, String> accountIdToSessionTokenMap = new HashMap<>();
     private final Lock accountIdToSessionTokenMapReadLock;
     private final Lock accountIdToSessionTokenMapWriteLock;
+    private final Map<Long, Long> accountIdToPlayerIdMap = new HashMap<>();
+    private final Lock accountIdToPlayerIdMapReadLock;
+    private final Lock accountIdToPlayerIdMapWriteLock;
 
-    public GameManager(MessageBroker messageBroker, IdentificationService identificationService) {
+    public GameManager(PlayerService playerService, MessageBroker messageBroker, IdentificationService identificationService) {
+        this.playerService = playerService;
         this.messageBroker = messageBroker;
         this.identificationService = identificationService;
         ReadWriteLock accountIdToSessionTokenMapReadWriteLock = new ReentrantReadWriteLock();
         accountIdToSessionTokenMapReadLock = accountIdToSessionTokenMapReadWriteLock.readLock();
         accountIdToSessionTokenMapWriteLock = accountIdToSessionTokenMapReadWriteLock.writeLock();
+        ReadWriteLock accountIdToPlayerIdMapReadWriteLock = new ReentrantReadWriteLock();
+        accountIdToPlayerIdMapReadLock = accountIdToPlayerIdMapReadWriteLock.readLock();
+        accountIdToPlayerIdMapWriteLock = accountIdToPlayerIdMapReadWriteLock.writeLock();
         this.messageBroker.registerConnectionEventHandler(this);
         this.messageBroker.registerIncomingMessageHandler(this);
         game.resetProcessingPoint();
@@ -50,16 +58,30 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     public void handleClosedConnection(Authentication authentication) {
         long accountId = identificationService.identifyAccount(authentication).getId();
         String sessionToken = (String) authentication.getCredentials();
+        boolean playerLeft = false;
         accountIdToSessionTokenMapWriteLock.lock();
         try {
             if (Objects.equals(accountIdToSessionTokenMap.get(accountId), sessionToken)) {
                 accountIdToSessionTokenMap.remove(accountId);
+                playerLeft = true;
             }
         }
         finally {
             accountIdToSessionTokenMapWriteLock.unlock();
         }
-        // TODO: Game state logic (e.g. remove character)
+        if (playerLeft) {
+            GameInput input = new GameInput();
+            input.setPlayerId(getPlayerId(accountId));
+            input.setType(GameInput.Type.LEAVE);
+            game.input(input);
+            accountIdToPlayerIdMapWriteLock.lock();
+            try {
+                accountIdToPlayerIdMap.remove(accountId);
+            }
+            finally {
+                accountIdToPlayerIdMapWriteLock.unlock();
+            }
+        }
     }
 
     @Override
@@ -115,7 +137,10 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         finally {
             accountIdToSessionTokenMapWriteLock.unlock();
         }
-        // TODO: Game state logic (e.g. spawn character)
+        GameInput input = new GameInput();
+        input.setPlayerId(getPlayerId(accountId));
+        input.setType(GameInput.Type.JOIN);
+        game.input(input);
         if (evictedSessionToken != null) {
             OutgoingMessage<Void> message = new OutgoingMessage<>();
             message.setType(OutgoingMessage.Type.GAME_EVICTION);
@@ -129,9 +154,45 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         if (!Objects.equals(accountIdToSessionTokenMap.get(accountId), sessionToken)) {
             return;
         }
-        // TODO: Use authentication to populate playerId
-        input.setPlayerId(1L); // TODO: For testing only
+        input.setPlayerId(getPlayerId(accountId));
         game.input(input);
+    }
+
+    private long getPlayerId(long accountId) {
+        Long playerId;
+        accountIdToPlayerIdMapReadLock.lock();
+        try {
+            playerId = accountIdToPlayerIdMap.get(accountId);
+        }
+        finally {
+            accountIdToPlayerIdMapReadLock.unlock();
+        }
+        if (playerId != null) {
+            return playerId;
+        }
+        List<Player> players = playerService.readPlayers(null, accountId);
+        Player player = players.isEmpty() ? null : players.get(0);
+        if (player != null) {
+            accountIdToPlayerIdMapWriteLock.lock();
+            try {
+                accountIdToPlayerIdMap.put(accountId, player.getId());
+            }
+            finally {
+                accountIdToPlayerIdMapWriteLock.unlock();
+            }
+            return player.getId();
+        }
+        player = new Player();
+        player.setAccountId(accountId);
+        player = playerService.createPlayer(player);
+        accountIdToPlayerIdMapWriteLock.lock();
+        try {
+            accountIdToPlayerIdMap.put(accountId, player.getId());
+        }
+        finally {
+            accountIdToPlayerIdMapWriteLock.unlock();
+        }
+        return player.getId();
     }
 
     private static GameEntry generateGameEntry() {
@@ -141,25 +202,12 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
 
     // TODO: For testing only
     private static GameEntry generateMockGameEntry() {
-        Player player = new Player();
-        player.setId(1);
-        player.setAccountId(1);
-        Set<Player> players = new HashSet<>();
-        players.add(player);
         Space space = new Space();
         space.setWidth(8);
         space.setHeight(8);
-        Character character = new Character();
-        character.setPlayerId(1);
-        character.setWidth(1);
-        character.setHeight(1);
-        character.setMovementSpeed(1);
-        Map<Long, Character> characters = new HashMap<>();
-        characters.put(player.getId(), character);
         GameState gameState = new GameState();
-        gameState.setPlayers(players);
         gameState.setSpace(space);
-        gameState.setCharacters(characters);
+        gameState.setCharacters(new HashMap<>());
         return new GameEntry(gameState);
     }
 
@@ -167,6 +215,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         private static final double DIAGONAL_MOVEMENT_SCALING = 0.707107;
         private static final double SPEED_SCALING = 0.005;
         private static final long MOVEMENT_DURATION_PER_INPUT = 25;
+        private static final double CHARACTER_LENGTH = 1;
         private long lastProcessTime;
         private final List<GameInput> inputQueue = new ArrayList<>();
         private final Lock inputQueueLock = new ReentrantLock();
@@ -175,7 +224,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         private final Lock gameStateWriteLock;
 
         public GameEntry(GameState gameState) {
-            this.gameState = gameState;
+            this.gameState = cloneGameState(gameState);
             ReadWriteLock gameStateReadWriteLock = new ReentrantReadWriteLock();
             gameStateReadLock = gameStateReadWriteLock.readLock();
             gameStateWriteLock = gameStateReadWriteLock.writeLock();
@@ -295,14 +344,34 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         }
 
         private static void processInput(GameState gameState, GameInput input) {
-            if (input.getMovementDirection() != null) {
-                Character character = gameState.getCharacters().get(input.getPlayerId());
-                if (character == null) {
-                    return;
+            switch (input.getType()) {
+                case JOIN -> {
+                    double posX = (gameState.getSpace().getWidth() - CHARACTER_LENGTH) / 2;
+                    double posY = (gameState.getSpace().getHeight() - CHARACTER_LENGTH) / 2;
+                    Character character = new Character();
+                    character.setPlayerId(input.getPlayerId());
+                    character.setWidth(CHARACTER_LENGTH);
+                    character.setHeight(CHARACTER_LENGTH);
+                    character.setPosX(posX);
+                    character.setPosY(posY);
+                    character.setOrientationDirection(Direction.DOWN);
+                    character.setMovementSpeed(1);
+                    gameState.getCharacters().put(input.getPlayerId(), character);
                 }
-                character.setPendingMovementDirection(input.getMovementDirection());
-                character.setPendingMovementDuration(MOVEMENT_DURATION_PER_INPUT);
-                character.setOrientationDirection(input.getMovementDirection());
+                case LEAVE -> {
+                    gameState.getCharacters().remove(input.getPlayerId());
+                }
+                case MOVE -> {
+                    if (input.getMovementDirection() != null) {
+                        Character character = gameState.getCharacters().get(input.getPlayerId());
+                        if (character == null) {
+                            return;
+                        }
+                        character.setPendingMovementDirection(input.getMovementDirection());
+                        character.setPendingMovementDuration(MOVEMENT_DURATION_PER_INPUT);
+                        character.setOrientationDirection(input.getMovementDirection());
+                    }
+                }
             }
         }
 
@@ -311,14 +380,6 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                 return null;
             }
             GameState clone = new GameState();
-            Set<Player> players = new HashSet<>();
-            for (Player player : gameState.getPlayers()) {
-                Player playerClone = new Player();
-                playerClone.setId(player.getId());
-                playerClone.setAccountId(player.getAccountId());;
-                players.add(playerClone);
-            }
-            clone.setPlayers(players);
             Space space = new Space();
             space.setWidth(gameState.getSpace().getWidth());
             space.setHeight(gameState.getSpace().getHeight());

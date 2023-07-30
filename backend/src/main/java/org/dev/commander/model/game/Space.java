@@ -1,5 +1,8 @@
 package org.dev.commander.model.game;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Space {
     private double width;
     private double height;

@@ -1,5 +1,8 @@
 package org.dev.commander.model.game;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Character {
     private long playerId;
     private double width;
