@@ -55,13 +55,13 @@ const api = {
     },
 
     invokeClosedConnectionHandlers: () => {
-      for (const handler of api.internal.establishedConnectionHandlers) {
+      for (const handler of api.internal.closedConnectionHandlers) {
         handler();
       }
     },
 
     invokeIncomingMessageHandlers: (message) => {
-      for (const handler of api.internal.establishedConnectionHandlers) {
+      for (const handler of api.internal.incomingMessageHandlers) {
         handler(message);
       }
     }
@@ -102,12 +102,10 @@ const api = {
       });
     });
     socket.addEventListener('close', () => {
-      console.log('Socket: close'); // TODO: Testing
       api.internal.socket = null;
       api.internal.invokeClosedConnectionHandlers();
     });
     socket.addEventListener('error', () => {
-      console.log('Socket: error'); // TODO: Testing
       api.internal.socket = null;
       api.internal.invokeClosedConnectionHandlers();
     });
