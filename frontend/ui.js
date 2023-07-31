@@ -176,4 +176,6 @@ game.registerGameStateChangeHandler(ui.handleGameStateChange);
 
 if (auth.isLoggedIn()) {
   ui.handleLogin();
+} else {
+  ui.handleLogout();
 }
