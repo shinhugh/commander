@@ -6,8 +6,17 @@ import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GameState {
+    private long clientPlayerId;
     private Space space;
     private Map<Long, Character> characters;
+
+    public long getClientPlayerId() {
+        return clientPlayerId;
+    }
+
+    public void setClientPlayerId(long clientPlayerId) {
+        this.clientPlayerId = clientPlayerId;
+    }
 
     public Space getSpace() {
         return space;

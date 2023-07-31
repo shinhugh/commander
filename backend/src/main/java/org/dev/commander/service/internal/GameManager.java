@@ -106,22 +106,26 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         game.process();
     }
 
+    // TODO: Each client should get its own dedicated snapshot as opposed to a common global snapshot
+    //       Certain information should be hidden from certain players (e.g. fog of war)
+    //       Each snapshot should also contain the client's player ID
     @Scheduled(fixedRate = BROADCAST_INTERVAL)
     public void broadcast() {
         GameState snapshot = game.snapshot();
         OutgoingMessage<GameState> message = new OutgoingMessage<>();
         message.setType(OutgoingMessage.Type.GAME_SNAPSHOT);
         message.setPayload(snapshot);
-        Set<String> sessionTokens;
+        Map<Long, String> mapCopy;
         accountIdToSessionTokenMapReadLock.lock();
         try {
-            sessionTokens = new HashSet<>(accountIdToSessionTokenMap.values());
+            mapCopy = new HashMap<>(accountIdToSessionTokenMap);
         }
         finally {
             accountIdToSessionTokenMapReadLock.unlock();
         }
-        for (String sessionToken : sessionTokens) { // TODO: Parallelize
-            messageBroker.sendMessageBySessionToken(sessionToken, message);
+        for (long accountId : mapCopy.keySet()) { // TODO: Parallelize
+            snapshot.setClientPlayerId(getPlayerId(accountId));
+            messageBroker.sendMessageBySessionToken(mapCopy.get(accountId), message);
         }
     }
 
@@ -203,8 +207,8 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     // TODO: For testing only
     private static GameEntry generateMockGameEntry() {
         Space space = new Space();
-        space.setWidth(8);
-        space.setHeight(8);
+        space.setWidth(16);
+        space.setHeight(26);
         GameState gameState = new GameState();
         gameState.setSpace(space);
         gameState.setCharacters(new HashMap<>());
@@ -379,11 +383,9 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             if (gameState == null) {
                 return null;
             }
-            GameState clone = new GameState();
             Space space = new Space();
             space.setWidth(gameState.getSpace().getWidth());
             space.setHeight(gameState.getSpace().getHeight());
-            clone.setSpace(space);
             Map<Long, Character> characters = new HashMap<>();
             for (Map.Entry<Long, Character> characterEntry : gameState.getCharacters().entrySet()) {
                 long playerId = characterEntry.getKey();
@@ -400,6 +402,9 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                 characterClone.setOrientationDirection(character.getOrientationDirection());
                 characters.put(playerId, characterClone);
             }
+            GameState clone = new GameState();
+            clone.setClientPlayerId(gameState.getClientPlayerId());
+            clone.setSpace(space);
             clone.setCharacters(characters);
             return clone;
         }

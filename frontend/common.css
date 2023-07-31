@@ -46,7 +46,7 @@ button {
   top: -3px;
   border-radius: 5px;
   background: #87c8f0;
-  box-shadow: 4px 4px 0 #ffffffa0;
+  box-shadow: 4px 4px 0 #e0e0e0;
 }
 
 button:hover {

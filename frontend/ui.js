@@ -43,12 +43,14 @@ const ui = {
       gameModule: {
         root: document.getElementById('content_game_module'),
         game: {
-          root: document.getElementById('content_game_module_game')
+          root: document.getElementById('content_game_module_game'),
+          map: document.getElementById('content_game_module_game_map')
         }
       }
     },
     topBar: {
       root: document.getElementById('top_bar'),
+      title: document.getElementById('top_bar_title'),
       friendsButton: document.getElementById('top_bar_friends_button'),
       accountButton: document.getElementById('top_bar_account_button'),
       logoutButton: document.getElementById('top_bar_logout_button')
@@ -170,6 +172,14 @@ const ui = {
   showGameModule: () => {
     ui.clearContent();
     ui.show(ui.elements.content.gameModule.root);
+  },
+
+  hideTopBarTitle: () => {
+    ui.hide(ui.elements.topBar.title);
+  },
+
+  showTopBarTitle: () => {
+    ui.show(ui.elements.topBar.title);
   },
 
   hideTopBarButtons: () => {
@@ -469,6 +479,7 @@ const ui = {
   handleLogout: () => {
     ui.hideOverlay();
     ui.hideTopBarButtons();
+    ui.showTopBarTitle();
     document.removeEventListener('keydown', ui.handleKeyDownInGame);
     document.removeEventListener('keyup', ui.handleKeyUpInGame);
     ui.showLoginPage();
@@ -483,6 +494,7 @@ const ui = {
 
   handleLogin: () => {
     ui.showGameModule();
+    ui.hideTopBarTitle();
     ui.showTopBarButtons();
     ui.refreshAccountPage();
     document.addEventListener('keydown', ui.handleKeyDownInGame);
@@ -500,20 +512,35 @@ const ui = {
 
   handleGameSnapshot: (snapshot) => {
     // TODO: Paint representation of game state
-    const boxHeight = ui.elements.content.gameModule.game.root.offsetHeight;
-    const boxWidth = ui.elements.content.gameModule.game.root.offsetWidth;
-    const scaleY = boxHeight / snapshot.space.height;
-    const scaleX = boxWidth / snapshot.space.width;
-    ui.elements.content.gameModule.game.root.innerHTML = null;
+    const clientCharacter = snapshot.characters[snapshot.clientPlayerId];
+    if (clientCharacter == null) {
+      return;
+    }
+    const rootHeight = ui.elements.content.gameModule.game.root.offsetHeight;
+    const rootWidth = ui.elements.content.gameModule.game.root.offsetWidth;
+    const spaceHeight = snapshot.space.height;
+    const spaceWidth = snapshot.space.width;
+    const scale = 1.2 * Math.max((rootHeight / spaceHeight), (rootWidth / spaceWidth));
+    const mapHeight = scale * spaceHeight;
+    const mapWidth = scale * spaceWidth;
+    ui.elements.content.gameModule.game.map.style.height = mapHeight + 'px';
+    ui.elements.content.gameModule.game.map.style.width = mapWidth + 'px';
+    // clientCharacter.poxX == 0 -> left = 0
+    // clientCharacter.poxX == spaceWidth - clientCharacter.width -> left = rootWidth - mapWidth
+    const mapTop = ((rootHeight - mapHeight) / (spaceHeight - clientCharacter.height)) * clientCharacter.posY;
+    const mapLeft = ((rootWidth - mapWidth) / (spaceWidth - clientCharacter.width)) * clientCharacter.posX;
+    ui.elements.content.gameModule.game.map.style.top = mapTop + 'px';
+    ui.elements.content.gameModule.game.map.style.left = mapLeft + 'px';
+    ui.elements.content.gameModule.game.map.innerHTML = null;
     for (const character of Object.values(snapshot.characters)) {
-      const characterBox = document.createElement('div');
-      characterBox.style.position = 'absolute';
-      characterBox.style.top = (scaleY * character.posY) + 'px';
-      characterBox.style.left = (scaleX * character.posX) + 'px';
-      characterBox.style.height = (scaleY * character.height) + 'px';
-      characterBox.style.width = (scaleX * character.width) + 'px';
-      characterBox.style.background = 'green';
-      ui.elements.content.gameModule.game.root.appendChild(characterBox);
+      const characterElement = document.createElement('div');
+      characterElement.style.position = 'absolute';
+      characterElement.style.top = (scale * character.posY) + 'px';
+      characterElement.style.left = (scale * character.posX) + 'px';
+      characterElement.style.height = (scale * character.height) + 'px';
+      characterElement.style.width = (scale * character.width) + 'px';
+      characterElement.classList.add('character_element');
+      ui.elements.content.gameModule.game.map.appendChild(characterElement);
     }
   },
 

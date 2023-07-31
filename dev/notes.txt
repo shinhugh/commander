@@ -26,6 +26,10 @@ TODO
 - frontend API publishes events to UI on login/logout and socket
   connection/close
 
+- backend: include timestamps on snapshots
+  frontend: as snapshots come in over socket, queue them for processing
+            if snapshot is too old, drop it
+
 - frontend: clear all state variables on logout
 
 JSON
