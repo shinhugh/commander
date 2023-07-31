@@ -4,7 +4,16 @@
   position: absolute;
   top: 0;
   left: 0;
-  background: #000000c0;
+}
+
+#overlay_backdrop {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  backdrop-filter: blur(15px);
+  background: #00000020;
 }
 
 #overlay_window {
@@ -13,9 +22,10 @@
   left: 50%;
   transform: translate(-50%, -50%);
   padding: 3rem;
-  border-radius: 5px;
-  box-shadow: 2px 2px 15px #ffffff30;
-  background: black;
+  border: 5px solid white;
+  border-radius: 10px;
+  box-shadow: 8px 8px 30px #00000050;
+  background: #54aeb8;
 }
 
 #overlay_friends_page {
@@ -29,7 +39,6 @@
 #overlay_friends_page>.title {
   flex: 0 0 auto;
   align-self: center;
-  font-size: 1.2rem;
 }
 
 #overlay_friends_page>.list_wrapper {
@@ -91,11 +100,11 @@
 }
 
 .overlay_account_page_field_label {
-  font-size: 0.8rem;
+  font-size: 1.2rem;
 }
 
 .overlay_account_page_field_value {
-  font-size: 1.2rem;
+  font-size: 1.8rem;
 }
 
 #overlay_account_page>button {
@@ -117,9 +126,10 @@
 }
 
 .overlay_modify_account_page_field_label {
-  font-size: 0.8rem;
+  font-size: 1.2rem;
 }
 
 .overlay_modify_account_page_field>input {
   align-self: stretch;
+  font-size: 1.8rem;
 }

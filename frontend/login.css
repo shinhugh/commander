@@ -3,9 +3,10 @@
   top: calc(50% + 1rem);
   left: 50%;
   transform: translate(-50%, -50%);
-  border-radius: 5px;
+  border: 5px solid white;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 2px 2px 15px #ffffff30;
+  box-shadow: 8px 8px 30px #00000050;
 }
 
 #content_login_module_tabs {
@@ -21,19 +22,21 @@
 }
 
 #content_login_module_tabs>* {
-  background: #202020;
-  color: white;
+  background: #87c8f0;
 }
 
 #content_login_module_tabs>.selected {
-  background: black;
-  color: white;
+  background: #54aeb8;
+}
+
+#content_login_module_tabs p {
+  font-size: 1.5rem;
 }
 
 #content_login_module_pages {
-  height: 28rem;
+  height: 30rem;
   padding: 4rem 3rem;
-  background: black;
+  background: #54aeb8;
   overflow-y: auto;
 }
 
@@ -45,13 +48,15 @@
 
 #content_login_module_pages p {
   margin-bottom: 0.5rem;
-  font-size: 0.8rem;
+  font-size: 1.2rem;
 }
 
 #content_login_module_pages input {
-  width: 15rem;
+  width: 16rem;
+  font-size: 1.8rem;
 }
 
 #content_login_module_pages>*>button {
+  margin-top: 1rem;
   align-self: flex-end;
 }

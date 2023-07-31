@@ -55,6 +55,7 @@ const ui = {
     },
     overlay: {
       root: document.getElementById('overlay'),
+      backdrop: document.getElementById('overlay_backdrop'),
       window: document.getElementById('overlay_window'),
       friendsPage: {
         root: document.getElementById('overlay_friends_page'),

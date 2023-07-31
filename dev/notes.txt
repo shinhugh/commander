@@ -26,6 +26,8 @@ TODO
 - frontend API publishes events to UI on login/logout and socket
   connection/close
 
+- frontend: clear all state variables on logout
+
 JSON
 
 {

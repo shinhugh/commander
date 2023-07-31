@@ -1,8 +1,8 @@
 #content_game_module {
-  height: calc(100% - 4rem);
+  height: 100%;
   width: 100%;
   position: absolute;
-  top: 4rem;
+  top: 0;
   left: 0;
 }
 

@@ -12,50 +12,57 @@
   text-decoration: none;
 }
 
+html, body {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  position: relative;
+  background: #74bfa0;
+  font-size: 1.4rem;
+  font-family: 'VT323', monospace;
+  color: white;
+}
+
 p {
   cursor: default;
 }
 
 input {
   padding: 0.5rem;
-  border: 2px solid white;
+  border: 3px solid white;
   border-radius: 5px;
+}
+
+input::placeholder {
+  color: #ffffff80;
 }
 
 button {
   display: block;
   padding: 0.5rem 1rem;
+  position: relative;
+  top: -3px;
   border-radius: 5px;
-  background: #ffffff20;
-  color: white;
+  background: #87c8f0;
+  box-shadow: 4px 4px 0 #ffffffa0;
 }
 
 button:hover {
-  background: #ffffff30;
+  background: #83c2e9;
 }
 
 button:active {
-  background: #ffffff40;
-}
-
-button.alt_color {
-  background: #00000020;
-  color: black;
-}
-
-button.alt_color:hover {
-  background: #00000030;
-  color: black;
-}
-
-button.alt_color:active {
-  background: #00000040;
-  color: black;
+  top: -1px;
+  left: 2px;
+  background: #7ebbe1;
+  box-shadow: 2px 2px 0 #ffffff;
 }
 
 .list_wrapper {
   position: relative;
-  border: 2px solid white;
+  border: 3px solid white;
   border-radius: 5px;
   overflow: hidden;
 }
