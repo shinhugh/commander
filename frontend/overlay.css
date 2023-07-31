@@ -24,7 +24,7 @@
   padding: 3rem;
   border: 5px solid white;
   border-radius: 10px;
-  box-shadow: 8px 8px 30px #00000050;
+  box-shadow: 8px 8px 30px #00000030;
   background: #54aeb8;
 }
 
@@ -72,13 +72,9 @@
 }
 
 #overlay_friends_page_add_friend_section_result {
-  padding: 0.5rem;
+  padding: 0.8rem 1.6rem;
   border-radius: 5px;
   border: 2px solid white;
-}
-
-#overlay_friends_page_add_friend_section_result_name {
-  margin-left: 1rem;
 }
 
 #overlay_friends_page_add_friend_section_id_input {
