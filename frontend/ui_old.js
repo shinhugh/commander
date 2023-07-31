@@ -1,4 +1,4 @@
-const ui = {
+const uiOld = {
 
   state: {
     notificationTimeoutId: null,
@@ -511,7 +511,6 @@ const ui = {
   },
 
   handleGameSnapshot: (snapshot) => {
-    // TODO: Paint representation of game state
     const clientCharacter = snapshot.characters[snapshot.clientPlayerId];
     if (clientCharacter == null) {
       return;

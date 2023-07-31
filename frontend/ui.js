@@ -118,31 +118,25 @@ const ui = {
 
   unselect: (element) => {
     element.classList.remove('selected');
+  },
+
+  handleLogin: () => {
+    // TODO: Implement
+  },
+
+  handleLogout: () => {
+    // TODO: Implement
+  },
+
+  handleFriendshipsChange: () => {
+    // TODO: Implement
+  },
+
+  handleGameStateChange: () => {
+    // TODO: Implement
   }
 
 };
-
-// ------------------------------------------------------------
-
-auth.initialize();
-friendships.initialize();
-game.initialize();
-
-// ------------------------------------------------------------
-
-auth.registerLoginHandler(() => {
-  // TODO
-});
-auth.registerLogoutHandler(() => {
-  // TODO
-});
-friendships.registerFriendshipsChangeHandler(() => {
-  // TODO
-});
-game.registerGameStateChangeHandler(() => {
-  // TODO
-});
-// TODO: Register UI event handlers
 
 // ------------------------------------------------------------
 
@@ -163,3 +157,23 @@ ui.cloak(ui.elements.overlay.friendsPage.addFriendSection.result.root);
 ui.hide(ui.elements.overlay.accountPage.root);
 ui.hide(ui.elements.overlay.modifyAccountPage.root);
 ui.hide(ui.elements.notification.root);
+
+// ------------------------------------------------------------
+
+auth.initialize();
+friendships.initialize();
+game.initialize();
+
+// ------------------------------------------------------------
+
+auth.registerLoginHandler(ui.handleLogin);
+auth.registerLogoutHandler(ui.handleLogout);
+friendships.registerFriendshipsChangeHandler(ui.handleFriendshipsChange);
+game.registerGameStateChangeHandler(ui.handleGameStateChange);
+// TODO: Register UI event handlers
+
+// ------------------------------------------------------------
+
+if (auth.isLoggedIn()) {
+  ui.handleLogin();
+}

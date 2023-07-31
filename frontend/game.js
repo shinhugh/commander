@@ -20,23 +20,12 @@ const game = {
       }
     },
 
-    joinGame: () => {
-      if (game.internal.gameState != null) {
-        return;
-      }
-      api.sendGameJoin();
-    },
-
     handleIncomingMessage: (message) => {
       if (message.type !== 'game_snapshot') {
         return;
       }
       game.internal.gameState = message.payload;
       game.internal.invokeGameStateChangeHandlers();
-    },
-
-    handleEstablishedConnection: () => {
-      game.internal.joinGame();
     },
 
     handleClosedConnection: () => {
@@ -51,11 +40,7 @@ const game = {
 
   initialize: () => {
     api.registerIncomingMessageHandler(game.internal.handleIncomingMessage);
-    api.registerEstablishedConnectionHandler(game.internal.handleEstablishedConnection);
     api.registerClosedConnectionHandler(game.internal.handleClosedConnection);
-    if (api.isConnected()) {
-      game.internal.handleEstablishedConnection();
-    }
   },
 
   registerGameStateChangeHandler: (handler) => {
@@ -67,7 +52,10 @@ const game = {
   },
 
   joinGame: () => {
-    game.internal.joinGame();
+    if (game.internal.gameState != null) {
+      return;
+    }
+    api.sendGameJoin();
   },
 
   setCharacterMovement: (direction) => {
