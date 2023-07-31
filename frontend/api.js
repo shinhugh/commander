@@ -4,63 +4,15 @@ const api = {
 
     endpoint: window.location.hostname + ':' + window.location.port,
 
+    authorizationToken: null,
+
     socket: null,
 
-    friendshipChangeHandler: null,
+    establishedConnectionHandlers: [ ],
 
-    gameSnapshotHandler: null,
+    closedConnectionHandlers: [ ],
 
-    session: null,
-
-    account: null,
-
-    friends: null,
-
-    gameState: null,
-
-    lastDirectionalGameInput: null,
-
-    directionalGameInputInterval: null,
-
-    connectSocket: async () => {
-      const url = 'ws://' + api.internal.endpoint + '/api/ws';
-      const socket = new WebSocket(url);
-      await new Promise((resolve, reject) => {
-        const errorEventHandler = () => {
-          reject();
-        };
-        socket.addEventListener('error', errorEventHandler);
-        socket.addEventListener('open', () => {
-          socket.removeEventListener('error', errorEventHandler);
-          resolve();
-        });
-      });
-      socket.addEventListener('close', () => {
-        api.internal.socket = null;
-      });
-      socket.addEventListener('error', () => {
-        api.internal.socket = null;
-      });
-      socket.addEventListener('message', async e => {
-        await api.internal.handleSocketEvent(JSON.parse(e.data));
-      });
-      api.internal.socket = socket;
-    },
-
-    disconnectSocket: () => {
-      if (api.internal.socket == null) {
-        return;
-      }
-      api.internal.socket.close();
-      api.internal.socket = null;
-    },
-
-    sendObjectOverSocket: (obj) => {
-      if (api.internal.socket == null) {
-        throw new Error('No socket connection');
-      }
-      api.internal.socket.send(JSON.stringify(obj));
-    },
+    incomingMessageHandlers: [ ],
 
     makeRequest: async (path, method, parameters, contentType, body) => {
       let parameterString = '';
@@ -73,8 +25,8 @@ const api = {
       }
       const url = 'http://' + api.internal.endpoint + path + parameterString;
       const headers = { };
-      if (api.internal.session != null) {
-        headers.authorization = 'Bearer ' + api.internal.session.token;
+      if (api.internal.authorizationToken != null) {
+        headers.authorization = 'Bearer ' + api.internal.authorizationToken;
       }
       if (contentType != null) {
         headers['content-type'] = contentType;
@@ -89,300 +41,211 @@ const api = {
       return await fetch(url, options);
     },
 
-    requestLogout: async () => {
-      await api.internal.makeRequest('/api/auth', 'DELETE', null, null, null);
-    },
-
-    requestLogin: async (username, password) => {
-      const response = await api.internal.makeRequest('/api/auth', 'POST', null, 'application/json', JSON.stringify({
-        username: username,
-        password, password
-      }));
-      if (response.ok) {
-        return await response.json();
+    sendObjectOverSocket: (obj) => {
+      if (api.internal.socket == null) {
+        throw new Error('No socket connection');
       }
-      throw new Error(response.status);
+      api.internal.socket.send(JSON.stringify(obj));
     },
 
-    requestReadAccounts: async (accountId) => {
-      let parameters = null;
-      if (accountId != null) {
-        parameters = {
-          id: accountId
-        };
-      }
-      const response = await api.internal.makeRequest('/api/account', 'GET', parameters, null, null);
-      if (response.ok) {
-        return await response.json();
-      }
-      throw new Error(response.status);
-    },
-
-    requestCreateAccount: async (username, password, publicName) => {
-      const response = await api.internal.makeRequest('/api/account', 'POST', null, 'application/json', JSON.stringify({
-        loginName: username,
-        password: password,
-        publicName: publicName
-      }));
-      if (response.ok) {
-        return await response.json();
-      }
-      throw new Error(response.status);
-    },
-
-    requestUpdateAccount: async (accountId, username, password, authorities, publicName) => {
-      let parameters = null;
-      if (accountId != null) {
-        parameters = {
-          id: accountId
-        };
-      }
-      const response = await api.internal.makeRequest('/api/account', 'PUT', parameters, 'application/json', JSON.stringify({
-        loginName: username,
-        password: password,
-        authorities: authorities,
-        publicName: publicName
-      }));
-      if (response.ok) {
-        return await response.json();
-      }
-      throw new Error(response.status);
-    },
-
-    requestDeleteAccount: async (accountId) => {
-      let parameters = null;
-      if (accountId != null) {
-        parameters = {
-          id: accountId
-        };
-      }
-      const response = await api.internal.makeRequest('/api/account', 'DELETE', parameters, null, null);
-      if (response.ok) {
-        return;
-      }
-      throw new Error(response.status);
-    },
-
-    requestListFriendships: async () => {
-      const response = await api.internal.makeRequest('/api/friendship', 'GET', null, null, null);
-      if (response.ok) {
-        return await response.json();
-      }
-      throw new Error(response.status);
-    },
-
-    requestRequestFriendship: async (accountId) => {
-      let parameters = null;
-      if (accountId != null) {
-        parameters = {
-          id: accountId
-        };
-      }
-      const response = await api.internal.makeRequest('/api/friendship', 'POST', parameters, null, null);
-      if (response.ok) {
-        return;
-      }
-      throw new Error(response.status);
-    },
-
-    requestTerminateFriendship: async (accountId) => {
-      let parameters = null;
-      if (accountId != null) {
-        parameters = {
-          id: accountId
-        };
-      }
-      const response = await api.internal.makeRequest('/api/friendship', 'DELETE', parameters, null, null);
-      if (response.ok) {
-        return;
-      }
-      throw new Error(response.status);
-    },
-
-    sendGameJoin: () => {
-      api.internal.sendObjectOverSocket({
-        type: 'game_join'
-      });
-    },
-
-    sendGameInput: (input) => {
-      api.internal.sendObjectOverSocket({
-        type: 'game_input',
-        payload: input
-      });
-    },
-
-    logout: async () => {
-      if (api.internal.session == null) {
-        return;
-      }
-      api.internal.disconnectSocket();
-      await api.internal.requestLogout();
-      api.internal.session = null;
-      api.internal.account = null;
-    },
-
-    login: async (username, password) => {
-      if (api.internal.session != null) {
-        return;
-      }
-      api.internal.session = await api.internal.requestLogin(username, password);
-      const accounts = await api.internal.readAccounts(null);
-      api.internal.account = accounts.length > 0 ? accounts[0] : null;
-      await Promise.allSettled([
-        (async () => {
-          await api.internal.connectSocket();
-          api.internal.joinGame();
-        })(),
-        api.internal.updateFriends()
-      ]);
-    },
-
-    readAccounts: async (accountId) => {
-      return await api.internal.requestReadAccounts(accountId);
-    },
-
-    createAccount: async (username, password, publicName) => {
-      return await api.internal.requestCreateAccount(username, password, publicName);
-    },
-
-    updateAccount: async (accountId, username, password, authorities, publicName) => {
-      return await api.internal.requestUpdateAccount(accountId, username, password, authorities, publicName);
-    },
-
-    deleteAccount: async (accountId) => {
-      await api.internal.requestDeleteAccount(accountId);
-    },
-
-    listFriendships: async () => {
-      await api.internal.requestListFriendships();
-    },
-
-    requestFriendship: async (accountId) => {
-      await api.internal.requestRequestFriendship(accountId);
-    },
-
-    terminateFriendship: async (accountId) => {
-      await api.internal.requestTerminateFriendship(accountId);
-    },
-
-    joinGame: () => {
-      api.internal.sendGameJoin();
-    },
-
-    moveCharacter: (direction) => {
-      if (direction === api.internal.lastDirectionalGameInput) {
-        return;
-      }
-      clearInterval(api.internal.directionalGameInputInterval);
-      api.internal.lastDirectionalGameInput = direction;
-      if (api.internal.lastDirectionalGameInput != null) {
-        const gameInput = {
-          type: 'move',
-          movementDirection: api.internal.lastDirectionalGameInput
-        };
-        api.internal.sendGameInput(gameInput);
-        api.internal.directionalGameInputInterval = setInterval(() => {
-          api.internal.sendGameInput(gameInput);
-        }, 15);
+    invokeEstablishedConnectionHandlers: () => {
+      for (const handler of api.internal.establishedConnectionHandlers) {
+        handler();
       }
     },
 
-    updateFriends: async () => {
-      if (api.internal.session != null) {
-        try {
-          api.internal.friends = await api.internal.listFriendships();
-        }
-        catch {
-          api.internal.friends = null;
-        }
-      } else {
-        api.internal.friends = null;
+    invokeClosedConnectionHandlers: () => {
+      for (const handler of api.internal.establishedConnectionHandlers) {
+        handler();
       }
     },
 
-    handleFriendshipChange: async () => {
-      await api.internal.updateFriends();
-      api.internal.friendshipChangeHandler?.();
-    },
-
-    handleGameSnapshot: (snapshot) => {
-      api.internal.gameState = snapshot;
-      api.internal.gameSnapshotHandler?.(snapshot);
-    },
-
-    handleSocketEvent: async e => {
-      switch (e.type) {
-        case 'friendships_change':
-          await api.internal.handleFriendshipChange();
-          break;
-        case 'game_snapshot':
-          api.internal.handleGameSnapshot(e.payload);
-          break;
+    invokeIncomingMessageHandlers: (message) => {
+      for (const handler of api.internal.establishedConnectionHandlers) {
+        handler(message);
       }
-    },
-
-    initialize: async (friendshipChangeHandler, gameSnapshotHandler) => {
-      api.internal.friendshipChangeHandler = friendshipChangeHandler;
-      api.internal.gameSnapshotHandler = gameSnapshotHandler;
-      try {
-        await api.internal.login(null, null);
-      }
-      catch { }
     }
 
   },
 
-  getLoggedInAccount: () => {
-    return api.internal.account;
+  registerEstablishedConnectionHandler: (handler) => {
+    api.internal.establishedConnectionHandlers.push(handler);
   },
 
-  getFriends: () => {
-    return api.internal.friends;
+  registerClosedConnectionHandler: (handler) => {
+    api.internal.closedConnectionHandlers.push(handler);
   },
 
-  logout: async () => {
-    await api.internal.logout();
+  registerIncomingMessageHandler: (handler) => {
+    api.internal.incomingMessageHandlers.push(handler);
   },
 
-  login: async (username, password) => {
-    await api.internal.login(username, password);
+  isConnected: () => {
+    return api.internal.socket != null;
   },
 
-  readAccounts: async (accountId) => {
-    return await api.internal.readAccounts(accountId);
+  setAuthorizationToken: (token) => {
+    api.internal.authorizationToken = token;
   },
 
-  createAccount: async (username, password, publicName) => {
-    return await api.internal.createAccount(username, password, publicName);
+  connectSocket: async () => {
+    const url = 'ws://' + api.internal.endpoint + '/api/ws';
+    const socket = await new Promise((resolve, reject) => {
+      const errorEventHandler = () => {
+        reject();
+      };
+      const socket = new WebSocket(url);
+      socket.addEventListener('error', errorEventHandler);
+      socket.addEventListener('open', () => {
+        socket.removeEventListener('error', errorEventHandler);
+        resolve(socket);
+      });
+    });
+    socket.addEventListener('close', () => {
+      console.log('Socket: close'); // TODO: Testing
+      api.internal.socket = null;
+      api.internal.invokeClosedConnectionHandlers();
+    });
+    socket.addEventListener('error', () => {
+      console.log('Socket: error'); // TODO: Testing
+      api.internal.socket = null;
+      api.internal.invokeClosedConnectionHandlers();
+    });
+    socket.addEventListener('message', e => {
+      api.internal.invokeIncomingMessageHandlers(JSON.parse(e.data));
+    });
+    api.internal.socket = socket;
+    api.internal.invokeEstablishedConnectionHandlers();
   },
 
-  updateAccount: async (accountId, username, password, authorities, publicName) => {
-    return await api.internal.updateAccount(accountId, username, password, authorities, publicName);
+  disconnectSocket: () => {
+    if (api.internal.socket == null) {
+      return;
+    }
+    api.internal.socket.close();
   },
 
-  deleteAccount: async (accountId) => {
-    await api.internal.deleteAccount(accountId);
+  requestLogin: async (username, password) => {
+    const response = await api.internal.makeRequest('/api/auth', 'POST', null, 'application/json', JSON.stringify({
+      username: username,
+      password, password
+    }));
+    if (response.ok) {
+      return await response.json();
+    }
+    throw new Error(response.status);
   },
 
-  requestFriendship: async (accountId) => {
-    await api.internal.requestFriendship(accountId);
+  requestLogout: async () => {
+    await api.internal.makeRequest('/api/auth', 'DELETE', null, null, null);
   },
 
-  terminateFriendship: async (accountId) => {
-    await api.internal.terminateFriendship(accountId);
+  requestReadAccounts: async (accountId) => {
+    let parameters = null;
+    if (accountId != null) {
+      parameters = {
+        id: accountId
+      };
+    }
+    const response = await api.internal.makeRequest('/api/account', 'GET', parameters, null, null);
+    if (response.ok) {
+      return await response.json();
+    }
+    throw new Error(response.status);
   },
 
-  joinGame: () => {
-    api.internal.joinGame();
+  requestCreateAccount: async (username, password, publicName) => {
+    const response = await api.internal.makeRequest('/api/account', 'POST', null, 'application/json', JSON.stringify({
+      loginName: username,
+      password: password,
+      publicName: publicName
+    }));
+    if (response.ok) {
+      return await response.json();
+    }
+    throw new Error(response.status);
   },
 
-  moveCharacter: (direction) => {
-    api.internal.moveCharacter(direction);
+  requestUpdateAccount: async (accountId, username, password, authorities, publicName) => {
+    let parameters = null;
+    if (accountId != null) {
+      parameters = {
+        id: accountId
+      };
+    }
+    const response = await api.internal.makeRequest('/api/account', 'PUT', parameters, 'application/json', JSON.stringify({
+      loginName: username,
+      password: password,
+      authorities: authorities,
+      publicName: publicName
+    }));
+    if (response.ok) {
+      return await response.json();
+    }
+    throw new Error(response.status);
   },
 
-  initialize: async (friendshipChangeHandler, gameSnapshotHandler) => {
-    await api.internal.initialize(friendshipChangeHandler, gameSnapshotHandler);
+  requestDeleteAccount: async (accountId) => {
+    let parameters = null;
+    if (accountId != null) {
+      parameters = {
+        id: accountId
+      };
+    }
+    const response = await api.internal.makeRequest('/api/account', 'DELETE', parameters, null, null);
+    if (response.ok) {
+      return;
+    }
+    throw new Error(response.status);
+  },
+
+  requestListFriendships: async () => {
+    const response = await api.internal.makeRequest('/api/friendship', 'GET', null, null, null);
+    if (response.ok) {
+      return await response.json();
+    }
+    throw new Error(response.status);
+  },
+
+  requestRequestFriendship: async (accountId) => {
+    let parameters = null;
+    if (accountId != null) {
+      parameters = {
+        id: accountId
+      };
+    }
+    const response = await api.internal.makeRequest('/api/friendship', 'POST', parameters, null, null);
+    if (response.ok) {
+      return;
+    }
+    throw new Error(response.status);
+  },
+
+  requestTerminateFriendship: async (accountId) => {
+    let parameters = null;
+    if (accountId != null) {
+      parameters = {
+        id: accountId
+      };
+    }
+    const response = await api.internal.makeRequest('/api/friendship', 'DELETE', parameters, null, null);
+    if (response.ok) {
+      return;
+    }
+    throw new Error(response.status);
+  },
+
+  sendGameJoin: () => {
+    api.internal.sendObjectOverSocket({
+      type: 'game_join'
+    });
+  },
+
+  sendGameInput: (input) => {
+    api.internal.sendObjectOverSocket({
+      type: 'game_input',
+      payload: input
+    });
   }
 
 };
