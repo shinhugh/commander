@@ -17,7 +17,7 @@ const friendships = {
       }
     },
 
-    handleIncomingMessage: async () => {
+    handleIncomingMessage: async (message) => {
       if (message.type !== 'friendships_change') {
         return;
       }
