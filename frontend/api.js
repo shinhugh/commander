@@ -140,11 +140,11 @@ const api = {
     await api.internal.makeRequest('/api/auth', 'DELETE', null, null, null);
   },
 
-  requestReadAccounts: async (accountId) => {
+  requestReadAccounts: async (id) => {
     let parameters = null;
-    if (accountId != null) {
+    if (id != null) {
       parameters = {
-        id: accountId
+        id: id
       };
     }
     const response = await api.internal.makeRequest('/api/account', 'GET', parameters, null, null);
@@ -166,11 +166,11 @@ const api = {
     throw new Error(response.status);
   },
 
-  requestUpdateAccount: async (accountId, username, password, authorities, publicName) => {
+  requestUpdateAccount: async (id, username, password, authorities, publicName) => {
     let parameters = null;
-    if (accountId != null) {
+    if (id != null) {
       parameters = {
-        id: accountId
+        id: id
       };
     }
     const response = await api.internal.makeRequest('/api/account', 'PUT', parameters, 'application/json', JSON.stringify({
@@ -185,11 +185,11 @@ const api = {
     throw new Error(response.status);
   },
 
-  requestDeleteAccount: async (accountId) => {
+  requestDeleteAccount: async (id) => {
     let parameters = null;
-    if (accountId != null) {
+    if (id != null) {
       parameters = {
-        id: accountId
+        id: id
       };
     }
     const response = await api.internal.makeRequest('/api/account', 'DELETE', parameters, null, null);
@@ -207,11 +207,11 @@ const api = {
     throw new Error(response.status);
   },
 
-  requestRequestFriendship: async (accountId) => {
+  requestRequestFriendship: async (id) => {
     let parameters = null;
-    if (accountId != null) {
+    if (id != null) {
       parameters = {
-        id: accountId
+        id: id
       };
     }
     const response = await api.internal.makeRequest('/api/friendship', 'POST', parameters, null, null);
@@ -221,11 +221,11 @@ const api = {
     throw new Error(response.status);
   },
 
-  requestTerminateFriendship: async (accountId) => {
+  requestTerminateFriendship: async (id) => {
     let parameters = null;
-    if (accountId != null) {
+    if (id != null) {
       parameters = {
-        id: accountId
+        id: id
       };
     }
     const response = await api.internal.makeRequest('/api/friendship', 'DELETE', parameters, null, null);

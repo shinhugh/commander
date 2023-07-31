@@ -1,5 +1,6 @@
 /* Requires:
  * - auth.js
+ * - accounts.js
  * - friendships.js
  * - game.js
  */
@@ -96,6 +97,8 @@ const ui = {
     }
   },
 
+  state: { },
+
   hide: (element) => {
     element.style.display = 'none';
   },
@@ -161,6 +164,7 @@ ui.hide(ui.elements.notification.root);
 // ------------------------------------------------------------
 
 auth.initialize();
+accounts.initialize();
 friendships.initialize();
 game.initialize();
 
@@ -170,6 +174,9 @@ auth.registerLoginHandler(ui.handleLogin);
 auth.registerLogoutHandler(ui.handleLogout);
 friendships.registerFriendshipsChangeHandler(ui.handleFriendshipsChange);
 game.registerGameStateChangeHandler(ui.handleGameStateChange);
+
+// ------------------------------------------------------------
+
 // TODO: Register UI event handlers
 
 // ------------------------------------------------------------

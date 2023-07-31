@@ -43,6 +43,14 @@ const friendships = {
 
   getFriendships: () => {
     return friendships.internal.friendships;
+  },
+
+  requestFriendship: async (id) => {
+    await api.requestRequestFriendship(id);
+  },
+
+  terminateFriendship: async (id) => {
+    await api.requestTerminateFriendship(id);
   }
 
 };

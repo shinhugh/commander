@@ -8,8 +8,6 @@ const auth = {
 
     session: null,
 
-    account: null,
-
     loginHandlers: [ ],
 
     logoutHandlers: [ ],
@@ -47,17 +45,12 @@ const auth = {
     return auth.internal.session != null;
   },
 
-  getAccount: () => {
-    return auth.internal.account;
-  },
-
   login: async (username, password) => {
     if (auth.internal.session != null) {
       return;
     }
     auth.internal.session = await api.requestLogin(username, password);
     api.setAuthorizationToken(auth.internal.session.token);
-    auth.internal.account = await api.requestReadAccounts(null)[0];
     await api.connectSocket();
     auth.internal.invokeLoginHandlers();
   },
@@ -66,7 +59,6 @@ const auth = {
     if (auth.internal.session == null) {
       return;
     }
-    auth.internal.account = null;
     auth.internal.session = null;
     api.disconnectSocket();
     await api.requestLogout();
