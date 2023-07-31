@@ -131,6 +131,10 @@ const ui = {
     // TODO: Implement
   },
 
+  handleSelfChange: () => {
+    // TODO: Implement
+  },
+
   handleFriendshipsChange: () => {
     // TODO: Implement
   },
@@ -172,6 +176,7 @@ game.initialize();
 
 auth.registerLoginHandler(ui.handleLogin);
 auth.registerLogoutHandler(ui.handleLogout);
+accounts.registerSelfChangeHandler(ui.handleSelfChange);
 friendships.registerFriendshipsChangeHandler(ui.handleFriendshipsChange);
 game.registerGameStateChangeHandler(ui.handleGameStateChange);
 

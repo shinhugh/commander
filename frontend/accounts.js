@@ -9,12 +9,22 @@ const accounts = {
 
     self: null,
 
+    selfChangeHandlers: [ ],
+
+    invokeSelfChangeHandlers: () => {
+      for (const handler of accounts.internal.selfChangeHandlers) {
+        handler();
+      }
+    },
+
     handleLogin: async () => {
-      accounts.internal.self = await api.requestReadAccounts(null)[0];
+      accounts.internal.self = (await api.requestReadAccounts(null))[0];
+      accounts.internal.invokeSelfChangeHandlers();
     },
 
     handleLogout: () => {
       accounts.internal.self = null;
+      accounts.internal.invokeSelfChangeHandlers();
     }
 
   },
@@ -25,6 +35,10 @@ const accounts = {
     if (auth.isLoggedIn()) {
       await accounts.internal.handleLogin();
     }
+  },
+
+  registerSelfChangeHandler: (handler) => {
+    accounts.internal.selfChangeHandlers.push(handler);
   },
 
   getSelf: () => {
