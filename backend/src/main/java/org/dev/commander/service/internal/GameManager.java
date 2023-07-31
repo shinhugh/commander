@@ -394,11 +394,15 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             }
         }
 
-        // TODO: Each client should get its own dedicated snapshot as opposed to a common global snapshot
-        //       Certain information should be hidden from certain players (e.g. fog of war)
-        //       Each snapshot should also contain the client's player ID
         private static Map<Long, GameState> applyPerspectives(GameState gameState) {
-            throw new RuntimeException("Not implemented");
+            Map<Long, GameState> playerSpecificGameStates = new HashMap<>();
+            for (Character character : gameState.getCharacters().values()) {
+                long playerId = character.getPlayerId();
+                GameState playerSpecificGameState = cloneGameState(gameState);
+                playerSpecificGameState.setClientPlayerId(playerId);
+                playerSpecificGameStates.put(playerId, playerSpecificGameState);
+            }
+            return playerSpecificGameStates;
         }
 
         private static GameState cloneGameState(GameState gameState) {
