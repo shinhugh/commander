@@ -17,6 +17,14 @@ const friendships = {
       }
     },
 
+    handleIncomingMessage: async () => {
+      if (message.type !== 'friendships_change') {
+        return;
+      }
+      friendships.internal.friendships = await api.requestListFriendships();
+      friendships.internal.invokeFriendshipsChangeHandlers();
+    },
+
     handleLogin: async () => {
       friendships.internal.friendships = await api.requestListFriendships();
       friendships.internal.invokeFriendshipsChangeHandlers();
@@ -30,6 +38,7 @@ const friendships = {
   },
 
   initialize: async () => {
+    api.registerIncomingMessageHandler(friendships.internal.handleIncomingMessage);
     auth.registerLoginHandler(friendships.internal.handleLogin);
     auth.registerLogoutHandler(friendships.internal.handleLogout);
     if (auth.isLoggedIn()) {
