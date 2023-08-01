@@ -337,16 +337,21 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                     if (character == null) {
                         return true;
                     }
+                    Double newPosX = input.getPosX();
+                    Double newPosY = input.getPosY();
+                    if (newPosX == null || newPosY == null) {
+                        return true;
+                    }
+                    double oldPosX = character.getPosX();
+                    double oldPosY = character.getPosY();
                     double width = character.getWidth();
                     double height = character.getHeight();
-                    double posX = input.getPosX();
-                    double posY = input.getPosY();
-                    if (posX < 0 || posX + width > gameState.getSpace().getWidth() || posY < 0 || posY + height > gameState.getSpace().getHeight()) {
+                    if (newPosX < 0 || newPosX + width > gameState.getSpace().getWidth() || newPosY < 0 || newPosY + height > gameState.getSpace().getHeight()) {
                         return false;
                     }
                     long duration = Math.min(currentTime - character.getLastPositionUpdateTime(), CHARACTER_POSITION_SILENT_INTERVAL_MAX);
                     double radius = character.getMovementSpeed() * duration * CHARACTER_SPEED_SCALING;
-                    double proposedDistance = Math.sqrt(Math.pow(posX - character.getPosX(), 2) + Math.pow(posY - character.getPosY(), 2));
+                    double proposedDistance = Math.sqrt(Math.pow(newPosX - oldPosX, 2) + Math.pow(newPosY - oldPosY, 2));
                     if (proposedDistance > radius + CHARACTER_MOVEMENT_VALIDATION_MARGIN) {
                         return false;
                     }
@@ -355,9 +360,14 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                             return false;
                         }
                     }
-                    character.setPosX(posX);
-                    character.setPosY(posY);
-                    character.setOrientation(input.getOrientation());
+                    Direction orientation = input.getOrientation();
+                    if (orientation == null) {
+                        orientation = determineDirection(newPosX - oldPosX, newPosY - oldPosY);
+                        orientation = orientation == null ? Direction.DOWN : orientation;
+                    }
+                    character.setPosX(newPosX);
+                    character.setPosY(newPosY);
+                    character.setOrientation(orientation);
                     character.setLastPositionUpdateTime(currentTime);
                 }
             }
@@ -390,6 +400,38 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                 return (matterAYLower >= matterBYLower && matterAYLower <= matterBYUpper) || (matterAYUpper >= matterBYLower && matterAYUpper <= matterBYUpper);
             }
             return false;
+        }
+
+        private static Direction determineDirection(double deltaX, double deltaY) {
+            if (deltaX < 0) {
+                if (deltaY < 0) {
+                    return Direction.UP_LEFT;
+                }
+                else if (deltaY > 0) {
+                    return Direction.DOWN_LEFT;
+                }
+                else {
+                    return Direction.LEFT;
+                }
+            }
+            else if (deltaX > 0) {
+                if (deltaY < 0) {
+                    return Direction.UP_RIGHT;
+                }
+                else if (deltaY > 0) {
+                    return Direction.DOWN_RIGHT;
+                }
+                else {
+                    return Direction.RIGHT;
+                }
+            }
+            if (deltaY < 0) {
+                return Direction.UP;
+            }
+            else if (deltaY > 0) {
+                return Direction.DOWN;
+            }
+            return null;
         }
 
         private static GameState cloneGameState(GameState gameState) {
