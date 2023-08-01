@@ -29,7 +29,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     private final MessageBroker messageBroker;
     private final IdentificationService identificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final GameEntry game = generateGameEntry();
+    private final GameEntry game = new GameEntry();
     private final Map<Long, String> playerIdToSessionTokenMap = new HashMap<>();
     private final Lock playerIdToSessionTokenMapReadLock;
     private final Lock playerIdToSessionTokenMapWriteLock;
@@ -214,22 +214,9 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         return player.getId();
     }
 
-    private static GameEntry generateGameEntry() {
-        // TODO: Populate GameEntry from persistent storage; remove method generateMockGameEntry()
-        return generateMockGameEntry();
-    }
-
-    private static GameEntry generateMockGameEntry() {
-        Space space = new Space();
-        space.setWidth(16);
-        space.setHeight(26);
-        GameState gameState = new GameState();
-        gameState.setSpace(space);
-        gameState.setCharacters(new HashMap<>());
-        return new GameEntry(gameState);
-    }
-
     private static class GameEntry {
+        private static final double SPACE_WIDTH = 16;
+        private static final double SPACE_HEIGHT = 26;
         private static final double SPEED_SCALING = 0.002;
         private static final double CHARACTER_LENGTH = 1;
         private static final double CHARACTER_MOVEMENT_SPEED = 1;
@@ -240,6 +227,18 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         private final GameState gameState;
         private final Lock gameStateReadLock;
         private final Lock gameStateWriteLock;
+
+        public GameEntry() {
+            Space space = new Space();
+            space.setWidth(SPACE_WIDTH);
+            space.setHeight(SPACE_HEIGHT);
+            gameState = new GameState();
+            gameState.setSpace(space);
+            gameState.setCharacters(new HashMap<>());
+            ReadWriteLock gameStateReadWriteLock = new ReentrantReadWriteLock();
+            gameStateReadLock = gameStateReadWriteLock.readLock();
+            gameStateWriteLock = gameStateReadWriteLock.writeLock();
+        }
 
         public GameEntry(GameState gameState) {
             this.gameState = cloneGameState(gameState);
