@@ -29,7 +29,9 @@ const uiGame = {
       auth.registerLoginHandler(uiGame.internal.handleLogin);
       auth.registerLogoutHandler(uiGame.internal.handleLogout);
       game.registerGameStateChangeHandler(uiGame.internal.handleGameStateChange);
-      uiBase.registerNavigationHandler(uiGame.internal.handleNavigation);
+      uiBase.registerModuleChangeHandler(uiGame.internal.handleModuleChange);
+      uiBase.registerOverlayAppearanceHandler(uiGame.internal.handleOverlayAppearance);
+      uiBase.registerOverlayDisappearanceHandler(uiGame.internal.handleOverlayDisappearance);
     },
 
     sendDirectionalCommand: () => {
@@ -82,6 +84,14 @@ const uiGame = {
         }
       }
       game.setCharacterMovement(direction);
+    },
+
+    resetMovement: () => {
+      uiGame.internal.state.keyWPressed = false;
+      uiGame.internal.state.keyAPressed = false;
+      uiGame.internal.state.keySPressed = false;
+      uiGame.internal.state.keyDPressed = false;
+      uiGame.internal.sendDirectionalCommand();
     },
 
     handleKeyDown: (e) => {
@@ -204,14 +214,29 @@ const uiGame = {
       });
     },
 
-    handleNavigation: (navigation) => {
-      if (navigation.destination === 'game_module') { // TODO: Match this with behavior in uiBase
+    handleModuleChange: () => {
+      if (uiBase.getCurrentModule() === 'game') {
         document.addEventListener('keydown', uiGame.internal.handleKeyDown);
         document.addEventListener('keyup', uiGame.internal.handleKeyUp);
       } else {
         document.removeEventListener('keydown', uiGame.internal.handleKeyDown);
         document.removeEventListener('keyup', uiGame.internal.handleKeyUp);
+        uiGame.internal.resetMovement();
       }
+    },
+
+    handleOverlayAppearance: () => {
+      document.removeEventListener('keydown', uiGame.internal.handleKeyDown);
+      document.removeEventListener('keyup', uiGame.internal.handleKeyUp);
+      uiGame.internal.resetMovement();
+    },
+
+    handleOverlayDisappearance: () => {
+      if (uiBase.getCurrentModule() !== 'game') {
+        return;
+      }
+      document.addEventListener('keydown', uiGame.internal.handleKeyDown);
+      document.addEventListener('keyup', uiGame.internal.handleKeyUp);
     }
 
   },

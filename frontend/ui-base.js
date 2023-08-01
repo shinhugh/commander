@@ -97,13 +97,27 @@ const uiBase = {
     state: {
       notificationTimeoutId: null,
       addFriendButtonHandler: null,
-      navigationHandlers: [ ]
+      currentModule: null,
+      moduleChangeHandlers: [ ],
+      overlayAppearanceHandlers: [ ],
+      overlayDisappearanceHandlers: [ ]
     },
 
-    // TODO: Invoke this whenever navigation occurs
-    invokeNavigationHandlers: (navigation) => {
-      for (const handler of uiBase.internal.state.navigationHandlers) {
-        handler(navigation);
+    invokeModuleChangeHandlers: () => {
+      for (const handler of uiBase.internal.state.moduleChangeHandlers) {
+        handler();
+      }
+    },
+
+    invokeOverlayAppearanceHandlers: () => {
+      for (const handler of uiBase.internal.state.overlayAppearanceHandlers) {
+        handler();
+      }
+    },
+
+    invokeOverlayDisappearanceHandlers: () => {
+      for (const handler of uiBase.internal.state.overlayDisappearanceHandlers) {
+        handler();
       }
     },
 
@@ -257,6 +271,8 @@ const uiBase = {
     showLoginModule: () => {
       uiBase.internal.clearContent();
       uiApi.show(uiBase.internal.elements.content.loginModule.root);
+      uiBase.internal.state.currentModule = 'login';
+      uiBase.internal.invokeModuleChangeHandlers();
     },
 
     showLoginPage: () => {
@@ -276,6 +292,8 @@ const uiBase = {
     showGameModule: () => {
       uiBase.internal.clearContent();
       uiApi.show(uiBase.internal.elements.content.gameModule.root);
+      uiBase.internal.state.currentModule = 'game';
+      uiBase.internal.invokeModuleChangeHandlers();
     },
 
     hideTopBarTitle: () => {
@@ -300,10 +318,12 @@ const uiBase = {
 
     hideOverlay: () => {
       uiApi.hide(uiBase.internal.elements.overlay.root);
+      uiBase.internal.invokeOverlayDisappearanceHandlers();
     },
 
     showOverlay: () => {
       uiApi.show(uiBase.internal.elements.overlay.root);
+      uiBase.internal.invokeOverlayAppearanceHandlers();
     },
 
     clearOverlay: () => {
@@ -644,8 +664,20 @@ const uiBase = {
     }
   },
 
-  registerNavigationHandler: (handler) => {
-    uiBase.internal.state.navigationHandlers.push(handler);
+  registerModuleChangeHandler: (handler) => {
+    uiBase.internal.state.moduleChangeHandlers.push(handler);
+  },
+
+  registerOverlayAppearanceHandler: (handler) => {
+    uiBase.internal.state.overlayAppearanceHandlers.push(handler);
+  },
+
+  registerOverlayDisappearanceHandler: (handler) => {
+    uiBase.internal.state.overlayDisappearanceHandlers.push(handler);
+  },
+
+  getCurrentModule: () => {
+    return uiBase.internal.state.currentModule;
   }
 
 };
