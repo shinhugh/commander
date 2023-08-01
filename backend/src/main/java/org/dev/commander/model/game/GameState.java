@@ -3,6 +3,7 @@ package org.dev.commander.model.game;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Map;
+import java.util.Set;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GameState {
@@ -10,6 +11,7 @@ public class GameState {
     private long snapshotTime;
     private Space space;
     private Map<Long, Character> characters;
+    private Set<Obstacle> obstacles;
 
     public long getClientPlayerId() {
         return clientPlayerId;
@@ -41,5 +43,13 @@ public class GameState {
 
     public void setCharacters(Map<Long, Character> characters) {
         this.characters = characters;
+    }
+
+    public Set<Obstacle> getObstacles() {
+        return obstacles;
+    }
+
+    public void setObstacles(Set<Obstacle> obstacles) {
+        this.obstacles = obstacles;
     }
 }

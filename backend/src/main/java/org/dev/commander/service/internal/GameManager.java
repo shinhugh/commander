@@ -336,19 +336,28 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                     if (character == null) {
                         return true;
                     }
-                    double posX = input.getPosX();
-                    double posY = input.getPosY();
-                    if (posX < 0 || posX + character.getWidth() > gameState.getSpace().getWidth() || posY < 0 || posY + character.getHeight() > gameState.getSpace().getHeight()) {
+                    double width = character.getWidth();
+                    double height = character.getHeight();
+                    double characterXLower = input.getPosX();
+                    double characterXUpper = characterXLower + character.getWidth();
+                    double characterYLower = input.getPosY();
+                    double characterYUpper = characterYLower + character.getHeight();
+                    if (characterXLower < 0 || characterXLower + width > gameState.getSpace().getWidth() || characterYLower < 0 || characterYLower + height > gameState.getSpace().getHeight()) {
                         return false;
                     }
                     long duration = Math.min(currentTime - character.getLastPositionUpdateTime(), CHARACTER_POSITION_SILENT_INTERVAL_MAX);
                     double radius = character.getMovementSpeed() * duration * CHARACTER_SPEED_SCALING;
-                    double proposedDistance = Math.sqrt(Math.pow(posX - character.getPosX(), 2) + Math.pow(posY - character.getPosY(), 2));
+                    double proposedDistance = Math.sqrt(Math.pow(characterXLower - character.getPosX(), 2) + Math.pow(characterYLower - character.getPosY(), 2));
                     if (proposedDistance > radius + CHARACTER_MOVEMENT_VALIDATION_MARGIN) {
                         return false;
                     }
-                    character.setPosX(posX);
-                    character.setPosY(posY);
+                    for (Obstacle obstacle : gameState.getObstacles()) {
+                        if (testForOverlap(character, obstacle)) {
+                            return false;
+                        }
+                    }
+                    character.setPosX(characterXLower);
+                    character.setPosY(characterYLower);
                     character.setOrientation(input.getOrientation());
                     character.setLastPositionUpdateTime(currentTime);
                 }
@@ -367,6 +376,21 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                 playerSpecificGameStates.put(playerId, playerSpecificGameState);
             }
             return playerSpecificGameStates;
+        }
+
+        private static boolean testForOverlap(Matter matterA, Matter matterB) {
+            double matterAXLower = matterA.getPosX();
+            double matterAXUpper = matterAXLower + matterA.getWidth();
+            double matterAYLower = matterA.getPosY();
+            double matterAYUpper = matterAYLower + matterA.getHeight();
+            double matterBXLower = matterB.getPosX();
+            double matterBXUpper = matterBXLower + matterB.getWidth();
+            double matterBYLower = matterB.getPosY();
+            double matterBYUpper = matterBYLower + matterB.getHeight();
+            if ((matterAXLower >= matterBXLower && matterAXLower <= matterBXUpper) || (matterAXUpper >= matterBXLower && matterAXUpper <= matterBXUpper)) {
+                return (matterAYLower >= matterBYLower && matterAYLower <= matterBYUpper) || (matterAYUpper >= matterBYLower && matterAYUpper <= matterBYUpper);
+            }
+            return false;
         }
 
         private static GameState cloneGameState(GameState gameState) {
@@ -391,11 +415,21 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                 characterClone.setOrientation(character.getOrientation());
                 characters.put(playerId, characterClone);
             }
+            Set<Obstacle> obstacles = new HashSet<>();
+            for (Obstacle obstacle : gameState.getObstacles()) {
+                Obstacle obstacleClone = new Obstacle();
+                obstacleClone.setWidth(obstacle.getWidth());
+                obstacleClone.setHeight(obstacle.getHeight());
+                obstacleClone.setPosX(obstacle.getPosX());
+                obstacleClone.setPosY(obstacle.getPosY());
+                obstacles.add(obstacleClone);
+            }
             GameState clone = new GameState();
             clone.setClientPlayerId(gameState.getClientPlayerId());
             clone.setSnapshotTime(gameState.getSnapshotTime());
             clone.setSpace(space);
             clone.setCharacters(characters);
+            clone.setObstacles(obstacles);
             return clone;
         }
     }
