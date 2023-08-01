@@ -236,6 +236,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             gameState = new GameState();
             gameState.setSpace(space);
             gameState.setCharacters(new HashMap<>());
+            gameState.setObstacles(new HashSet<>());
             ReadWriteLock gameStateReadWriteLock = new ReentrantReadWriteLock();
             gameStateReadLock = gameStateReadWriteLock.readLock();
             gameStateWriteLock = gameStateReadWriteLock.writeLock();
@@ -338,16 +339,14 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                     }
                     double width = character.getWidth();
                     double height = character.getHeight();
-                    double characterXLower = input.getPosX();
-                    double characterXUpper = characterXLower + character.getWidth();
-                    double characterYLower = input.getPosY();
-                    double characterYUpper = characterYLower + character.getHeight();
-                    if (characterXLower < 0 || characterXLower + width > gameState.getSpace().getWidth() || characterYLower < 0 || characterYLower + height > gameState.getSpace().getHeight()) {
+                    double posX = input.getPosX();
+                    double posY = input.getPosY();
+                    if (posX < 0 || posX + width > gameState.getSpace().getWidth() || posY < 0 || posY + height > gameState.getSpace().getHeight()) {
                         return false;
                     }
                     long duration = Math.min(currentTime - character.getLastPositionUpdateTime(), CHARACTER_POSITION_SILENT_INTERVAL_MAX);
                     double radius = character.getMovementSpeed() * duration * CHARACTER_SPEED_SCALING;
-                    double proposedDistance = Math.sqrt(Math.pow(characterXLower - character.getPosX(), 2) + Math.pow(characterYLower - character.getPosY(), 2));
+                    double proposedDistance = Math.sqrt(Math.pow(posX - character.getPosX(), 2) + Math.pow(posY - character.getPosY(), 2));
                     if (proposedDistance > radius + CHARACTER_MOVEMENT_VALIDATION_MARGIN) {
                         return false;
                     }
@@ -356,8 +355,8 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                             return false;
                         }
                     }
-                    character.setPosX(characterXLower);
-                    character.setPosY(characterYLower);
+                    character.setPosX(posX);
+                    character.setPosY(posY);
                     character.setOrientation(input.getOrientation());
                     character.setLastPositionUpdateTime(currentTime);
                 }
