@@ -54,7 +54,7 @@ const accounts = {
   },
 
   updateAccount: async (id, username, password, authorities, publicName) => {
-    return await api.requestUpdateAccounts(id, username, password, authorities, publicName);
+    return await api.requestUpdateAccount(id, username, password, authorities, publicName);
   },
 
   deleteAccount: async (id) => {
