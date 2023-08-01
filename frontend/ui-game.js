@@ -23,7 +23,8 @@ const uiGame = {
       keySPressTime: null,
       keyDPressed: false,
       keyDPressTime: null,
-      characterElements: { }
+      characterElements: { },
+      obstacleElements: { }
     },
 
     registerApiHandlers: () => {
@@ -116,20 +117,20 @@ const uiGame = {
     },
 
     updateCharacterElements: (characterModels, scale) => {
-      let currentPlayerIds = new Set(Object.keys(uiGame.internal.state.characterElements));
+      let cachedCharacterIds = new Set(Object.keys(uiGame.internal.state.characterElements));
       for (const characterModel of characterModels) {
         let characterElement;
-        if (currentPlayerIds.has(characterModel.playerId.toString())) {
-          characterElement = uiGame.internal.state.characterElements[characterModel.playerId];
-          currentPlayerIds.delete(characterModel.playerId.toString());
+        if (cachedCharacterIds.has(characterModel.id.toString())) {
+          characterElement = uiGame.internal.state.characterElements[characterModel.id];
+          cachedCharacterIds.delete(characterModel.id.toString());
         } else {
           const spriteElement = document.createElement('div');
-          spriteElement.classList.add('character_sprite');
+          spriteElement.classList.add('game_character_sprite');
           characterElement = document.createElement('div');
-          characterElement.classList.add('character');
+          characterElement.classList.add('game_character');
           characterElement.appendChild(spriteElement);
           uiGame.internal.elements.map.appendChild(characterElement);
-          uiGame.internal.state.characterElements[characterModel.playerId] = characterElement;
+          uiGame.internal.state.characterElements[characterModel.id] = characterElement;
         }
         characterElement.style.top = (scale * characterModel.posY) + 'px';
         characterElement.style.left = (scale * characterModel.posX) + 'px';
@@ -149,10 +150,34 @@ const uiGame = {
         }
         // TODO: Set 'moving' data attribute on characterElement if character is moving
       }
-      currentPlayerIds.forEach(playerId => {
-        uiGame.internal.state.characterElements[playerId].remove();
-        delete uiGame.internal.state.characterElements[playerId];
+      cachedCharacterIds.forEach(id => {
+        uiGame.internal.state.characterElements[id].remove();
+        delete uiGame.internal.state.characterElements[id];
       });
+    },
+
+    updateObstacleElements: (obstacleModels, scale) => {
+      let cachedObstacleIds = new Set(Object.keys(uiGame.internal.state.obstacleElements));
+      for (const obstacleModel of obstacleModels) {
+        let obstacleElement;
+        if (cachedObstacleIds.has(obstacleModel.id.toString())) {
+          obstacleElement = uiGame.internal.state.obstacleElements[obstacleModel.id];
+          cachedObstacleIds.delete(obstacleModel.id.toString());
+        } else {
+          obstacleElement = document.createElement('div');
+          obstacleElement.classList.add('game_obstacle');
+          uiGame.internal.elements.map.appendChild(obstacleElement);
+          uiGame.internal.state.obstacleElements[obstacleModel.id] = obstacleElement;
+        }
+        obstacleElement.style.top = (scale * obstacleModel.posY) + 'px';
+        obstacleElement.style.left = (scale * obstacleModel.posX) + 'px';
+        obstacleElement.style.height = (scale * obstacleModel.height) + 'px';
+        obstacleElement.style.width = (scale * obstacleModel.width) + 'px';
+        cachedObstacleIds.forEach(id => {
+          uiGame.internal.state.obstacleElements[id].remove();
+          delete uiGame.internal.state.obstacleElements[id];
+        });
+      }
     },
 
     handleKeyDown: (e) => {
@@ -237,6 +262,7 @@ const uiGame = {
       }
       const scale = uiGame.internal.updateMapElement(snapshot.space, clientCharacter);
       uiGame.internal.updateCharacterElements(Object.values(snapshot.characters), scale);
+      uiGame.internal.updateObstacleElements(snapshot.obstacles, scale);
     },
 
     handleModuleChange: () => {

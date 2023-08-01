@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -29,7 +30,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     private final MessageBroker messageBroker;
     private final IdentificationService identificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final GameEntry game = new GameEntry();
+    private final GameEntry game = generateGameEntry();
     private final Map<Long, String> playerIdToSessionTokenMap = new HashMap<>();
     private final Lock playerIdToSessionTokenMapReadLock;
     private final Lock playerIdToSessionTokenMapWriteLock;
@@ -214,33 +215,39 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         return player.getId();
     }
 
+    // TODO: Read map data from external configuration file
+    private static GameEntry generateGameEntry() {
+        Space space = new Space();
+        space.setWidth(48);
+        space.setHeight(16);
+        Obstacle obstacle = new Obstacle();
+        obstacle.setId(1);
+        obstacle.setWidth(3);
+        obstacle.setHeight(2);
+        obstacle.setPosX(18);
+        obstacle.setPosY(8);
+        Set<Obstacle> obstacles = new HashSet<>();
+        obstacles.add(obstacle);
+        GameState gameState = new GameState();
+        gameState.setSpace(space);
+        gameState.setCharacters(new HashMap<>());
+        gameState.setObstacles(obstacles);
+        return new GameEntry(gameState);
+    }
+
+    // TODO: Use as data object; move logic into parent class GameManager
     private static class GameEntry {
-        private static final double SPACE_WIDTH = 48;
-        private static final double SPACE_HEIGHT = 16;
         private static final double CHARACTER_SPEED_SCALING = 0.005;
         private static final double CHARACTER_LENGTH = 1;
         private static final double CHARACTER_MOVEMENT_SPEED = 1;
         private static final double CHARACTER_MOVEMENT_VALIDATION_MARGIN = 0.06;
         private static final long CHARACTER_POSITION_SILENT_INTERVAL_MAX = 100;
-        private long lastProcessTime;
         private final List<GameInput> inputQueue = new ArrayList<>();
         private final Lock inputQueueLock = new ReentrantLock();
         private final GameState gameState;
         private final Lock gameStateReadLock;
         private final Lock gameStateWriteLock;
-
-        public GameEntry() {
-            Space space = new Space();
-            space.setWidth(SPACE_WIDTH);
-            space.setHeight(SPACE_HEIGHT);
-            gameState = new GameState();
-            gameState.setSpace(space);
-            gameState.setCharacters(new HashMap<>());
-            gameState.setObstacles(new HashSet<>());
-            ReadWriteLock gameStateReadWriteLock = new ReentrantReadWriteLock();
-            gameStateReadLock = gameStateReadWriteLock.readLock();
-            gameStateWriteLock = gameStateReadWriteLock.writeLock();
-        }
+        private long lastProcessTime;
 
         public GameEntry(GameState gameState) {
             this.gameState = cloneGameState(gameState);
@@ -319,6 +326,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                     double posX = (gameState.getSpace().getWidth() - CHARACTER_LENGTH) / 2;
                     double posY = (gameState.getSpace().getHeight() - CHARACTER_LENGTH) / 2;
                     Character character = new Character();
+                    character.setId(generateCharacterId(gameState));
                     character.setPlayerId(input.getPlayerId());
                     character.setWidth(CHARACTER_LENGTH);
                     character.setHeight(CHARACTER_LENGTH);
@@ -434,6 +442,14 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             return null;
         }
 
+        private static long generateCharacterId(GameState gameState) {
+            long characterId;
+            do {
+                characterId = ThreadLocalRandom.current().nextLong(Long.MAX_VALUE) + 1;
+            } while (gameState.getCharacters().containsKey(characterId));
+            return characterId;
+        }
+
         private static GameState cloneGameState(GameState gameState) {
             if (gameState == null) {
                 return null;
@@ -446,6 +462,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                 long playerId = characterEntry.getKey();
                 Character character = characterEntry.getValue();
                 Character characterClone = new Character();
+                characterClone.setId(character.getId());
                 characterClone.setPlayerId(character.getPlayerId());
                 characterClone.setWidth(character.getWidth());
                 characterClone.setHeight(character.getHeight());
@@ -459,6 +476,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             Set<Obstacle> obstacles = new HashSet<>();
             for (Obstacle obstacle : gameState.getObstacles()) {
                 Obstacle obstacleClone = new Obstacle();
+                obstacleClone.setId(obstacle.getId());
                 obstacleClone.setWidth(obstacle.getWidth());
                 obstacleClone.setHeight(obstacle.getHeight());
                 obstacleClone.setPosX(obstacle.getPosX());

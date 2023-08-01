@@ -79,12 +79,12 @@
   background-size: 20%;
 }
 
-.character {
+.game_character {
   position: absolute;
   overflow-y: visible;
 }
 
-.character_sprite {
+.game_character_sprite {
   position: absolute;
   bottom: 0;
   animation-name: slime_idle;
@@ -92,12 +92,17 @@
   animation-iteration-count: infinite;
 }
 
-[data-moving]>.character_sprite {
+[data-moving]>.game_character_sprite {
   animation-name: slime_moving;
   animation-duration: 1.4s;
   animation-iteration-count: infinite;
 }
 
-[data-right]>.character_sprite {
+[data-right]>.game_character_sprite {
   transform: scaleX(-1);
+}
+
+.game_obstacle {
+  position: absolute;
+  background: black;
 }

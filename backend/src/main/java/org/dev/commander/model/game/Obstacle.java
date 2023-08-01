@@ -4,10 +4,19 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Obstacle implements Matter {
+    private long id;
     private double width;
     private double height;
     private double posX;
     private double posY;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 
     public double getWidth() {
         return width;

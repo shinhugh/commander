@@ -8,9 +8,9 @@ const game = {
 
     diagonalScaling: 0.707107,
 
-    movementSpeedScaling: 0.005,
+    characterSpeedScaling: 0.005,
 
-    processingInterval: 15,
+    processTickTime: 15,
 
     gameState: null,
 
@@ -28,6 +28,21 @@ const game = {
       }
     },
 
+    testForOverlap: (matterA, matterB) => {
+      const matterAXLower = matterA.posX;
+      const matterAXUpper = matterAXLower + matterA.width;
+      const matterAYLower = matterA.posY;
+      const matterAYUpper = matterAYLower + matterA.height;
+      const matterBXLower = matterB.posX;
+      const matterBXUpper = matterBXLower + matterB.width;
+      const matterBYLower = matterB.posY;
+      const matterBYUpper = matterBYLower + matterB.height;
+      if ((matterAXLower >= matterBXLower && matterAXLower < matterBXUpper) || (matterAXUpper > matterBXLower && matterAXUpper <= matterBXUpper) || (matterAXLower <= matterBXLower && matterAXUpper >= matterBXUpper)) {
+        return (matterAYLower >= matterBYLower && matterAYLower < matterBYUpper) || (matterAYUpper > matterBYLower && matterAYUpper <= matterBYUpper) || (matterAYLower <= matterBYLower && matterAYUpper >= matterBYUpper);
+      }
+      return false;
+    },
+
     process: () => {
       if (game.internal.gameState == null) {
         return;
@@ -35,51 +50,57 @@ const game = {
       const clientCharacter = game.internal.gameState.characters[game.internal.gameState.clientPlayerId];
       const spaceWidth = game.internal.gameState.space.width;
       const spaceHeight = game.internal.gameState.space.height;
+      const obstacles = game.internal.gameState.obstacles;
       const currentTime = Date.now();
       const duration = currentTime - game.internal.lastGameStateProcessTime;
-      let distance = clientCharacter.movementSpeed * duration * game.internal.movementSpeedScaling;
-      let clientCharacterPositionChanged = false;
+      let distance = clientCharacter.movementSpeed * duration * game.internal.characterSpeedScaling;
+      let proposedClientCharacterPosX = clientCharacter.posX;
+      let proposedClientCharacterPosY = clientCharacter.posY;
       switch (game.internal.directionInput) {
         case 'up':
-          clientCharacter.posY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, clientCharacter.posY - distance));
-          clientCharacterPositionChanged = true;
+          proposedClientCharacterPosY -= distance;
           break;
         case 'up_right':
           distance *= game.internal.diagonalScaling;
-          clientCharacter.posX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, clientCharacter.posX + distance));
-          clientCharacter.posY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, clientCharacter.posY - distance));
-          clientCharacterPositionChanged = true;
+          proposedClientCharacterPosX += distance;
+          proposedClientCharacterPosY -= distance;
           break;
         case 'right':
-          clientCharacter.posX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, clientCharacter.posX + distance));
-          clientCharacterPositionChanged = true;
+          proposedClientCharacterPosX += distance;
           break;
         case 'down_right':
           distance *= game.internal.diagonalScaling;
-          clientCharacter.posX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, clientCharacter.posX + distance));
-          clientCharacter.posY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, clientCharacter.posY + distance));
-          clientCharacterPositionChanged = true;
+          proposedClientCharacterPosX += distance;
+          proposedClientCharacterPosY += distance;
           break;
         case 'down':
-          clientCharacter.posY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, clientCharacter.posY + distance));
-          clientCharacterPositionChanged = true;
+          proposedClientCharacterPosY += distance;
           break;
         case 'down_left':
           distance *= game.internal.diagonalScaling;
-          clientCharacter.posX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, clientCharacter.posX - distance));
-          clientCharacter.posY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, clientCharacter.posY + distance));
-          clientCharacterPositionChanged = true;
+          proposedClientCharacterPosX -= distance;
+          proposedClientCharacterPosY += distance;
           break;
         case 'left':
-          clientCharacter.posX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, clientCharacter.posX - distance));
-          clientCharacterPositionChanged = true;
+          proposedClientCharacterPosX -= distance;
           break;
         case 'up_left':
           distance *= game.internal.diagonalScaling;
-          clientCharacter.posX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, clientCharacter.posX - distance));
-          clientCharacter.posY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, clientCharacter.posY - distance));
-          clientCharacterPositionChanged = true;
+          proposedClientCharacterPosX -= distance;
+          proposedClientCharacterPosY -= distance;
           break;
+      }
+      for (const obstacle of obstacles) {
+        // TODO: On collision, modify proposed coordinates to have character go
+        //       as far as possible up to obstacle's surface
+      }
+      proposedClientCharacterPosX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, proposedClientCharacterPosX));
+      proposedClientCharacterPosY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, proposedClientCharacterPosY));
+      let clientCharacterPositionChanged = false;
+      if (clientCharacter.posX !== proposedClientCharacterPosX || clientCharacter.posY !== proposedClientCharacterPosY) {
+        clientCharacter.posX = proposedClientCharacterPosX;
+        clientCharacter.posY = proposedClientCharacterPosY;
+        clientCharacterPositionChanged = true;
       }
       clientCharacter.orientation = game.internal.directionInput;
       game.internal.lastGameStateProcessTime = currentTime;
@@ -100,7 +121,7 @@ const game = {
       }
       game.internal.lastGameStateProcessTime = Date.now();
       game.internal.process();
-      game.internal.gameStateProcessingInterval = setInterval(game.internal.process, game.internal.processingInterval);
+      game.internal.gameStateProcessingInterval = setInterval(game.internal.process, game.internal.processTickTime);
     },
 
     stopProcessing: () => {

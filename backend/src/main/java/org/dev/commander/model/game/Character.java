@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Character implements Matter {
+    private long id;
     private long playerId;
     private double width;
     private double height;
@@ -14,6 +15,14 @@ public class Character implements Matter {
     @JsonIgnore
     private long lastPositionUpdateTime;
     private Direction orientation;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 
     public long getPlayerId() {
         return playerId;
