@@ -7,6 +7,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GameState {
     private long clientPlayerId;
+    private long snapshotTime;
     private Space space;
     private Map<Long, Character> characters;
 
@@ -16,6 +17,14 @@ public class GameState {
 
     public void setClientPlayerId(long clientPlayerId) {
         this.clientPlayerId = clientPlayerId;
+    }
+
+    public long getSnapshotTime() {
+        return snapshotTime;
+    }
+
+    public void setSnapshotTime(long snapshotTime) {
+        this.snapshotTime = snapshotTime;
     }
 
     public Space getSpace() {

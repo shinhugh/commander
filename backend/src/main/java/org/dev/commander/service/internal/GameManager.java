@@ -263,6 +263,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             finally {
                 gameStateReadLock.unlock();
             }
+            commonGameState.setSnapshotTime(currentTimeMillis());
             return applyPerspectives(commonGameState);
         }
 
@@ -430,6 +431,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             }
             GameState clone = new GameState();
             clone.setClientPlayerId(gameState.getClientPlayerId());
+            clone.setSnapshotTime(gameState.getSnapshotTime());
             clone.setSpace(space);
             clone.setCharacters(characters);
             return clone;
