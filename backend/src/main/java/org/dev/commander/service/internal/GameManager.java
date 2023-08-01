@@ -396,8 +396,8 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             double matterBXUpper = matterBXLower + matterB.getWidth();
             double matterBYLower = matterB.getPosY();
             double matterBYUpper = matterBYLower + matterB.getHeight();
-            if ((matterAXLower >= matterBXLower && matterAXLower <= matterBXUpper) || (matterAXUpper >= matterBXLower && matterAXUpper <= matterBXUpper)) {
-                return (matterAYLower >= matterBYLower && matterAYLower <= matterBYUpper) || (matterAYUpper >= matterBYLower && matterAYUpper <= matterBYUpper);
+            if ((matterAXLower >= matterBXLower && matterAXLower < matterBXUpper) || (matterAXUpper > matterBXLower && matterAXUpper <= matterBXUpper) || (matterAXLower <= matterBXLower && matterAXUpper >= matterBXUpper)) {
+                return (matterAYLower >= matterBYLower && matterAYLower < matterBYUpper) || (matterAYUpper > matterBYLower && matterAYUpper <= matterBYUpper) || (matterAYLower <= matterBYLower && matterAYUpper >= matterBYUpper);
             }
             return false;
         }
