@@ -10,13 +10,10 @@ public class Character {
     private double height;
     private double posX;
     private double posY;
-    @JsonIgnore
-    private Direction pendingMovementDirection;
-    @JsonIgnore
-    private long pendingMovementDuration;
-    private Direction orientationDirection;
-    @JsonIgnore
     private double movementSpeed;
+    @JsonIgnore
+    private long lastPositionUpdateTime;
+    private Direction orientation;
 
     public long getPlayerId() {
         return playerId;
@@ -58,35 +55,27 @@ public class Character {
         this.posY = posY;
     }
 
-    public Direction getPendingMovementDirection() {
-        return pendingMovementDirection;
-    }
-
-    public void setPendingMovementDirection(Direction pendingMovementDirection) {
-        this.pendingMovementDirection = pendingMovementDirection;
-    }
-
-    public long getPendingMovementDuration() {
-        return pendingMovementDuration;
-    }
-
-    public void setPendingMovementDuration(long pendingMovementDuration) {
-        this.pendingMovementDuration = pendingMovementDuration;
-    }
-
-    public Direction getOrientationDirection() {
-        return orientationDirection;
-    }
-
-    public void setOrientationDirection(Direction orientationDirection) {
-        this.orientationDirection = orientationDirection;
-    }
-
     public double getMovementSpeed() {
         return movementSpeed;
     }
 
     public void setMovementSpeed(double movementSpeed) {
         this.movementSpeed = movementSpeed;
+    }
+
+    public long getLastPositionUpdateTime() {
+        return lastPositionUpdateTime;
+    }
+
+    public void setLastPositionUpdateTime(long lastPositionUpdateTime) {
+        this.lastPositionUpdateTime = lastPositionUpdateTime;
+    }
+
+    public Direction getOrientation() {
+        return orientation;
+    }
+
+    public void setOrientation(Direction orientation) {
+        this.orientation = orientation;
     }
 }

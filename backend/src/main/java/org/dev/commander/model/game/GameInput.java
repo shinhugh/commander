@@ -1,13 +1,13 @@
 package org.dev.commander.model.game;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class GameInput {
     private long playerId;
     private Type type;
-    private Direction movementDirection;
+    private Double posX;
+    private Double posY;
+    private Direction orientation;
 
     public long getPlayerId() {
         return playerId;
@@ -25,12 +25,28 @@ public class GameInput {
         this.type = type;
     }
 
-    public Direction getMovementDirection() {
-        return movementDirection;
+    public Double getPosX() {
+        return posX;
     }
 
-    public void setMovementDirection(Direction movementDirection) {
-        this.movementDirection = movementDirection;
+    public void setPosX(Double posX) {
+        this.posX = posX;
+    }
+
+    public Double getPosY() {
+        return posY;
+    }
+
+    public void setPosY(Double posY) {
+        this.posY = posY;
+    }
+
+    public Direction getOrientation() {
+        return orientation;
+    }
+
+    public void setOrientation(Direction orientation) {
+        this.orientation = orientation;
     }
 
     public enum Type {
@@ -38,7 +54,7 @@ public class GameInput {
         JOIN,
         @JsonProperty("leave")
         LEAVE,
-        @JsonProperty("move")
-        MOVE
+        @JsonProperty("position")
+        POSITION
     }
 }

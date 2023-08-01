@@ -5,6 +5,7 @@ import org.dev.commander.model.IncomingMessage;
 import org.dev.commander.model.OutgoingMessage;
 import org.dev.commander.model.game.Character;
 import org.dev.commander.model.game.*;
+import org.dev.commander.service.exception.IllegalArgumentException;
 import org.dev.commander.websocket.ConnectionEventHandler;
 import org.dev.commander.websocket.IncomingMessageHandler;
 import org.dev.commander.websocket.MessageBroker;
@@ -104,7 +105,10 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
 
     @Scheduled(fixedRate = PROCESS_INTERVAL)
     public void process() {
-        game.process();
+        Set<Long> offenders = game.process();
+        for (long playerId : offenders) {
+            // TODO: Handle offender (evict from game?)
+        }
     }
 
     @Scheduled(fixedRate = BROADCAST_INTERVAL)
@@ -226,10 +230,10 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     }
 
     private static class GameEntry {
-        private static final double DIAGONAL_MOVEMENT_SCALING = 0.707107;
-        private static final double SPEED_SCALING = 0.005;
-        private static final long MOVEMENT_DURATION_PER_INPUT = 25;
+        private static final double SPEED_SCALING = 0.002;
         private static final double CHARACTER_LENGTH = 1;
+        private static final double CHARACTER_MOVEMENT_SPEED = 1;
+        private static final double CHARACTER_MOVEMENT_VALIDATION_MARGIN = 0.06;
         private long lastProcessTime;
         private final List<GameInput> inputQueue = new ArrayList<>();
         private final Lock inputQueueLock = new ReentrantLock();
@@ -267,20 +271,25 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             return applyPerspectives(commonGameState);
         }
 
-        public void process() {
+        public Set<Long> process() {
+            Set<Long> offenders = new HashSet<>();
             long currentTime = currentTimeMillis();
+            long duration = currentTime - lastProcessTime;
             List<GameInput> inputs = cloneAndClearInputQueue();
             gameStateWriteLock.lock();
             try {
                 for (GameInput input : inputs) {
-                    processInput(gameState, input);
+                    if (!processInput(gameState, input, currentTime)) {
+                        offenders.add(input.getPlayerId());
+                    }
                 }
-                processDuration(gameState, currentTime - lastProcessTime);
+                processDuration(gameState, duration);
             }
             finally {
                 gameStateWriteLock.unlock();
             }
             lastProcessTime = currentTime;
+            return offenders;
         }
 
         public void resetProcessingPoint() {
@@ -300,71 +309,11 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             return clone;
         }
 
-        private static void processDuration(GameState gameState, long duration) {
-            double spaceWidth = gameState.getSpace().getWidth();
-            double spaceHeight = gameState.getSpace().getHeight();
-            for (Character character : gameState.getCharacters().values()) {
-                long movementDuration = Math.min(character.getPendingMovementDuration(), duration);
-                if (movementDuration > 0) {
-                    double movementDistance = SPEED_SCALING * character.getMovementSpeed() * movementDuration;
-                    double deltaPosX = 0;
-                    double deltaPosY = 0;
-                    switch (character.getPendingMovementDirection()) {
-                        case UP -> {
-                            deltaPosY = -1 * movementDistance;
-                        }
-                        case UP_RIGHT -> {
-                            deltaPosX = DIAGONAL_MOVEMENT_SCALING * movementDistance;
-                            deltaPosY = -1 * DIAGONAL_MOVEMENT_SCALING * movementDistance;
-                        }
-                        case RIGHT -> {
-                            deltaPosX = movementDistance;
-                        }
-                        case DOWN_RIGHT -> {
-                            deltaPosX = DIAGONAL_MOVEMENT_SCALING * movementDistance;
-                            deltaPosY = DIAGONAL_MOVEMENT_SCALING * movementDistance;
-                        }
-                        case DOWN -> {
-                            deltaPosY = movementDistance;
-                        }
-                        case DOWN_LEFT -> {
-                            deltaPosX = -1 * DIAGONAL_MOVEMENT_SCALING * movementDistance;
-                            deltaPosY = DIAGONAL_MOVEMENT_SCALING * movementDistance;
-                        }
-                        case LEFT -> {
-                            deltaPosX = -1 * movementDistance;
-                        }
-                        case UP_LEFT -> {
-                            deltaPosX = -1 * DIAGONAL_MOVEMENT_SCALING * movementDistance;
-                            deltaPosY = -1 * DIAGONAL_MOVEMENT_SCALING * movementDistance;
-                        }
-                    }
-                    double posX = character.getPosX() + deltaPosX;
-                    if (posX < 0) {
-                        posX = 0;
-                    }
-                    else if (posX + character.getWidth() > spaceWidth) {
-                        posX = spaceWidth - character.getWidth();
-                    }
-                    double posY = character.getPosY() + deltaPosY;
-                    if (posY < 0) {
-                        posY = 0;
-                    }
-                    else if (posY + character.getHeight() > spaceHeight) {
-                        posY = spaceHeight - character.getHeight();
-                    }
-                    character.setPosX(posX);
-                    character.setPosY(posY);
-                    character.setPendingMovementDuration(character.getPendingMovementDuration() - movementDuration);
-                }
-            }
-        }
-
-        private static void processInput(GameState gameState, GameInput input) {
+        private static boolean processInput(GameState gameState, GameInput input, long currentTime) {
             switch (input.getType()) {
                 case JOIN -> {
                     if (gameState.getCharacters().containsKey(input.getPlayerId())) {
-                        return;
+                        return true;
                     }
                     double posX = (gameState.getSpace().getWidth() - CHARACTER_LENGTH) / 2;
                     double posY = (gameState.getSpace().getHeight() - CHARACTER_LENGTH) / 2;
@@ -374,26 +323,40 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                     character.setHeight(CHARACTER_LENGTH);
                     character.setPosX(posX);
                     character.setPosY(posY);
-                    character.setOrientationDirection(Direction.DOWN);
-                    character.setMovementSpeed(1);
+                    character.setMovementSpeed(CHARACTER_MOVEMENT_SPEED);
+                    character.setLastPositionUpdateTime(currentTime);
+                    character.setOrientation(Direction.DOWN);
                     gameState.getCharacters().put(input.getPlayerId(), character);
                 }
                 case LEAVE -> {
                     gameState.getCharacters().remove(input.getPlayerId());
                 }
-                case MOVE -> {
-                    if (input.getMovementDirection() != null) {
-                        Character character = gameState.getCharacters().get(input.getPlayerId());
-                        if (character == null) {
-                            return;
-                        }
-                        character.setPendingMovementDirection(input.getMovementDirection());
-                        character.setPendingMovementDuration(MOVEMENT_DURATION_PER_INPUT);
-                        character.setOrientationDirection(input.getMovementDirection());
+                case POSITION -> {
+                    Character character = gameState.getCharacters().get(input.getPlayerId());
+                    if (character == null) {
+                        return true;
                     }
+                    double posX = input.getPosX();
+                    double posY = input.getPosY();
+                    if (posX < 0 || posX + character.getWidth() > gameState.getSpace().getWidth() || posY < 0 || posY + character.getHeight() > gameState.getSpace().getHeight()) {
+                        return false;
+                    }
+                    long duration = currentTime - character.getLastPositionUpdateTime();
+                    double radius = character.getMovementSpeed() * duration * SPEED_SCALING;
+                    double proposedDistance = Math.sqrt(Math.pow(posX - character.getPosX(), 2) + Math.pow(posY - character.getPosY(), 2));
+                    if (proposedDistance > radius + CHARACTER_MOVEMENT_VALIDATION_MARGIN) {
+                        return false;
+                    }
+                    character.setPosX(posX);
+                    character.setPosY(posY);
+                    character.setOrientation(input.getOrientation());
+                    character.setLastPositionUpdateTime(currentTime);
                 }
             }
+            return true;
         }
+
+        private static void processDuration(GameState gameState, long duration) { }
 
         private static Map<Long, GameState> applyPerspectives(GameState gameState) {
             Map<Long, GameState> playerSpecificGameStates = new HashMap<>();
@@ -423,10 +386,9 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                 characterClone.setHeight(character.getHeight());
                 characterClone.setPosX(character.getPosX());
                 characterClone.setPosY(character.getPosY());
-                characterClone.setPendingMovementDirection(character.getPendingMovementDirection());
-                characterClone.setPendingMovementDuration(character.getPendingMovementDuration());
                 characterClone.setMovementSpeed(character.getMovementSpeed());
-                characterClone.setOrientationDirection(character.getOrientationDirection());
+                characterClone.setLastPositionUpdateTime(character.getLastPositionUpdateTime());
+                characterClone.setOrientation(character.getOrientation());
                 characters.put(playerId, characterClone);
             }
             GameState clone = new GameState();

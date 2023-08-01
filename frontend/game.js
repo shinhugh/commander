@@ -10,9 +10,11 @@ const game = {
 
     gameStateChangeHandlers: [ ],
 
-    lastDirectionalGameInput: null,
+    directionInput: null,
 
-    directionalGameInputInterval: null,
+    gameStateProcessingInterval: null,
+
+    lastGameStateProcessTime: null,
 
     invokeGameStateChangeHandlers: () => {
       for (const handler of game.internal.gameStateChangeHandlers) {
@@ -20,19 +22,94 @@ const game = {
       }
     },
 
+    process: () => {
+      if (game.internal.gameState == null) {
+        return;
+      }
+      const character = game.internal.gameState.characters[game.internal.gameState.clientPlayerId];
+      const spaceWidth = game.internal.gameState.space.width;
+      const spaceHeight = game.internal.gameState.space.height;
+      const currentTime = Date.now();
+      const duration = currentTime - game.internal.lastGameStateProcessTime;
+      let distance = character.movementSpeed * duration * 0.002;
+      const diagonalScaling = 0.707107;
+      switch (game.internal.directionInput) {
+        case 'up':
+          character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY - distance));
+          break;
+        case 'up_right':
+          distance *= diagonalScaling;
+          character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX + distance));
+          character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY - distance));
+          break;
+        case 'right':
+          character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX + distance));
+          break;
+        case 'down_right':
+          distance *= diagonalScaling;
+          character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX + distance));
+          character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY + distance));
+          break;
+        case 'down':
+          character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY + distance));
+          break;
+        case 'down_left':
+          distance *= diagonalScaling;
+          character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX - distance));
+          character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY + distance));
+          break;
+        case 'left':
+          character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX - distance));
+          break;
+        case 'up_left':
+          distance *= diagonalScaling;
+          character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX - distance));
+          character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY - distance));
+          break;
+      }
+      game.internal.lastGameStateProcessTime = currentTime;
+      game.internal.invokeGameStateChangeHandlers();
+      api.sendGameInput({
+        type: 'position',
+        posX: character.posX,
+        posY: character.posY,
+        orientation: game.internal.directionInput
+      });
+    },
+
+    startProcessing: () => {
+      if (game.internal.gameStateProcessingInterval != null) {
+        return;
+      }
+      game.internal.lastGameStateProcessTime = Date.now();
+      game.internal.process();
+      game.internal.gameStateProcessingInterval = setInterval(game.internal.process, 15);
+    },
+
+    stopProcessing: () => {
+      clearInterval(game.internal.gameStateProcessingInterval);
+      game.internal.gameStateProcessingInterval = null;
+      game.internal.lastGameStateProcessTime = null;
+    },
+
     handleIncomingMessage: (message) => {
       if (message.type !== 'game_snapshot') {
         return;
       }
+      let clientCharacter;
+      if (game.internal.gameState != null) {
+        clientCharacter = game.internal.gameState.characters[game.internal.gameState.clientPlayerId];
+      }
       game.internal.gameState = message.payload;
-      game.internal.invokeGameStateChangeHandlers();
+      if (clientCharacter != null) {
+        game.internal.gameState.characters[game.internal.gameState.clientPlayerId] = clientCharacter;
+      }
     },
 
     handleClosedConnection: () => {
+      game.internal.stopProcessing();
       game.internal.gameState = null;
-      game.internal.lastDirectionalGameInput = null;
-      clearInterval(game.internal.directionalGameInputInterval);
-      game.internal.directionalGameInputInterval = null;
+      game.internal.directionInput = null;
       game.internal.invokeGameStateChangeHandlers();
     }
 
@@ -56,27 +133,14 @@ const game = {
       return;
     }
     api.sendGameJoin();
+    game.internal.startProcessing();
   },
 
-  setCharacterMovement: (direction) => {
+  setDirectionInput: (direction) => {
     if (game.internal.gameState == null) {
       return;
     }
-    if (direction === game.internal.lastDirectionalGameInput) {
-      return;
-    }
-    clearInterval(game.internal.directionalGameInputInterval);
-    game.internal.lastDirectionalGameInput = direction;
-    if (game.internal.lastDirectionalGameInput != null) {
-      const gameInput = {
-        type: 'move',
-        movementDirection: game.internal.lastDirectionalGameInput
-      };
-      api.sendGameInput(gameInput);
-      game.internal.directionalGameInputInterval = setInterval(() => {
-        api.sendGameInput(gameInput);
-      }, 15);
-    }
+    game.internal.directionInput = direction;
   }
 
 };

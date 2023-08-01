@@ -26,7 +26,6 @@ const uiGame = {
     },
 
     registerApiHandlers: () => {
-      auth.registerLoginHandler(uiGame.internal.handleLogin);
       auth.registerLogoutHandler(uiGame.internal.handleLogout);
       game.registerGameStateChangeHandler(uiGame.internal.handleGameStateChange);
       uiBase.registerModuleChangeHandler(uiGame.internal.handleModuleChange);
@@ -34,7 +33,7 @@ const uiGame = {
       uiBase.registerOverlayDisappearanceHandler(uiGame.internal.handleOverlayDisappearance);
     },
 
-    sendDirectionalCommand: () => {
+    updateDirectionInput: () => {
       let vertical = 0;
       if (uiGame.internal.state.keyWPressed && uiGame.internal.state.keySPressed) {
         if (uiGame.internal.state.keyWPressTime <= uiGame.internal.state.keySPressTime) {
@@ -83,10 +82,10 @@ const uiGame = {
           direction = 'right';
         }
       }
-      game.setCharacterMovement(direction);
+      game.setDirectionInput(direction);
     },
 
-    resetMovement: () => {
+    resetDirectionInput: () => {
       uiGame.internal.state.keyWPressed = false;
       uiGame.internal.state.keyWPressTime = null;
       uiGame.internal.state.keyAPressed = false;
@@ -95,7 +94,7 @@ const uiGame = {
       uiGame.internal.state.keySPressTime = null;
       uiGame.internal.state.keyDPressed = false;
       uiGame.internal.state.keyDPressTime = null;
-      game.setCharacterMovement(null);
+      game.setDirectionInput(null);
     },
 
     handleKeyDown: (e) => {
@@ -105,28 +104,28 @@ const uiGame = {
             uiGame.internal.state.keyWPressTime = Date.now();
             uiGame.internal.state.keyWPressed = true;
           }
-          uiGame.internal.sendDirectionalCommand();
+          uiGame.internal.updateDirectionInput();
           break;
         case 'a':
           if (!uiGame.internal.state.keyAPressed) {
             uiGame.internal.state.keyAPressTime = Date.now();
             uiGame.internal.state.keyAPressed = true;
           }
-          uiGame.internal.sendDirectionalCommand();
+          uiGame.internal.updateDirectionInput();
           break;
         case 's':
           if (!uiGame.internal.state.keySPressed) {
             uiGame.internal.state.keySPressTime = Date.now();
             uiGame.internal.state.keySPressed = true;
           }
-          uiGame.internal.sendDirectionalCommand();
+          uiGame.internal.updateDirectionInput();
           break;
         case 'd':
           if (!uiGame.internal.state.keyDPressed) {
             uiGame.internal.state.keyDPressTime = Date.now();
             uiGame.internal.state.keyDPressed = true;
           }
-          uiGame.internal.sendDirectionalCommand();
+          uiGame.internal.updateDirectionInput();
           break;
       }
     },
@@ -136,28 +135,24 @@ const uiGame = {
         case 'w':
           uiGame.internal.state.keyWPressed = false;
           uiGame.internal.state.keyWPressTime = null;
-          uiGame.internal.sendDirectionalCommand();
+          uiGame.internal.updateDirectionInput();
           break;
         case 'a':
           uiGame.internal.state.keyAPressed = false;
           uiGame.internal.state.keyAPressTime = null;
-          uiGame.internal.sendDirectionalCommand();
+          uiGame.internal.updateDirectionInput();
           break;
         case 's':
           uiGame.internal.state.keySPressed = false;
           uiGame.internal.state.keySPressTime = null;
-          uiGame.internal.sendDirectionalCommand();
+          uiGame.internal.updateDirectionInput();
           break;
         case 'd':
           uiGame.internal.state.keyDPressed = false;
           uiGame.internal.state.keyDPressTime = null;
-          uiGame.internal.sendDirectionalCommand();
+          uiGame.internal.updateDirectionInput();
           break;
       }
-    },
-
-    handleLogin: () => {
-      game.joinGame();
     },
 
     handleLogout: () => {
@@ -220,19 +215,20 @@ const uiGame = {
 
     handleModuleChange: () => {
       if (uiBase.getCurrentModule() === 'game') {
+        game.joinGame();
         document.addEventListener('keydown', uiGame.internal.handleKeyDown);
         document.addEventListener('keyup', uiGame.internal.handleKeyUp);
       } else {
         document.removeEventListener('keydown', uiGame.internal.handleKeyDown);
         document.removeEventListener('keyup', uiGame.internal.handleKeyUp);
-        uiGame.internal.resetMovement();
+        uiGame.internal.resetDirectionInput();
       }
     },
 
     handleOverlayAppearance: () => {
       document.removeEventListener('keydown', uiGame.internal.handleKeyDown);
       document.removeEventListener('keyup', uiGame.internal.handleKeyUp);
-      uiGame.internal.resetMovement();
+      uiGame.internal.resetDirectionInput();
     },
 
     handleOverlayDisappearance: () => {
