@@ -132,32 +132,7 @@ const uiGame = {
         characterElement.style.left = (scale * characterModel.posX) + 'px';
         characterElement.style.height = (scale * characterModel.height) + 'px';
         characterElement.style.width = (scale * characterModel.width) + 'px';
-        switch (characterModel.orientation) {
-          case 'up':
-            characterElement.style.transform = 'rotate(180deg)';
-            break;
-          case 'up_right':
-            characterElement.style.transform = 'rotate(225deg)';
-            break;
-          case 'right':
-            characterElement.style.transform = 'rotate(270deg)';
-            break;
-          case 'down_right':
-            characterElement.style.transform = 'rotate(315deg)';
-            break;
-          case 'down':
-            characterElement.style.removeProperty('transform');
-            break;
-          case 'down_left':
-            characterElement.style.transform = 'rotate(45deg)';
-            break;
-          case 'left':
-            characterElement.style.transform = 'rotate(90deg)';
-            break;
-          case 'up_left':
-            characterElement.style.transform = 'rotate(135deg)';
-            break;
-        }
+        characterElement.dataset.direction = characterModel.orientation;
       }
       currentPlayerIds.forEach(playerId => {
         uiGame.internal.state.characterElements[playerId].remove();

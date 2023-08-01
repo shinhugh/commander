@@ -29,3 +29,31 @@
   border-bottom: 5px solid red;
   background: orange;
 }
+
+.character_element[data-direction="up"] {
+  transform: rotate(180deg);
+}
+
+.character_element[data-direction="up_right"] {
+  transform: rotate(225deg);
+}
+
+.character_element[data-direction="right"] {
+  transform: rotate(270deg);
+}
+
+.character_element[data-direction="down_right"] {
+  transform: rotate(315deg);
+}
+
+.character_element[data-direction="down_left"] {
+  transform: rotate(45deg);
+}
+
+.character_element[data-direction="left"] {
+  transform: rotate(90deg);
+}
+
+.character_element[data-direction="up_left"] {
+  transform: rotate(135deg);
+}
