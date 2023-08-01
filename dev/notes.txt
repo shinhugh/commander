@@ -23,6 +23,15 @@ TODO
 
 - custom HTTP responses for all errors (404, 405, etc)
 
+- frontend: maintain self character position separately
+            send coordinates to backend instead of inputs
+            UI paints self character using local coordinates
+  backend:  take in coordinates instead of inputs
+            verify that the coordinates are possible
+            if deemed impossible, increment alert counter
+            on valid verification, reset alert counter
+            if alert counter reaches ~3, close socket connection
+
 JSON
 
 {
