@@ -89,83 +89,80 @@
 
   <!-- Overlay -->
   <div id="overlay">
-    <div id="overlay_backdrop"></div>
-    <div id="overlay_window">
 
-      <div id="overlay_friends_page">
-        <p class="title">Friends</p>
-        <div class="list_wrapper">
-          <div id="overlay_friends_page_friends_list" class="list">
-            <div class="incoming_friendship_request_entry friend_entry list_entry">
-              <p class="friend_entry_name"></p>
-              <div class="friend_entry_right_strip">
-                <button class="friend_entry_accept_button">Accept</button>
-                <button class="friend_entry_deny_button">Deny</button>
-              </div>
+    <div id="overlay_friends_page">
+      <p class="title">Friends</p>
+      <div class="list_wrapper">
+        <div id="overlay_friends_page_friends_list" class="list">
+          <div class="incoming_friendship_request_entry friend_entry list_entry">
+            <p class="friend_entry_name"></p>
+            <div class="friend_entry_right_strip">
+              <button class="friend_entry_accept_button">Accept</button>
+              <button class="friend_entry_deny_button">Deny</button>
             </div>
-            <div class="confirmed_friendship_entry friend_entry list_entry">
-              <p class="friend_entry_name"></p>
-              <div class="friend_entry_right_strip">
-                <button class="friend_entry_remove_button">Remove</button>
-              </div>
+          </div>
+          <div class="confirmed_friendship_entry friend_entry list_entry">
+            <p class="friend_entry_name"></p>
+            <div class="friend_entry_right_strip">
+              <button class="friend_entry_remove_button">Remove</button>
             </div>
-            <div class="outgoing_friendship_request_entry friend_entry list_entry">
-              <p class="friend_entry_name"></p>
-              <div class="friend_entry_right_strip">
-                <button class="friend_entry_cancel_button">Cancel</button>
-              </div>
+          </div>
+          <div class="outgoing_friendship_request_entry friend_entry list_entry">
+            <p class="friend_entry_name"></p>
+            <div class="friend_entry_right_strip">
+              <button class="friend_entry_cancel_button">Cancel</button>
             </div>
           </div>
         </div>
-        <div id="overlay_friends_page_add_friend_section">
-          <div id="overlay_friends_page_add_friend_section_result">
-            <p id="overlay_friends_page_add_friend_section_result_name"></p>
-            <button id="overlay_friends_page_add_friend_section_result_add_friend_button">Add friend</button>
-          </div>
-          <div>
-            <input id="overlay_friends_page_add_friend_section_id_input" type="text" placeholder="Account ID">
-            <button id="overlay_friends_page_add_friend_section_search_button">Search</button>
-          </div>
+      </div>
+      <div id="overlay_friends_page_add_friend_section">
+        <div id="overlay_friends_page_add_friend_section_result">
+          <p id="overlay_friends_page_add_friend_section_result_name"></p>
+          <button id="overlay_friends_page_add_friend_section_result_add_friend_button">Add friend</button>
+        </div>
+        <div>
+          <input id="overlay_friends_page_add_friend_section_id_input" type="text" placeholder="Account ID">
+          <button id="overlay_friends_page_add_friend_section_search_button">Search</button>
         </div>
       </div>
-
-      <div id="overlay_account_page">
-        <div class="overlay_account_page_field">
-          <p class="overlay_account_page_field_label">ID</p>
-          <p id="overlay_account_page_id" class="overlay_account_page_field_value"></p>
-        </div>
-        <div class="overlay_account_page_field">
-          <p class="overlay_account_page_field_label">Username</p>
-          <p id="overlay_account_page_username" class="overlay_account_page_field_value"></p>
-        </div>
-        <div class="overlay_account_page_field">
-          <p class="overlay_account_page_field_label">Public name</p>
-          <p id="overlay_account_page_public_name" class="overlay_account_page_field_value"></p>
-        </div>
-        <button id="overlay_account_page_modify_button">Modify</button>
-      </div>
-
-      <div id="overlay_modify_account_page">
-        <div class="overlay_modify_account_page_field">
-          <p class="overlay_modify_account_page_field_label">Username</p>
-          <input id="overlay_modify_account_page_username_input" type="text" placeholder="Optional">
-        </div>
-        <div class="overlay_modify_account_page_field">
-          <p class="overlay_modify_account_page_field_label">Password</p>
-          <input id="overlay_modify_account_page_password_input" type="password" placeholder="Optional">
-        </div>
-        <div class="overlay_modify_account_page_field">
-          <p class="overlay_modify_account_page_field_label">Public name</p>
-          <input id="overlay_modify_account_page_public_name_input" type="text" placeholder="Optional">
-        </div>
-        <div class="button_strip">
-          <button id="overlay_modify_account_page_cancel_button">Cancel</button>
-          <button id="overlay_modify_account_page_delete_button">Delete</button>
-          <button id="overlay_modify_account_page_save_button">Save</button>
-        </div>
-      </div>
-
     </div>
+
+    <div id="overlay_account_page">
+      <div class="overlay_account_page_field">
+        <p class="overlay_account_page_field_label">ID</p>
+        <p id="overlay_account_page_id" class="overlay_account_page_field_value"></p>
+      </div>
+      <div class="overlay_account_page_field">
+        <p class="overlay_account_page_field_label">Username</p>
+        <p id="overlay_account_page_username" class="overlay_account_page_field_value"></p>
+      </div>
+      <div class="overlay_account_page_field">
+        <p class="overlay_account_page_field_label">Public name</p>
+        <p id="overlay_account_page_public_name" class="overlay_account_page_field_value"></p>
+      </div>
+      <button id="overlay_account_page_modify_button">Modify</button>
+    </div>
+
+    <div id="overlay_modify_account_page">
+      <div class="overlay_modify_account_page_field">
+        <p class="overlay_modify_account_page_field_label">Username</p>
+        <input id="overlay_modify_account_page_username_input" type="text" placeholder="Optional">
+      </div>
+      <div class="overlay_modify_account_page_field">
+        <p class="overlay_modify_account_page_field_label">Password</p>
+        <input id="overlay_modify_account_page_password_input" type="password" placeholder="Optional">
+      </div>
+      <div class="overlay_modify_account_page_field">
+        <p class="overlay_modify_account_page_field_label">Public name</p>
+        <input id="overlay_modify_account_page_public_name_input" type="text" placeholder="Optional">
+      </div>
+      <div class="button_strip">
+        <button id="overlay_modify_account_page_cancel_button">Cancel</button>
+        <button id="overlay_modify_account_page_delete_button">Delete</button>
+        <button id="overlay_modify_account_page_save_button">Save</button>
+      </div>
+    </div>
+
   </div>
 
   <!-- Blocker -->

@@ -48,8 +48,6 @@ const uiBase = {
     },
     overlay: {
       root: document.getElementById('overlay'),
-      backdrop: document.getElementById('overlay_backdrop'),
-      window: document.getElementById('overlay_window'), // TODO: Remove
       friendsPage: {
         root: document.getElementById('overlay_friends_page'),
         friendsList: document.getElementById('overlay_friends_page_friends_list'),
@@ -158,7 +156,7 @@ const uiBase = {
   },
 
   clearOverlay: () => {
-    for (const child of uiBase.elements.overlay.window.children) {
+    for (const child of uiBase.elements.overlay.root.children) {
       uiApi.hide(child);
     }
   },
@@ -571,9 +569,11 @@ uiBase.elements.topBar.logoutButton.addEventListener('click', async () => {
 uiBase.elements.overlay.root.addEventListener('click', () => {
   uiBase.hideOverlay();
 });
-uiBase.elements.overlay.window.addEventListener('click', e => {
-  e.stopPropagation();
-});
+for (const child of uiBase.elements.overlay.root.children) {
+  child.addEventListener('click', e => {
+    e.stopPropagation();
+  });
+}
 uiBase.elements.overlay.friendsPage.addFriendSection.idInput.addEventListener('keydown', async e => {
   if (e.key === 'Enter') {
     await uiBase.parseInputAndShowFriendshipSearchResult();
