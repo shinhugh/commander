@@ -14,6 +14,24 @@ const api = {
 
     incomingMessageHandlers: [ ],
 
+    invokeEstablishedConnectionHandlers: () => {
+      for (const handler of api.internal.establishedConnectionHandlers) {
+        handler();
+      }
+    },
+
+    invokeClosedConnectionHandlers: () => {
+      for (const handler of api.internal.closedConnectionHandlers) {
+        handler();
+      }
+    },
+
+    invokeIncomingMessageHandlers: (message) => {
+      for (const handler of api.internal.incomingMessageHandlers) {
+        handler(message);
+      }
+    },
+
     makeRequest: async (path, method, parameters, contentType, body) => {
       let parameterString = '';
       if (parameters != null && Object.keys(parameters).length > 0) {
@@ -46,24 +64,6 @@ const api = {
         throw new Error('No socket connection');
       }
       api.internal.socket.send(JSON.stringify(obj));
-    },
-
-    invokeEstablishedConnectionHandlers: () => {
-      for (const handler of api.internal.establishedConnectionHandlers) {
-        handler();
-      }
-    },
-
-    invokeClosedConnectionHandlers: () => {
-      for (const handler of api.internal.closedConnectionHandlers) {
-        handler();
-      }
-    },
-
-    invokeIncomingMessageHandlers: (message) => {
-      for (const handler of api.internal.incomingMessageHandlers) {
-        handler(message);
-      }
     }
 
   },

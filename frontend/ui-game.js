@@ -88,10 +88,14 @@ const uiGame = {
 
     resetMovement: () => {
       uiGame.internal.state.keyWPressed = false;
+      uiGame.internal.state.keyWPressTime = null;
       uiGame.internal.state.keyAPressed = false;
+      uiGame.internal.state.keyAPressTime = null;
       uiGame.internal.state.keySPressed = false;
+      uiGame.internal.state.keySPressTime = null;
       uiGame.internal.state.keyDPressed = false;
-      uiGame.internal.sendDirectionalCommand();
+      uiGame.internal.state.keyDPressTime = null;
+      game.setCharacterMovement(null);
     },
 
     handleKeyDown: (e) => {

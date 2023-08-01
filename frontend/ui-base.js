@@ -103,24 +103,6 @@ const uiBase = {
       overlayDisappearanceHandlers: [ ]
     },
 
-    invokeModuleChangeHandlers: () => {
-      for (const handler of uiBase.internal.state.moduleChangeHandlers) {
-        handler();
-      }
-    },
-
-    invokeOverlayAppearanceHandlers: () => {
-      for (const handler of uiBase.internal.state.overlayAppearanceHandlers) {
-        handler();
-      }
-    },
-
-    invokeOverlayDisappearanceHandlers: () => {
-      for (const handler of uiBase.internal.state.overlayDisappearanceHandlers) {
-        handler();
-      }
-    },
-
     registerApiHandlers: () => {
       auth.registerLoginHandler(uiBase.internal.handleLogin);
       auth.registerLogoutHandler(uiBase.internal.handleLogout);
@@ -240,6 +222,24 @@ const uiBase = {
       uiBase.internal.elements.overlay.modifyAccountPage.saveButton.addEventListener('click', async () => {
         await uiBase.internal.parseInputAndUpdateAccount();
       });
+    },
+
+    invokeModuleChangeHandlers: () => {
+      for (const handler of uiBase.internal.state.moduleChangeHandlers) {
+        handler();
+      }
+    },
+
+    invokeOverlayAppearanceHandlers: () => {
+      for (const handler of uiBase.internal.state.overlayAppearanceHandlers) {
+        handler();
+      }
+    },
+
+    invokeOverlayDisappearanceHandlers: () => {
+      for (const handler of uiBase.internal.state.overlayDisappearanceHandlers) {
+        handler();
+      }
     },
 
     clearUi: () => {
