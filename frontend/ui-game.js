@@ -123,8 +123,11 @@ const uiGame = {
           characterElement = uiGame.internal.state.characterElements[characterModel.playerId];
           currentPlayerIds.delete(characterModel.playerId.toString());
         } else {
+          const spriteElement = document.createElement('div');
+          spriteElement.classList.add('character_sprite');
           characterElement = document.createElement('div');
-          characterElement.classList.add('character_element');
+          characterElement.classList.add('character');
+          characterElement.appendChild(spriteElement);
           uiGame.internal.elements.map.appendChild(characterElement);
           uiGame.internal.state.characterElements[characterModel.playerId] = characterElement;
         }
@@ -136,14 +139,15 @@ const uiGame = {
           case 'up_right':
           case 'right':
           case 'down_right':
-            characterElement.dataset.direction = 'right';
+            characterElement.dataset.right = null;
             break;
           case 'down_left':
           case 'left':
           case 'up_left':
-            characterElement.dataset.direction = 'left';
+            delete characterElement.dataset.right;
             break;
         }
+        // TODO: Set 'moving' data attribute on characterElement if character is moving
       }
       currentPlayerIds.forEach(playerId => {
         uiGame.internal.state.characterElements[playerId].remove();

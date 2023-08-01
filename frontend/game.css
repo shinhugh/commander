@@ -1,3 +1,59 @@
+@keyframes slime_idle {
+  0%, 69.99% {
+    background: url('assets/sprite_slime.png') no-repeat -9px -19px;
+    width: 66px;
+    height: 49px;
+  }
+  70%, 79.99% {
+    background: url('assets/sprite_slime.png') no-repeat -83px -19px;
+    width: 71px;
+    height: 49px;
+  }
+  80%, 100% {
+    background: url('assets/sprite_slime.png') no-repeat -162px -19px;
+    width: 59px;
+    height: 50px;
+  }
+}
+
+@keyframes slime_moving {
+  0%, 13.99% {
+    background: url('assets/sprite_slime.png') no-repeat -7px -85px;
+    width: 70px;
+    height: 84px;
+  }
+  14%, 27.99% {
+    background: url('assets/sprite_slime.png') no-repeat -79px -85px;
+    width: 70px;
+    height: 84px;
+  }
+  28%, 41.99% {
+    background: url('assets/sprite_slime.png') no-repeat -153px -85px;
+    width: 70px;
+    height: 84px;
+  }
+  42%, 55.99% {
+    background: url('assets/sprite_slime.png') no-repeat -226px -85px;
+    width: 70px;
+    height: 84px;
+  }
+  56%, 69.99% {
+    background: url('assets/sprite_slime.png') no-repeat -299px -85px;
+    width: 70px;
+    height: 84px;
+  }
+  70%, 83.99% {
+    background: url('assets/sprite_slime.png') no-repeat -372px -85px;
+    width: 70px;
+    height: 84px;
+  }
+  84%, 100% {
+    background: url('assets/sprite_slime.png') no-repeat -445px -85px;
+    width: 70px;
+    height: 84px;
+  }
+}
+
 #content_game_module {
   height: 100%;
   width: 100%;
@@ -23,12 +79,25 @@
   background-size: 20%;
 }
 
-.character_element {
+.character {
   position: absolute;
-  background: url('assets/character_hutao.png') no-repeat;
-  background-size: 100%;
+  overflow-y: visible;
 }
 
-.character_element[data-direction="left"] {
+.character_sprite {
+  position: absolute;
+  bottom: 0;
+  animation-name: slime_idle;
+  animation-duration: 1.8s;
+  animation-iteration-count: infinite;
+}
+
+[data-moving]>.character_sprite {
+  animation-name: slime_moving;
+  animation-duration: 1.4s;
+  animation-iteration-count: infinite;
+}
+
+[data-right]>.character_sprite {
   transform: scaleX(-1);
 }
