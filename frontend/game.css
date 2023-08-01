@@ -24,6 +24,7 @@
 }
 
 .character_element {
+  position: absolute;
   background: url(assets/eugene.png) no-repeat;
   background-size: 30%;
 }
