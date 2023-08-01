@@ -95,6 +95,7 @@ const uiBase = {
     },
 
     state: {
+      notificationDuration: 2000,
       notificationTimeoutId: null,
       addFriendButtonHandler: null,
       currentModule: null,
@@ -468,7 +469,7 @@ const uiBase = {
       uiBase.internal.state.notificationTimeoutId = setTimeout(() => {
         uiApi.hide(uiBase.internal.elements.notification.root);
         uiBase.internal.elements.notification.message.innerHTML = null;
-      }, 2000);
+      }, uiBase.internal.state.notificationDuration);
     },
 
     hideBlocker: () => {

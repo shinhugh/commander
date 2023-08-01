@@ -14,6 +14,7 @@ const uiGame = {
     },
 
     state: {
+      zoom: 1.1,
       keyWPressed: false,
       keyWPressTime: null,
       keyAPressed: false,
@@ -181,7 +182,7 @@ const uiGame = {
       const rootWidth = uiGame.internal.elements.root.offsetWidth;
       const spaceHeight = snapshot.space.height;
       const spaceWidth = snapshot.space.width;
-      const scale = 1.1 * Math.max((rootHeight / spaceHeight), (rootWidth / spaceWidth));
+      const scale = uiGame.internal.state.zoom * Math.max((rootHeight / spaceHeight), (rootWidth / spaceWidth));
       const mapHeight = scale * spaceHeight;
       const mapWidth = scale * spaceWidth;
       uiGame.internal.elements.map.style.height = mapHeight + 'px';

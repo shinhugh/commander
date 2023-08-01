@@ -6,6 +6,12 @@ const game = {
 
   internal: {
 
+    diagonalScaling: 0.707107,
+
+    movementSpeedScaling: 0.002,
+
+    processingInterval: 15,
+
     gameState: null,
 
     gameStateChangeHandlers: [ ],
@@ -31,14 +37,13 @@ const game = {
       const spaceHeight = game.internal.gameState.space.height;
       const currentTime = Date.now();
       const duration = currentTime - game.internal.lastGameStateProcessTime;
-      let distance = character.movementSpeed * duration * 0.002;
-      const diagonalScaling = 0.707107;
+      let distance = character.movementSpeed * duration * game.internal.movementSpeedScaling;
       switch (game.internal.directionInput) {
         case 'up':
           character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY - distance));
           break;
         case 'up_right':
-          distance *= diagonalScaling;
+          distance *= game.internal.diagonalScaling;
           character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX + distance));
           character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY - distance));
           break;
@@ -46,7 +51,7 @@ const game = {
           character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX + distance));
           break;
         case 'down_right':
-          distance *= diagonalScaling;
+          distance *= game.internal.diagonalScaling;
           character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX + distance));
           character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY + distance));
           break;
@@ -54,7 +59,7 @@ const game = {
           character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY + distance));
           break;
         case 'down_left':
-          distance *= diagonalScaling;
+          distance *= game.internal.diagonalScaling;
           character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX - distance));
           character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY + distance));
           break;
@@ -62,7 +67,7 @@ const game = {
           character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX - distance));
           break;
         case 'up_left':
-          distance *= diagonalScaling;
+          distance *= game.internal.diagonalScaling;
           character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX - distance));
           character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY - distance));
           break;
@@ -83,7 +88,7 @@ const game = {
       }
       game.internal.lastGameStateProcessTime = Date.now();
       game.internal.process();
-      game.internal.gameStateProcessingInterval = setInterval(game.internal.process, 15);
+      game.internal.gameStateProcessingInterval = setInterval(game.internal.process, game.internal.processingInterval);
     },
 
     stopProcessing: () => {
