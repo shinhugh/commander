@@ -25,35 +25,10 @@
 
 .character_element {
   position: absolute;
-  border-radius: 50%;
-  border-bottom: 5px solid red;
-  background: orange;
-}
-
-.character_element[data-direction="up"] {
-  transform: rotate(180deg);
-}
-
-.character_element[data-direction="up_right"] {
-  transform: rotate(225deg);
-}
-
-.character_element[data-direction="right"] {
-  transform: rotate(270deg);
-}
-
-.character_element[data-direction="down_right"] {
-  transform: rotate(315deg);
-}
-
-.character_element[data-direction="down_left"] {
-  transform: rotate(45deg);
+  background: url('assets/character_hutao.png') no-repeat;
+  background-size: 100%;
 }
 
 .character_element[data-direction="left"] {
-  transform: rotate(90deg);
-}
-
-.character_element[data-direction="up_left"] {
-  transform: rotate(135deg);
+  transform: scaleX(-1);
 }

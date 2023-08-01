@@ -132,7 +132,18 @@ const uiGame = {
         characterElement.style.left = (scale * characterModel.posX) + 'px';
         characterElement.style.height = (scale * characterModel.height) + 'px';
         characterElement.style.width = (scale * characterModel.width) + 'px';
-        characterElement.dataset.direction = characterModel.orientation;
+        switch (characterModel.orientation) {
+          case 'up_right':
+          case 'right':
+          case 'down_right':
+            characterElement.dataset.direction = 'right';
+            break;
+          case 'down_left':
+          case 'left':
+          case 'up_left':
+            characterElement.dataset.direction = 'left';
+            break;
+        }
       }
       currentPlayerIds.forEach(playerId => {
         uiGame.internal.state.characterElements[playerId].remove();
