@@ -1,209 +1,225 @@
 /* Requires:
  * - auth.js
  * - game.js
- * - ui-api.js
+ * - ui-base.js
  */
 
 const uiGame = {
 
-  elements: {
-    root: document.getElementById('content_game_module_game'),
-    map: document.getElementById('content_game_module_game_map')
-  },
+  internal: {
 
-  state: {
-    keyWPressed: false,
-    keyWPressTime: null,
-    keyAPressed: false,
-    keyAPressTime: null,
-    keySPressed: false,
-    keySPressTime: null,
-    keyDPressed: false,
-    keyDPressTime: null,
-    characterElements: { }
-  },
+    elements: {
+      root: document.getElementById('content_game_module_game'),
+      map: document.getElementById('content_game_module_game_map')
+    },
 
-  sendDirectionalCommand: () => {
-    let vertical = 0;
-    if (uiGame.state.keyWPressed && uiGame.state.keySPressed) {
-      if (uiGame.state.keyWPressTime <= uiGame.state.keySPressTime) {
-        vertical = 1;
-      } else {
+    state: {
+      keyWPressed: false,
+      keyWPressTime: null,
+      keyAPressed: false,
+      keyAPressTime: null,
+      keySPressed: false,
+      keySPressTime: null,
+      keyDPressed: false,
+      keyDPressTime: null,
+      characterElements: { }
+    },
+
+    registerApiHandlers: () => {
+      auth.registerLoginHandler(uiGame.internal.handleLogin);
+      auth.registerLogoutHandler(uiGame.internal.handleLogout);
+      game.registerGameStateChangeHandler(uiGame.internal.handleGameStateChange);
+      uiBase.registerNavigationHandler(uiGame.internal.handleNavigation);
+    },
+
+    sendDirectionalCommand: () => {
+      let vertical = 0;
+      if (uiGame.internal.state.keyWPressed && uiGame.internal.state.keySPressed) {
+        if (uiGame.internal.state.keyWPressTime <= uiGame.internal.state.keySPressTime) {
+          vertical = 1;
+        } else {
+          vertical = -1;
+        }
+      } else if (uiGame.internal.state.keyWPressed) {
         vertical = -1;
+      } else if (uiGame.internal.state.keySPressed) {
+        vertical = 1;
       }
-    } else if (uiGame.state.keyWPressed) {
-      vertical = -1;
-    } else if (uiGame.state.keySPressed) {
-      vertical = 1;
-    }
-    let horizontal = 0;
-    if (uiGame.state.keyAPressed && uiGame.state.keyDPressed) {
-      if (uiGame.state.keyAPressTime <= uiGame.state.keyDPressTime) {
-        horizontal = 1;
-      } else {
+      let horizontal = 0;
+      if (uiGame.internal.state.keyAPressed && uiGame.internal.state.keyDPressed) {
+        if (uiGame.internal.state.keyAPressTime <= uiGame.internal.state.keyDPressTime) {
+          horizontal = 1;
+        } else {
+          horizontal = -1;
+        }
+      } else if (uiGame.internal.state.keyAPressed) {
         horizontal = -1;
+      } else if (uiGame.internal.state.keyDPressed) {
+        horizontal = 1;
       }
-    } else if (uiGame.state.keyAPressed) {
-      horizontal = -1;
-    } else if (uiGame.state.keyDPressed) {
-      horizontal = 1;
-    }
-    let direction = null;
-    if (vertical < 0) {
-      if (horizontal < 0) {
-        direction = 'up_left';
-      } else if (horizontal > 0) {
-        direction = 'up_right';
+      let direction = null;
+      if (vertical < 0) {
+        if (horizontal < 0) {
+          direction = 'up_left';
+        } else if (horizontal > 0) {
+          direction = 'up_right';
+        } else {
+          direction = 'up';
+        }
+      } else if (vertical > 0) {
+        if (horizontal < 0) {
+          direction = 'down_left';
+        } else if (horizontal > 0) {
+          direction = 'down_right';
+        } else {
+          direction = 'down';
+        }
       } else {
-        direction = 'up';
+        if (horizontal < 0) {
+          direction = 'left';
+        } else if (horizontal > 0) {
+          direction = 'right';
+        }
       }
-    } else if (vertical > 0) {
-      if (horizontal < 0) {
-        direction = 'down_left';
-      } else if (horizontal > 0) {
-        direction = 'down_right';
+      game.setCharacterMovement(direction);
+    },
+
+    handleKeyDown: (e) => {
+      switch (e.key) {
+        case 'w':
+          if (!uiGame.internal.state.keyWPressed) {
+            uiGame.internal.state.keyWPressTime = Date.now();
+            uiGame.internal.state.keyWPressed = true;
+          }
+          uiGame.internal.sendDirectionalCommand();
+          break;
+        case 'a':
+          if (!uiGame.internal.state.keyAPressed) {
+            uiGame.internal.state.keyAPressTime = Date.now();
+            uiGame.internal.state.keyAPressed = true;
+          }
+          uiGame.internal.sendDirectionalCommand();
+          break;
+        case 's':
+          if (!uiGame.internal.state.keySPressed) {
+            uiGame.internal.state.keySPressTime = Date.now();
+            uiGame.internal.state.keySPressed = true;
+          }
+          uiGame.internal.sendDirectionalCommand();
+          break;
+        case 'd':
+          if (!uiGame.internal.state.keyDPressed) {
+            uiGame.internal.state.keyDPressTime = Date.now();
+            uiGame.internal.state.keyDPressed = true;
+          }
+          uiGame.internal.sendDirectionalCommand();
+          break;
+      }
+    },
+
+    handleKeyUp: (e) => {
+      switch (e.key) {
+        case 'w':
+          uiGame.internal.state.keyWPressed = false;
+          uiGame.internal.state.keyWPressTime = null;
+          uiGame.internal.sendDirectionalCommand();
+          break;
+        case 'a':
+          uiGame.internal.state.keyAPressed = false;
+          uiGame.internal.state.keyAPressTime = null;
+          uiGame.internal.sendDirectionalCommand();
+          break;
+        case 's':
+          uiGame.internal.state.keySPressed = false;
+          uiGame.internal.state.keySPressTime = null;
+          uiGame.internal.sendDirectionalCommand();
+          break;
+        case 'd':
+          uiGame.internal.state.keyDPressed = false;
+          uiGame.internal.state.keyDPressTime = null;
+          uiGame.internal.sendDirectionalCommand();
+          break;
+      }
+    },
+
+    handleLogin: () => {
+      game.joinGame();
+    },
+
+    handleLogout: () => {
+      uiGame.internal.state.keyWPressed = false;
+      uiGame.internal.state.keyWPressTime = null;
+      uiGame.internal.state.keyAPressed = false;
+      uiGame.internal.state.keyAPressTime = null;
+      uiGame.internal.state.keySPressed = false;
+      uiGame.internal.state.keySPressTime = null;
+      uiGame.internal.state.keyDPressed = false;
+      uiGame.internal.state.keyDPressTime = null;
+      uiGame.internal.state.characterElements = { };
+    },
+
+    handleGameStateChange: () => {
+      const snapshot = game.getGameState();
+      if (snapshot == null) {
+        uiGame.internal.elements.map.innerHTML = null;
+        return;
+      }
+      const clientCharacter = snapshot.characters[snapshot.clientPlayerId];
+      if (clientCharacter == null) {
+        return;
+      }
+      const rootHeight = uiGame.internal.elements.root.offsetHeight;
+      const rootWidth = uiGame.internal.elements.root.offsetWidth;
+      const spaceHeight = snapshot.space.height;
+      const spaceWidth = snapshot.space.width;
+      const scale = 1.1 * Math.max((rootHeight / spaceHeight), (rootWidth / spaceWidth));
+      const mapHeight = scale * spaceHeight;
+      const mapWidth = scale * spaceWidth;
+      uiGame.internal.elements.map.style.height = mapHeight + 'px';
+      uiGame.internal.elements.map.style.width = mapWidth + 'px';
+      const mapTop = ((rootHeight - mapHeight) / (spaceHeight - clientCharacter.height)) * clientCharacter.posY;
+      const mapLeft = ((rootWidth - mapWidth) / (spaceWidth - clientCharacter.width)) * clientCharacter.posX;
+      uiGame.internal.elements.map.style.top = mapTop + 'px';
+      uiGame.internal.elements.map.style.left = mapLeft + 'px';
+      let currentPlayerIds = new Set(Object.keys(uiGame.internal.state.characterElements));
+      for (const character of Object.values(snapshot.characters)) {
+        let characterElement;
+        if (currentPlayerIds.has(character.playerId.toString())) {
+          characterElement = uiGame.internal.state.characterElements[character.playerId];
+          currentPlayerIds.delete(character.playerId.toString());
+        } else {
+          characterElement = document.createElement('div');
+          characterElement.classList.add('character_element');
+          uiGame.internal.elements.map.appendChild(characterElement);
+          uiGame.internal.state.characterElements[character.playerId] = characterElement;
+        }
+        characterElement.style.top = (scale * character.posY) + 'px';
+        characterElement.style.left = (scale * character.posX) + 'px';
+        characterElement.style.height = (scale * character.height) + 'px';
+        characterElement.style.width = (scale * character.width) + 'px';
+      }
+      currentPlayerIds.forEach(playerId => {
+        uiGame.internal.state.characterElements[playerId].remove();
+        delete uiGame.internal.state.characterElements[playerId];
+      });
+    },
+
+    handleNavigation: (navigation) => {
+      if (navigation.destination === 'game_module') { // TODO: Match this with behavior in uiBase
+        document.addEventListener('keydown', uiGame.internal.handleKeyDown);
+        document.addEventListener('keyup', uiGame.internal.handleKeyUp);
       } else {
-        direction = 'down';
-      }
-    } else {
-      if (horizontal < 0) {
-        direction = 'left';
-      } else if (horizontal > 0) {
-        direction = 'right';
+        document.removeEventListener('keydown', uiGame.internal.handleKeyDown);
+        document.removeEventListener('keyup', uiGame.internal.handleKeyUp);
       }
     }
-    game.setCharacterMovement(direction);
+
   },
 
-  handleKeyDown: (e) => {
-    switch (e.key) {
-      case 'w':
-        if (!uiGame.state.keyWPressed) {
-          uiGame.state.keyWPressTime = Date.now();
-          uiGame.state.keyWPressed = true;
-        }
-        uiGame.sendDirectionalCommand();
-        break;
-      case 'a':
-        if (!uiGame.state.keyAPressed) {
-          uiGame.state.keyAPressTime = Date.now();
-          uiGame.state.keyAPressed = true;
-        }
-        uiGame.sendDirectionalCommand();
-        break;
-      case 's':
-        if (!uiGame.state.keySPressed) {
-          uiGame.state.keySPressTime = Date.now();
-          uiGame.state.keySPressed = true;
-        }
-        uiGame.sendDirectionalCommand();
-        break;
-      case 'd':
-        if (!uiGame.state.keyDPressed) {
-          uiGame.state.keyDPressTime = Date.now();
-          uiGame.state.keyDPressed = true;
-        }
-        uiGame.sendDirectionalCommand();
-        break;
-    }
-  },
-
-  handleKeyUp: (e) => {
-    switch (e.key) {
-      case 'w':
-        uiGame.state.keyWPressed = false;
-        uiGame.state.keyWPressTime = null;
-        uiGame.sendDirectionalCommand();
-        break;
-      case 'a':
-        uiGame.state.keyAPressed = false;
-        uiGame.state.keyAPressTime = null;
-        uiGame.sendDirectionalCommand();
-        break;
-      case 's':
-        uiGame.state.keySPressed = false;
-        uiGame.state.keySPressTime = null;
-        uiGame.sendDirectionalCommand();
-        break;
-      case 'd':
-        uiGame.state.keyDPressed = false;
-        uiGame.state.keyDPressTime = null;
-        uiGame.sendDirectionalCommand();
-        break;
-    }
-  },
-
-  handleLogin: () => {
-    game.joinGame();
-    document.addEventListener('keydown', uiGame.handleKeyDown);
-    document.addEventListener('keyup', uiGame.handleKeyUp);
-    // TODO: Disable event listener when overlay is visible
-  },
-
-  handleLogout: () => {
-    document.removeEventListener('keydown', uiGame.handleKeyDown);
-    document.removeEventListener('keyup', uiGame.handleKeyUp);
-    uiGame.state.keyWPressed = false;
-    uiGame.state.keyWPressTime = null;
-    uiGame.state.keyAPressed = false;
-    uiGame.state.keyAPressTime = null;
-    uiGame.state.keySPressed = false;
-    uiGame.state.keySPressTime = null;
-    uiGame.state.keyDPressed = false;
-    uiGame.state.keyDPressTime = null;
-    uiGame.state.characterElements = { };
-  },
-
-  handleGameStateChange: () => {
-    const snapshot = game.getGameState();
-    if (snapshot == null) {
-      uiGame.elements.map.innerHTML = null;
-      return;
-    }
-    const clientCharacter = snapshot.characters[snapshot.clientPlayerId];
-    if (clientCharacter == null) {
-      return;
-    }
-    const rootHeight = uiGame.elements.root.offsetHeight;
-    const rootWidth = uiGame.elements.root.offsetWidth;
-    const spaceHeight = snapshot.space.height;
-    const spaceWidth = snapshot.space.width;
-    const scale = 1.1 * Math.max((rootHeight / spaceHeight), (rootWidth / spaceWidth));
-    const mapHeight = scale * spaceHeight;
-    const mapWidth = scale * spaceWidth;
-    uiGame.elements.map.style.height = mapHeight + 'px';
-    uiGame.elements.map.style.width = mapWidth + 'px';
-    const mapTop = ((rootHeight - mapHeight) / (spaceHeight - clientCharacter.height)) * clientCharacter.posY;
-    const mapLeft = ((rootWidth - mapWidth) / (spaceWidth - clientCharacter.width)) * clientCharacter.posX;
-    uiGame.elements.map.style.top = mapTop + 'px';
-    uiGame.elements.map.style.left = mapLeft + 'px';
-    let currentPlayerIds = new Set(Object.keys(uiGame.state.characterElements));
-    for (const character of Object.values(snapshot.characters)) {
-      let characterElement;
-      if (currentPlayerIds.has(character.playerId.toString())) {
-        characterElement = uiGame.state.characterElements[character.playerId];
-        currentPlayerIds.delete(character.playerId.toString());
-      } else {
-        characterElement = document.createElement('div');
-        characterElement.classList.add('character_element');
-        uiGame.elements.map.appendChild(characterElement);
-        uiGame.state.characterElements[character.playerId] = characterElement;
-      }
-      characterElement.style.top = (scale * character.posY) + 'px';
-      characterElement.style.left = (scale * character.posX) + 'px';
-      characterElement.style.height = (scale * character.height) + 'px';
-      characterElement.style.width = (scale * character.width) + 'px';
-    }
-    currentPlayerIds.forEach(playerId => {
-      uiGame.state.characterElements[playerId].remove();
-      delete uiGame.state.characterElements[playerId];
-    });
+  initialize: () => {
+    uiGame.internal.registerApiHandlers();
   }
 
 };
 
-// ------------------------------------------------------------
-
-auth.registerLoginHandler(uiGame.handleLogin);
-auth.registerLogoutHandler(uiGame.handleLogout);
-game.registerGameStateChangeHandler(uiGame.handleGameStateChange);
+uiGame.initialize();

@@ -62,3 +62,5 @@ const accounts = {
   }
 
 };
+
+accounts.initialize();

@@ -1,10 +1,3 @@
-/* Requires:
- * - auth.js
- * - accounts.js
- * - friendships.js
- * - game.js
- */
-
 const uiApi = {
 
   hide: (element) => {
@@ -32,10 +25,3 @@ const uiApi = {
   }
 
 };
-
-// ------------------------------------------------------------
-
-auth.initialize();
-accounts.initialize();
-friendships.initialize();
-game.initialize();

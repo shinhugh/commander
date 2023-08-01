@@ -80,3 +80,5 @@ const game = {
   }
 
 };
+
+game.initialize();

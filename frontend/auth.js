@@ -67,3 +67,5 @@ const auth = {
   }
 
 };
+
+auth.initialize();
