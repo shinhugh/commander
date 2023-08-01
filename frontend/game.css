@@ -19,12 +19,13 @@
 
 #content_game_module_game_map {
   position: absolute;
-  background: url(assets/pokemon_map.png) no-repeat;
-  background-size: 100%;
+  background: url('assets/texture-grass.jpg');
+  background-size: 20%;
 }
 
 .character_element {
   position: absolute;
-  background: url(assets/eugene.png) no-repeat;
-  background-size: 30%;
+  border-radius: 50%;
+  border-bottom: 5px solid red;
+  background: orange;
 }

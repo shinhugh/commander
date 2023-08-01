@@ -98,6 +98,73 @@ const uiGame = {
       game.setDirectionInput(null);
     },
 
+    updateMapElement: (spaceModel, clientCharacterModel) => {
+      const rootHeight = uiGame.internal.elements.root.offsetHeight;
+      const rootWidth = uiGame.internal.elements.root.offsetWidth;
+      const spaceHeight = spaceModel.height;
+      const spaceWidth = spaceModel.width;
+      const scale = uiGame.internal.state.zoom * Math.max((rootHeight / spaceHeight), (rootWidth / spaceWidth));
+      const mapHeight = scale * spaceHeight;
+      const mapWidth = scale * spaceWidth;
+      const mapTop = ((rootHeight - mapHeight) / (spaceHeight - clientCharacterModel.height)) * clientCharacterModel.posY;
+      const mapLeft = ((rootWidth - mapWidth) / (spaceWidth - clientCharacterModel.width)) * clientCharacterModel.posX;
+      uiGame.internal.elements.map.style.height = mapHeight + 'px';
+      uiGame.internal.elements.map.style.width = mapWidth + 'px';
+      uiGame.internal.elements.map.style.top = mapTop + 'px';
+      uiGame.internal.elements.map.style.left = mapLeft + 'px';
+      return scale;
+    },
+
+    updateCharacterElements: (characterModels, scale) => {
+      let currentPlayerIds = new Set(Object.keys(uiGame.internal.state.characterElements));
+      for (const characterModel of characterModels) {
+        let characterElement;
+        if (currentPlayerIds.has(characterModel.playerId.toString())) {
+          characterElement = uiGame.internal.state.characterElements[characterModel.playerId];
+          currentPlayerIds.delete(characterModel.playerId.toString());
+        } else {
+          characterElement = document.createElement('div');
+          characterElement.classList.add('character_element');
+          uiGame.internal.elements.map.appendChild(characterElement);
+          uiGame.internal.state.characterElements[characterModel.playerId] = characterElement;
+        }
+        characterElement.style.top = (scale * characterModel.posY) + 'px';
+        characterElement.style.left = (scale * characterModel.posX) + 'px';
+        characterElement.style.height = (scale * characterModel.height) + 'px';
+        characterElement.style.width = (scale * characterModel.width) + 'px';
+        switch (characterModel.orientation) {
+          case 'up':
+            characterElement.style.transform = 'rotate(180deg)';
+            break;
+          case 'up_right':
+            characterElement.style.transform = 'rotate(225deg)';
+            break;
+          case 'right':
+            characterElement.style.transform = 'rotate(270deg)';
+            break;
+          case 'down_right':
+            characterElement.style.transform = 'rotate(315deg)';
+            break;
+          case 'down':
+            characterElement.style.removeProperty('transform');
+            break;
+          case 'down_left':
+            characterElement.style.transform = 'rotate(45deg)';
+            break;
+          case 'left':
+            characterElement.style.transform = 'rotate(90deg)';
+            break;
+          case 'up_left':
+            characterElement.style.transform = 'rotate(135deg)';
+            break;
+        }
+      }
+      currentPlayerIds.forEach(playerId => {
+        uiGame.internal.state.characterElements[playerId].remove();
+        delete uiGame.internal.state.characterElements[playerId];
+      });
+    },
+
     handleKeyDown: (e) => {
       switch (e.key) {
         case 'w':
@@ -178,40 +245,8 @@ const uiGame = {
       if (clientCharacter == null) {
         return;
       }
-      const rootHeight = uiGame.internal.elements.root.offsetHeight;
-      const rootWidth = uiGame.internal.elements.root.offsetWidth;
-      const spaceHeight = snapshot.space.height;
-      const spaceWidth = snapshot.space.width;
-      const scale = uiGame.internal.state.zoom * Math.max((rootHeight / spaceHeight), (rootWidth / spaceWidth));
-      const mapHeight = scale * spaceHeight;
-      const mapWidth = scale * spaceWidth;
-      uiGame.internal.elements.map.style.height = mapHeight + 'px';
-      uiGame.internal.elements.map.style.width = mapWidth + 'px';
-      const mapTop = ((rootHeight - mapHeight) / (spaceHeight - clientCharacter.height)) * clientCharacter.posY;
-      const mapLeft = ((rootWidth - mapWidth) / (spaceWidth - clientCharacter.width)) * clientCharacter.posX;
-      uiGame.internal.elements.map.style.top = mapTop + 'px';
-      uiGame.internal.elements.map.style.left = mapLeft + 'px';
-      let currentPlayerIds = new Set(Object.keys(uiGame.internal.state.characterElements));
-      for (const character of Object.values(snapshot.characters)) {
-        let characterElement;
-        if (currentPlayerIds.has(character.playerId.toString())) {
-          characterElement = uiGame.internal.state.characterElements[character.playerId];
-          currentPlayerIds.delete(character.playerId.toString());
-        } else {
-          characterElement = document.createElement('div');
-          characterElement.classList.add('character_element');
-          uiGame.internal.elements.map.appendChild(characterElement);
-          uiGame.internal.state.characterElements[character.playerId] = characterElement;
-        }
-        characterElement.style.top = (scale * character.posY) + 'px';
-        characterElement.style.left = (scale * character.posX) + 'px';
-        characterElement.style.height = (scale * character.height) + 'px';
-        characterElement.style.width = (scale * character.width) + 'px';
-      }
-      currentPlayerIds.forEach(playerId => {
-        uiGame.internal.state.characterElements[playerId].remove();
-        delete uiGame.internal.state.characterElements[playerId];
-      });
+      const scale = uiGame.internal.updateMapElement(snapshot.space, clientCharacter);
+      uiGame.internal.updateCharacterElements(Object.values(snapshot.characters), scale);
     },
 
     handleModuleChange: () => {

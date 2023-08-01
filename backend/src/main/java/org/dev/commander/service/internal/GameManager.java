@@ -215,12 +215,13 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     }
 
     private static class GameEntry {
-        private static final double SPACE_WIDTH = 16;
-        private static final double SPACE_HEIGHT = 26;
-        private static final double SPEED_SCALING = 0.002;
+        private static final double SPACE_WIDTH = 48;
+        private static final double SPACE_HEIGHT = 16;
+        private static final double CHARACTER_SPEED_SCALING = 0.005;
         private static final double CHARACTER_LENGTH = 1;
         private static final double CHARACTER_MOVEMENT_SPEED = 1;
         private static final double CHARACTER_MOVEMENT_VALIDATION_MARGIN = 0.06;
+        private static final long CHARACTER_POSITION_SILENT_INTERVAL_MAX = 500;
         private long lastProcessTime;
         private final List<GameInput> inputQueue = new ArrayList<>();
         private final Lock inputQueueLock = new ReentrantLock();
@@ -340,8 +341,8 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                     if (posX < 0 || posX + character.getWidth() > gameState.getSpace().getWidth() || posY < 0 || posY + character.getHeight() > gameState.getSpace().getHeight()) {
                         return false;
                     }
-                    long duration = currentTime - character.getLastPositionUpdateTime();
-                    double radius = character.getMovementSpeed() * duration * SPEED_SCALING;
+                    long duration = Math.min(currentTime - character.getLastPositionUpdateTime(), CHARACTER_POSITION_SILENT_INTERVAL_MAX);
+                    double radius = character.getMovementSpeed() * duration * CHARACTER_SPEED_SCALING;
                     double proposedDistance = Math.sqrt(Math.pow(posX - character.getPosX(), 2) + Math.pow(posY - character.getPosY(), 2));
                     if (proposedDistance > radius + CHARACTER_MOVEMENT_VALIDATION_MARGIN) {
                         return false;

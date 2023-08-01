@@ -8,7 +8,7 @@ const game = {
 
     diagonalScaling: 0.707107,
 
-    movementSpeedScaling: 0.002,
+    movementSpeedScaling: 0.005,
 
     processingInterval: 15,
 
@@ -32,54 +32,66 @@ const game = {
       if (game.internal.gameState == null) {
         return;
       }
-      const character = game.internal.gameState.characters[game.internal.gameState.clientPlayerId];
+      const clientCharacter = game.internal.gameState.characters[game.internal.gameState.clientPlayerId];
       const spaceWidth = game.internal.gameState.space.width;
       const spaceHeight = game.internal.gameState.space.height;
       const currentTime = Date.now();
       const duration = currentTime - game.internal.lastGameStateProcessTime;
-      let distance = character.movementSpeed * duration * game.internal.movementSpeedScaling;
+      let distance = clientCharacter.movementSpeed * duration * game.internal.movementSpeedScaling;
+      let clientCharacterPositionChanged = false;
       switch (game.internal.directionInput) {
         case 'up':
-          character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY - distance));
+          clientCharacter.posY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, clientCharacter.posY - distance));
+          clientCharacterPositionChanged = true;
           break;
         case 'up_right':
           distance *= game.internal.diagonalScaling;
-          character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX + distance));
-          character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY - distance));
+          clientCharacter.posX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, clientCharacter.posX + distance));
+          clientCharacter.posY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, clientCharacter.posY - distance));
+          clientCharacterPositionChanged = true;
           break;
         case 'right':
-          character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX + distance));
+          clientCharacter.posX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, clientCharacter.posX + distance));
+          clientCharacterPositionChanged = true;
           break;
         case 'down_right':
           distance *= game.internal.diagonalScaling;
-          character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX + distance));
-          character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY + distance));
+          clientCharacter.posX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, clientCharacter.posX + distance));
+          clientCharacter.posY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, clientCharacter.posY + distance));
+          clientCharacterPositionChanged = true;
           break;
         case 'down':
-          character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY + distance));
+          clientCharacter.posY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, clientCharacter.posY + distance));
+          clientCharacterPositionChanged = true;
           break;
         case 'down_left':
           distance *= game.internal.diagonalScaling;
-          character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX - distance));
-          character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY + distance));
+          clientCharacter.posX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, clientCharacter.posX - distance));
+          clientCharacter.posY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, clientCharacter.posY + distance));
+          clientCharacterPositionChanged = true;
           break;
         case 'left':
-          character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX - distance));
+          clientCharacter.posX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, clientCharacter.posX - distance));
+          clientCharacterPositionChanged = true;
           break;
         case 'up_left':
           distance *= game.internal.diagonalScaling;
-          character.posX = Math.max(0, Math.min(spaceWidth - character.width, character.posX - distance));
-          character.posY = Math.max(0, Math.min(spaceHeight - character.height, character.posY - distance));
+          clientCharacter.posX = Math.max(0, Math.min(spaceWidth - clientCharacter.width, clientCharacter.posX - distance));
+          clientCharacter.posY = Math.max(0, Math.min(spaceHeight - clientCharacter.height, clientCharacter.posY - distance));
+          clientCharacterPositionChanged = true;
           break;
       }
+      clientCharacter.orientation = game.internal.directionInput;
       game.internal.lastGameStateProcessTime = currentTime;
       game.internal.invokeGameStateChangeHandlers();
-      api.sendGameInput({
-        type: 'position',
-        posX: character.posX,
-        posY: character.posY,
-        orientation: game.internal.directionInput
-      });
+      if (clientCharacterPositionChanged) {
+        api.sendGameInput({
+          type: 'position',
+          posX: clientCharacter.posX,
+          posY: clientCharacter.posY,
+          orientation: clientCharacter.orientation
+        });
+      }
     },
 
     startProcessing: () => {
