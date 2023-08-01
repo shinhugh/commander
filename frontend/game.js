@@ -24,11 +24,7 @@ const game = {
       if (message.type !== 'game_snapshot') {
         return;
       }
-      const gameState = message.payload;
-      if (gameState.snapshotTime < Date.now() - 20) {
-        return;
-      }
-      game.internal.gameState = gameState;
+      game.internal.gameState = message.payload;
       game.internal.invokeGameStateChangeHandlers();
     },
 
