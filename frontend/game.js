@@ -12,6 +12,8 @@ const game = {
 
     collisionMargin: 0.0001,
 
+    distanceMargin: 0.055,
+
     processTickTime: 15,
 
     gameState: null,
@@ -46,19 +48,41 @@ const game = {
       }
     },
 
-    testForOverlap: (matterA, matterB) => {
-      const matterAXLower = matterA.posX;
-      const matterAXUpper = matterAXLower + matterA.width;
-      const matterAYLower = matterA.posY;
-      const matterAYUpper = matterAYLower + matterA.height;
-      const matterBXLower = matterB.posX;
-      const matterBXUpper = matterBXLower + matterB.width;
-      const matterBYLower = matterB.posY;
-      const matterBYUpper = matterBYLower + matterB.height;
-      if (matterAXUpper > matterBXLower - game.internal.collisionMargin && matterAXLower < matterBXUpper + game.internal.collisionMargin) {
-        return matterAYUpper > matterBYLower - game.internal.collisionMargin && matterAYLower < matterBYUpper + game.internal.collisionMargin;
+    calculateDistance: (pointA, pointB) => {
+      return Math.sqrt(Math.pow(pointA.posX - pointB.posX, 2) + Math.pow(pointA.posY - pointB.posY, 2));
+    },
+
+    verifyInBounds: (matter, space, margin) => {
+      return matter.posX >= margin && matter.posX <= space.width - margin && matter.posY >= margin && matter.posY <= space.height - margin;
+    },
+
+    resolveCollision: (unmovableMatter, movableMatter) => {
+      const unmovableMatterXLower = unmovableMatter.posX - game.internal.collisionMargin;
+      const unmovableMatterXUpper = unmovableMatter.posX + unmovableMatter.width + game.internal.collisionMargin;
+      const unmovableMatterYLower = unmovableMatter.posY - game.internal.collisionMargin;
+      const unmovableMatterYUpper = unmovableMatter.posY + unmovableMatter.height + game.internal.collisionMargin;
+      const movableMatterXLower = movableMatter.posX;
+      const movableMatterXUpper = movableMatter.posX + movableMatter.width;
+      const movableMatterYLower = movableMatter.posY;
+      const movableMatterYUpper = movableMatter.posY + movableMatter.height;
+      const overlap = movableMatterXUpper > unmovableMatterXLower && movableMatterXLower < unmovableMatterXUpper && movableMatterYUpper > unmovableMatterYLower && movableMatterYLower < unmovableMatterYUpper;
+      if (!overlap) {
+        return;
       }
-      return false;
+      const distanceUp = movableMatterYUpper - unmovableMatterYLower;
+      const distanceRight = unmovableMatterXUpper - movableMatterXLower;
+      const distanceDown = unmovableMatterYUpper - movableMatterYLower;
+      const distanceLeft = movableMatterXUpper - unmovableMatterXLower;
+      const distanceMin = Math.min(distanceUp, distanceRight, distanceDown, distanceLeft);
+      if (distanceMin === distanceUp) {
+        movableMatter.posY -= distanceMin;
+      } else if (distanceMin === distanceRight) {
+        movableMatter.posX += distanceMin;
+      } else if (distanceMin === distanceDown) {
+        movableMatter.posY += distanceMin;
+      } else {
+        movableMatter.posX -= distanceMin;
+      }
     },
 
     process: () => {
@@ -112,63 +136,15 @@ const game = {
           proposedState.posY -= distance;
           break;
       }
-      for (const obstacle of obstacles) { // TODO: Consider case where there are multiple collisions
-        if (game.internal.testForOverlap(proposedState, obstacle)) {
-          let gapX, gapY;
-          switch (game.internal.directionInput) { // TODO: Instead of movement direction, use which corners are contained within the obstacle
-            case 'up':
-              proposedState.posY = obstacle.posY + obstacle.height + game.internal.collisionMargin;
-              break;
-            case 'up_right':
-              gapX = proposedState.posX + proposedState.width - obstacle.posX;
-              gapY = obstacle.posY + obstacle.height - proposedState.posY;
-              if (gapX >= gapY) {
-                proposedState.posY = obstacle.posY + obstacle.height + game.internal.collisionMargin;
-              } else {
-                proposedState.posX = obstacle.posX - proposedState.width - game.internal.collisionMargin;
-              }
-              break;
-            case 'right':
-              proposedState.posX = obstacle.posX - proposedState.width - game.internal.collisionMargin;
-              break;
-            case 'down_right':
-              gapX = proposedState.posX + proposedState.width - obstacle.posX;
-              gapY = proposedState.posY + proposedState.height - obstacle.posY;
-              if (gapX >= gapY) {
-                proposedState.posY = obstacle.posY - proposedState.height - game.internal.collisionMargin;
-              } else {
-                proposedState.posX = obstacle.posX - proposedState.width - game.internal.collisionMargin;
-              }
-              break;
-            case 'down':
-              proposedState.posY = obstacle.posY - proposedState.height - game.internal.collisionMargin;
-              break;
-            case 'down_left':
-              gapX = obstacle.posX + obstacle.width - proposedState.posX;
-              gapY = proposedState.posY + proposedState.height - obstacle.posY;
-              if (gapX >= gapY) {
-                proposedState.posY = obstacle.posY - proposedState.height - game.internal.collisionMargin;
-              } else {
-                proposedState.posX = obstacle.posX + obstacle.width + game.internal.collisionMargin;
-              }
-              break;
-            case 'left':
-              proposedState.posX = obstacle.posX + obstacle.width + game.internal.collisionMargin;
-              break;
-            case 'up_left':
-              gapX = obstacle.posX + obstacle.width - proposedState.posX;
-              gapY = obstacle.posY + obstacle.height - proposedState.posY;
-              if (gapX >= gapY) {
-                proposedState.posY = obstacle.posY + obstacle.height + game.internal.collisionMargin;
-              } else {
-                proposedState.posX = obstacle.posX + obstacle.width + game.internal.collisionMargin;
-              }
-              break;
-          }
-        }
-      }
       proposedState.posX = Math.max(game.internal.collisionMargin, Math.min(spaceWidth - proposedState.width - game.internal.collisionMargin, proposedState.posX));
       proposedState.posY = Math.max(game.internal.collisionMargin, Math.min(spaceHeight - proposedState.height - game.internal.collisionMargin, proposedState.posY));
+      for (const obstacle of obstacles) {
+        game.internal.resolveCollision(obstacle, proposedState);
+      }
+      if (!game.internal.verifyInBounds(proposedState, game.internal.gameState.space, game.internal.collisionMargin) || game.internal.calculateDistance(clientCharacter, proposedState) - distance > game.internal.distanceMargin) {
+        proposedState.posX = clientCharacter.posX;
+        proposedState.posY = clientCharacter.posY;
+      }
       const clientCharacterPositionChanged = clientCharacter.posX !== proposedState.posX || clientCharacter.posY !== proposedState.posY;
       if (clientCharacterPositionChanged) {
         clientCharacter.posX = proposedState.posX;
