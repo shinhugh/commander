@@ -1,3 +1,27 @@
+@keyframes spinning {
+  0% { transform: rotate(0deg); }
+  5% { transform: rotate(18deg); }
+  10% { transform: rotate(36deg); }
+  15% { transform: rotate(54deg); }
+  20% { transform: rotate(72deg); }
+  25% { transform: rotate(90deg); }
+  30% { transform: rotate(108deg); }
+  35% { transform: rotate(126deg); }
+  40% { transform: rotate(144deg); }
+  45% { transform: rotate(162deg); }
+  50% { transform: rotate(180deg); }
+  55% { transform: rotate(198deg); }
+  60% { transform: rotate(216deg); }
+  65% { transform: rotate(234deg); }
+  70% { transform: rotate(252deg); }
+  75% { transform: rotate(270deg); }
+  80% { transform: rotate(288deg); }
+  85% { transform: rotate(306deg); }
+  90% { transform: rotate(324deg); }
+  95% { transform: rotate(342deg); }
+  100% { transform: rotate(360deg); }
+}
+
 #content {
   height: 100%;
   width: 100%;
@@ -43,20 +67,22 @@
   position: absolute;
   top: 0;
   left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background: #74bfa0;
 }
 
 #blocker_indicator {
   height: 10rem;
   width: 10rem;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  flex: 0 0 auto;
   border: 6px solid white;
-  border-radius: 50%;
-  /* TODO: Cut out one corner */
-  /* TODO: Animate */
+  border-top-color: transparent;
+  border-radius: 100%;
+  animation-name: spinning;
+  animation-duration: 1.2s;
+  animation-iteration-count: infinite;
 }
 
 #notification {
