@@ -248,6 +248,7 @@ const uiGame = {
       uiGame.internal.state.keyDPressed = false;
       uiGame.internal.state.keyDPressTime = null;
       uiGame.internal.state.characterElements = { };
+      uiGame.internal.state.obstacleElements = { };
     },
 
     handleGameStateChange: () => {

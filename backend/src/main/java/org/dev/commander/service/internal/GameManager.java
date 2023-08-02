@@ -247,7 +247,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         private static final double CHARACTER_SPEED_SCALING = 0.005;
         private static final double CHARACTER_LENGTH = 1;
         private static final double CHARACTER_MOVEMENT_SPEED = 1;
-        private static final double CHARACTER_MOVEMENT_VALIDATION_MARGIN = 0.06;
+        private static final double CHARACTER_MOVEMENT_VALIDATION_MARGIN = 0.09;
         private static final long CHARACTER_POSITION_SILENT_INTERVAL_MAX = 100;
         private final List<GameInput> inputQueue = new ArrayList<>();
         private final Lock inputQueueLock = new ReentrantLock();
@@ -325,16 +325,17 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         }
 
         private static boolean processInput(GameState gameState, GameInput input, long currentTime) {
+            long playerId = input.getPlayerId();
             switch (input.getType()) {
                 case JOIN -> {
-                    if (gameState.getCharacters().containsKey(input.getPlayerId())) {
+                    if (gameState.getCharacters().containsKey(playerId)) {
                         return true;
                     }
                     double posX = (gameState.getSpace().getWidth() - CHARACTER_LENGTH) / 2;
                     double posY = (gameState.getSpace().getHeight() - CHARACTER_LENGTH) / 2;
                     Character character = new Character();
                     character.setId(generateCharacterId(gameState));
-                    character.setPlayerId(input.getPlayerId());
+                    character.setPlayerId(playerId);
                     character.setWidth(CHARACTER_LENGTH);
                     character.setHeight(CHARACTER_LENGTH);
                     character.setPosX(posX);
@@ -342,13 +343,13 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                     character.setMovementSpeed(CHARACTER_MOVEMENT_SPEED);
                     character.setLastPositionUpdateTime(currentTime);
                     character.setOrientation(Direction.DOWN);
-                    gameState.getCharacters().put(input.getPlayerId(), character);
+                    gameState.getCharacters().put(playerId, character);
                 }
                 case LEAVE -> {
-                    gameState.getCharacters().remove(input.getPlayerId());
+                    gameState.getCharacters().remove(playerId);
                 }
                 case POSITION -> {
-                    Character character = gameState.getCharacters().get(input.getPlayerId());
+                    Character character = gameState.getCharacters().get(playerId);
                     if (character == null) {
                         return true;
                     }
@@ -362,16 +363,19 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                     double width = character.getWidth();
                     double height = character.getHeight();
                     if (newPosX < 0 || newPosX + width > gameState.getSpace().getWidth() || newPosY < 0 || newPosY + height > gameState.getSpace().getHeight()) {
+                        gameState.getCharacters().remove(playerId);
                         return false;
                     }
                     long duration = Math.min(currentTime - character.getLastPositionUpdateTime(), CHARACTER_POSITION_SILENT_INTERVAL_MAX);
                     double radius = character.getMovementSpeed() * duration * CHARACTER_SPEED_SCALING;
                     double proposedDistance = Math.sqrt(Math.pow(newPosX - oldPosX, 2) + Math.pow(newPosY - oldPosY, 2));
                     if (proposedDistance > radius + CHARACTER_MOVEMENT_VALIDATION_MARGIN) {
+                        gameState.getCharacters().remove(playerId);
                         return false;
                     }
                     for (Obstacle obstacle : gameState.getObstacles()) {
                         if (testForOverlap(character, obstacle)) {
+                            gameState.getCharacters().remove(playerId);
                             return false;
                         }
                     }

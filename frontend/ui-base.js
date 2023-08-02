@@ -2,6 +2,7 @@
  * - auth.js
  * - accounts.js
  * - friendships.js
+ * - game.js
  * - ui-api.js
  */
 
@@ -109,6 +110,8 @@ const uiBase = {
       auth.registerLogoutHandler(uiBase.internal.handleLogout);
       accounts.registerSelfChangeHandler(uiBase.internal.handleSelfChange);
       friendships.registerFriendshipsChangeHandler(uiBase.internal.handleFriendshipsChange);
+      game.registerGameSeatLossHandler(uiBase.internal.handleGameSeatLoss);
+      game.registerGameIntegrityViolationHandler(uiBase.internal.handleGameIntegrityViolation);
     },
 
     registerUiHandlers: () => {
@@ -650,6 +653,14 @@ const uiBase = {
 
     handleFriendshipsChange: () => {
       uiBase.internal.refreshFriendsList();
+    },
+
+    handleGameSeatLoss: () => {
+      uiBase.internal.notify('Joined the game from a different client');
+    },
+
+    handleGameIntegrityViolation: () => {
+      uiBase.internal.notify('Game integrity violation');
     }
 
   },
