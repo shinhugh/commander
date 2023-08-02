@@ -55,8 +55,8 @@ const game = {
       const matterBXUpper = matterBXLower + matterB.width;
       const matterBYLower = matterB.posY;
       const matterBYUpper = matterBYLower + matterB.height;
-      if (matterAXUpper >= matterBXLower - game.internal.collisionMargin && matterAXLower <= matterBXUpper + game.internal.collisionMargin) {
-        return matterAYUpper >= matterBYLower - game.internal.collisionMargin && matterAYLower <= matterBYUpper + game.internal.collisionMargin;
+      if (matterAXUpper > matterBXLower - game.internal.collisionMargin && matterAXLower < matterBXUpper + game.internal.collisionMargin) {
+        return matterAYUpper > matterBYLower - game.internal.collisionMargin && matterAYLower < matterBYUpper + game.internal.collisionMargin;
       }
       return false;
     },
@@ -72,7 +72,7 @@ const game = {
       const currentTime = Date.now();
       const duration = currentTime - game.internal.lastGameStateProcessTime;
       let distance = clientCharacter.movementSpeed * duration * game.internal.characterSpeedScaling;
-      const proposedPosition = {
+      const proposedState = {
         width: clientCharacter.width,
         height: clientCharacter.height,
         posX: clientCharacter.posX,
@@ -80,52 +80,99 @@ const game = {
       };
       switch (game.internal.directionInput) {
         case 'up':
-          proposedPosition.posY -= distance;
+          proposedState.posY -= distance;
           break;
         case 'up_right':
           distance *= game.internal.diagonalScaling;
-          proposedPosition.posX += distance;
-          proposedPosition.posY -= distance;
+          proposedState.posX += distance;
+          proposedState.posY -= distance;
           break;
         case 'right':
-          proposedPosition.posX += distance;
+          proposedState.posX += distance;
           break;
         case 'down_right':
           distance *= game.internal.diagonalScaling;
-          proposedPosition.posX += distance;
-          proposedPosition.posY += distance;
+          proposedState.posX += distance;
+          proposedState.posY += distance;
           break;
         case 'down':
-          proposedPosition.posY += distance;
+          proposedState.posY += distance;
           break;
         case 'down_left':
           distance *= game.internal.diagonalScaling;
-          proposedPosition.posX -= distance;
-          proposedPosition.posY += distance;
+          proposedState.posX -= distance;
+          proposedState.posY += distance;
           break;
         case 'left':
-          proposedPosition.posX -= distance;
+          proposedState.posX -= distance;
           break;
         case 'up_left':
           distance *= game.internal.diagonalScaling;
-          proposedPosition.posX -= distance;
-          proposedPosition.posY -= distance;
+          proposedState.posX -= distance;
+          proposedState.posY -= distance;
           break;
       }
-      for (const obstacle of obstacles) {
-        if (game.internal.testForOverlap(proposedPosition, obstacle)) {
-          // TODO: Adjust proposedPosition such that it is just touching the
-          //       obstacle but not overlapping
-          proposedPosition.posX = clientCharacter.posX;
-          proposedPosition.posY = clientCharacter.posY;
+      for (const obstacle of obstacles) { // TODO: Consider case where there are multiple collisions
+        if (game.internal.testForOverlap(proposedState, obstacle)) {
+          let gapX, gapY;
+          switch (game.internal.directionInput) { // TODO: Instead of movement direction, use which corners are contained within the obstacle
+            case 'up':
+              proposedState.posY = obstacle.posY + obstacle.height + game.internal.collisionMargin;
+              break;
+            case 'up_right':
+              gapX = proposedState.posX + proposedState.width - obstacle.posX;
+              gapY = obstacle.posY + obstacle.height - proposedState.posY;
+              if (gapX >= gapY) {
+                proposedState.posY = obstacle.posY + obstacle.height + game.internal.collisionMargin;
+              } else {
+                proposedState.posX = obstacle.posX - proposedState.width - game.internal.collisionMargin;
+              }
+              break;
+            case 'right':
+              proposedState.posX = obstacle.posX - proposedState.width - game.internal.collisionMargin;
+              break;
+            case 'down_right':
+              gapX = proposedState.posX + proposedState.width - obstacle.posX;
+              gapY = proposedState.posY + proposedState.height - obstacle.posY;
+              if (gapX >= gapY) {
+                proposedState.posY = obstacle.posY - proposedState.height - game.internal.collisionMargin;
+              } else {
+                proposedState.posX = obstacle.posX - proposedState.width - game.internal.collisionMargin;
+              }
+              break;
+            case 'down':
+              proposedState.posY = obstacle.posY - proposedState.height - game.internal.collisionMargin;
+              break;
+            case 'down_left':
+              gapX = obstacle.posX + obstacle.width - proposedState.posX;
+              gapY = proposedState.posY + proposedState.height - obstacle.posY;
+              if (gapX >= gapY) {
+                proposedState.posY = obstacle.posY - proposedState.height - game.internal.collisionMargin;
+              } else {
+                proposedState.posX = obstacle.posX + obstacle.width + game.internal.collisionMargin;
+              }
+              break;
+            case 'left':
+              proposedState.posX = obstacle.posX + obstacle.width + game.internal.collisionMargin;
+              break;
+            case 'up_left':
+              gapX = obstacle.posX + obstacle.width - proposedState.posX;
+              gapY = obstacle.posY + obstacle.height - proposedState.posY;
+              if (gapX >= gapY) {
+                proposedState.posY = obstacle.posY + obstacle.height + game.internal.collisionMargin;
+              } else {
+                proposedState.posX = obstacle.posX + obstacle.width + game.internal.collisionMargin;
+              }
+              break;
+          }
         }
       }
-      proposedPosition.posX = Math.max(game.internal.collisionMargin, Math.min(spaceWidth - clientCharacter.width - game.internal.collisionMargin, proposedPosition.posX));
-      proposedPosition.posY = Math.max(game.internal.collisionMargin, Math.min(spaceHeight - clientCharacter.height - game.internal.collisionMargin, proposedPosition.posY));
-      const clientCharacterPositionChanged = clientCharacter.posX !== proposedPosition.posX || clientCharacter.posY !== proposedPosition.posY;
+      proposedState.posX = Math.max(game.internal.collisionMargin, Math.min(spaceWidth - proposedState.width - game.internal.collisionMargin, proposedState.posX));
+      proposedState.posY = Math.max(game.internal.collisionMargin, Math.min(spaceHeight - proposedState.height - game.internal.collisionMargin, proposedState.posY));
+      const clientCharacterPositionChanged = clientCharacter.posX !== proposedState.posX || clientCharacter.posY !== proposedState.posY;
       if (clientCharacterPositionChanged) {
-        clientCharacter.posX = proposedPosition.posX;
-        clientCharacter.posY = proposedPosition.posY;
+        clientCharacter.posX = proposedState.posX;
+        clientCharacter.posY = proposedState.posY;
       }
       clientCharacter.orientation = game.internal.directionInput;
       clientCharacter.moving = clientCharacterPositionChanged;
