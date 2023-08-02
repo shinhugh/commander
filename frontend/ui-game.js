@@ -1,6 +1,7 @@
 /* Requires:
  * - auth.js
  * - game.js
+ * - ui-api.js
  * - ui-base.js
  */
 
@@ -10,7 +11,17 @@ const uiGame = {
 
     elements: {
       root: document.getElementById('content_game_module_game'),
-      map: document.getElementById('content_game_module_game_map')
+      map: document.getElementById('content_game_module_game_map'),
+      overlay: {
+        root: document.getElementById('content_game_module_game_overlay'),
+        seatLossPage: {
+          root: document.getElementById('content_game_module_game_overlay_seat_loss_page'),
+          reconnectButton: document.getElementById('content_game_module_game_overlay_seat_loss_page_reconnect_button')
+        },
+        integrityViolationPage: {
+          root: document.getElementById('content_game_module_game_overlay_integrity_violation_page')
+        }
+      }
     },
 
     state: {
@@ -30,73 +41,54 @@ const uiGame = {
     registerApiHandlers: () => {
       auth.registerLogoutHandler(uiGame.internal.handleLogout);
       game.registerGameStateChangeHandler(uiGame.internal.handleGameStateChange);
+      game.registerGameSeatLossHandler(uiGame.internal.handleGameSeatLoss);
+      game.registerGameIntegrityViolationHandler(uiGame.internal.handleGameIntegrityViolation);
       uiBase.registerModuleChangeHandler(uiGame.internal.handleModuleChange);
       uiBase.registerOverlayAppearanceHandler(uiGame.internal.handleOverlayAppearance);
       uiBase.registerOverlayDisappearanceHandler(uiGame.internal.handleOverlayDisappearance);
     },
 
-    updateDirectionInput: () => {
-      let vertical = 0;
-      if (uiGame.internal.state.keyWPressed && uiGame.internal.state.keySPressed) {
-        if (uiGame.internal.state.keyWPressTime <= uiGame.internal.state.keySPressTime) {
-          vertical = 1;
-        } else {
-          vertical = -1;
-        }
-      } else if (uiGame.internal.state.keyWPressed) {
-        vertical = -1;
-      } else if (uiGame.internal.state.keySPressed) {
-        vertical = 1;
-      }
-      let horizontal = 0;
-      if (uiGame.internal.state.keyAPressed && uiGame.internal.state.keyDPressed) {
-        if (uiGame.internal.state.keyAPressTime <= uiGame.internal.state.keyDPressTime) {
-          horizontal = 1;
-        } else {
-          horizontal = -1;
-        }
-      } else if (uiGame.internal.state.keyAPressed) {
-        horizontal = -1;
-      } else if (uiGame.internal.state.keyDPressed) {
-        horizontal = 1;
-      }
-      let direction = null;
-      if (vertical < 0) {
-        if (horizontal < 0) {
-          direction = 'up_left';
-        } else if (horizontal > 0) {
-          direction = 'up_right';
-        } else {
-          direction = 'up';
-        }
-      } else if (vertical > 0) {
-        if (horizontal < 0) {
-          direction = 'down_left';
-        } else if (horizontal > 0) {
-          direction = 'down_right';
-        } else {
-          direction = 'down';
-        }
-      } else {
-        if (horizontal < 0) {
-          direction = 'left';
-        } else if (horizontal > 0) {
-          direction = 'right';
-        }
-      }
-      game.setDirectionInput(direction);
+    registerUiHandlers: () => {
+      uiGame.internal.elements.overlay.seatLossPage.reconnectButton.addEventListener('click', () => {
+        uiGame.internal.hideGameOverlay();
+        uiGame.internal.clearGameOverlay();
+        game.joinGame();
+      });
     },
 
-    resetDirectionInput: () => {
-      uiGame.internal.state.keyWPressed = false;
-      uiGame.internal.state.keyWPressTime = null;
-      uiGame.internal.state.keyAPressed = false;
-      uiGame.internal.state.keyAPressTime = null;
-      uiGame.internal.state.keySPressed = false;
-      uiGame.internal.state.keySPressTime = null;
-      uiGame.internal.state.keyDPressed = false;
-      uiGame.internal.state.keyDPressTime = null;
-      game.setDirectionInput(null);
+    clearUi: () => {
+      uiApi.hide(uiGame.internal.elements.overlay.root);
+      uiApi.hide(uiGame.internal.elements.overlay.seatLossPage.root);
+      uiApi.hide(uiGame.internal.elements.overlay.integrityViolationPage.root);
+    },
+
+    hideGameOverlay: () => {
+      document.addEventListener('keydown', uiGame.internal.handleKeyDown);
+      document.addEventListener('keyup', uiGame.internal.handleKeyUp);
+      uiApi.hide(uiGame.internal.elements.overlay.root);
+    },
+
+    showGameOverlay: () => {
+      document.removeEventListener('keydown', uiGame.internal.handleKeyDown);
+      document.removeEventListener('keyup', uiGame.internal.handleKeyUp);
+      uiGame.internal.resetDirectionInput();
+      uiApi.show(uiGame.internal.elements.overlay.root);
+    },
+
+    clearGameOverlay: () => {
+      for (const child of uiGame.internal.elements.overlay.root.children) {
+        uiApi.hide(child);
+      }
+    },
+
+    showGameSeatLossPage: () => {
+      uiGame.internal.clearGameOverlay();
+      uiApi.show(uiGame.internal.elements.overlay.seatLossPage.root);
+    },
+
+    showGameIntegrityViolationPage: () => {
+      uiGame.internal.clearGameOverlay();
+      uiApi.show(uiGame.internal.elements.overlay.integrityViolationPage.root);
     },
 
     updateMapElement: (spaceModel, clientCharacterModel) => {
@@ -180,6 +172,70 @@ const uiGame = {
       }
     },
 
+    updateDirectionInput: () => {
+      let vertical = 0;
+      if (uiGame.internal.state.keyWPressed && uiGame.internal.state.keySPressed) {
+        if (uiGame.internal.state.keyWPressTime <= uiGame.internal.state.keySPressTime) {
+          vertical = 1;
+        } else {
+          vertical = -1;
+        }
+      } else if (uiGame.internal.state.keyWPressed) {
+        vertical = -1;
+      } else if (uiGame.internal.state.keySPressed) {
+        vertical = 1;
+      }
+      let horizontal = 0;
+      if (uiGame.internal.state.keyAPressed && uiGame.internal.state.keyDPressed) {
+        if (uiGame.internal.state.keyAPressTime <= uiGame.internal.state.keyDPressTime) {
+          horizontal = 1;
+        } else {
+          horizontal = -1;
+        }
+      } else if (uiGame.internal.state.keyAPressed) {
+        horizontal = -1;
+      } else if (uiGame.internal.state.keyDPressed) {
+        horizontal = 1;
+      }
+      let direction = null;
+      if (vertical < 0) {
+        if (horizontal < 0) {
+          direction = 'up_left';
+        } else if (horizontal > 0) {
+          direction = 'up_right';
+        } else {
+          direction = 'up';
+        }
+      } else if (vertical > 0) {
+        if (horizontal < 0) {
+          direction = 'down_left';
+        } else if (horizontal > 0) {
+          direction = 'down_right';
+        } else {
+          direction = 'down';
+        }
+      } else {
+        if (horizontal < 0) {
+          direction = 'left';
+        } else if (horizontal > 0) {
+          direction = 'right';
+        }
+      }
+      game.setDirectionInput(direction);
+    },
+
+    resetDirectionInput: () => {
+      uiGame.internal.state.keyWPressed = false;
+      uiGame.internal.state.keyWPressTime = null;
+      uiGame.internal.state.keyAPressed = false;
+      uiGame.internal.state.keyAPressTime = null;
+      uiGame.internal.state.keySPressed = false;
+      uiGame.internal.state.keySPressTime = null;
+      uiGame.internal.state.keyDPressed = false;
+      uiGame.internal.state.keyDPressTime = null;
+      game.setDirectionInput(null);
+    },
+
     handleKeyDown: (e) => {
       switch (e.key) {
         case 'w':
@@ -247,14 +303,14 @@ const uiGame = {
       uiGame.internal.state.keySPressTime = null;
       uiGame.internal.state.keyDPressed = false;
       uiGame.internal.state.keyDPressTime = null;
-      uiGame.internal.state.characterElements = { };
-      uiGame.internal.state.obstacleElements = { };
     },
 
     handleGameStateChange: () => {
       const snapshot = game.getGameState();
       if (snapshot == null) {
         uiGame.internal.elements.map.innerHTML = null;
+        uiGame.internal.state.characterElements = { };
+        uiGame.internal.state.obstacleElements = { };
         return;
       }
       const clientCharacter = snapshot.characters[snapshot.clientPlayerId];
@@ -264,6 +320,16 @@ const uiGame = {
       const scale = uiGame.internal.updateMapElement(snapshot.space, clientCharacter);
       uiGame.internal.updateCharacterElements(Object.values(snapshot.characters), scale);
       uiGame.internal.updateObstacleElements(snapshot.obstacles, scale);
+    },
+
+    handleGameSeatLoss: () => {
+      uiGame.internal.showGameSeatLossPage();
+      uiGame.internal.showGameOverlay();
+    },
+
+    handleGameIntegrityViolation: () => {
+      uiGame.internal.showGameIntegrityViolationPage();
+      uiGame.internal.showGameOverlay();
     },
 
     handleModuleChange: () => {
@@ -295,7 +361,9 @@ const uiGame = {
   },
 
   initialize: () => {
+    uiGame.internal.clearUi();
     uiGame.internal.registerApiHandlers();
+    uiGame.internal.registerUiHandlers();
   }
 
 };

@@ -106,3 +106,41 @@
   position: absolute;
   background: black;
 }
+
+#content_game_module_game_overlay {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  backdrop-filter: blur(15px);
+  background: #00000020;
+}
+
+#content_game_module_game_overlay>* {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 2rem;
+  border: 5px solid white;
+  border-radius: 10px;
+  box-shadow: 8px 8px 30px #00000030;
+  background: #74bfa0;
+  color: white;
+}
+
+#content_game_module_game_overlay_seat_loss_page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+#content_game_module_game_overlay_seat_loss_page>p {
+  text-align: center;
+}
+
+#content_game_module_game_overlay_integrity_violation_page>p {
+  text-align: center;
+}

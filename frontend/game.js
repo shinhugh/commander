@@ -144,14 +144,14 @@ const game = {
       clearInterval(game.internal.gameStateProcessingInterval);
       game.internal.gameStateProcessingInterval = null;
       game.internal.lastGameStateProcessTime = null;
+      game.internal.gameState = null;
+      game.internal.directionInput = null;
+      game.internal.invokeGameStateChangeHandlers();
     },
 
     handleIncomingMessage: (message) => {
       if (message.type === 'game_snapshot') {
-        let clientCharacter;
-        if (game.internal.gameState != null) {
-          clientCharacter = game.internal.gameState.characters[game.internal.gameState.clientPlayerId];
-        }
+        const clientCharacter = game.internal.gameState?.characters[game.internal.gameState.clientPlayerId];
         game.internal.gameState = message.payload;
         if (clientCharacter != null) {
           game.internal.gameState.characters[game.internal.gameState.clientPlayerId] = clientCharacter;
@@ -167,9 +167,6 @@ const game = {
 
     handleClosedConnection: () => {
       game.internal.stopProcessing();
-      game.internal.gameState = null;
-      game.internal.directionInput = null;
-      game.internal.invokeGameStateChangeHandlers();
     }
 
   },
