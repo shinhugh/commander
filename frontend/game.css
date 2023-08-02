@@ -141,6 +141,13 @@
   text-align: center;
 }
 
+#content_game_module_game_overlay_integrity_violation_page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
 #content_game_module_game_overlay_integrity_violation_page>p {
   text-align: center;
 }

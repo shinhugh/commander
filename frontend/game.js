@@ -12,7 +12,7 @@ const game = {
 
     collisionMargin: 0.0001,
 
-    distanceMargin: 0.055,
+    distanceMargin: 0.06,
 
     processTickTime: 15,
 

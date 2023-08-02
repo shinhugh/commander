@@ -1,5 +1,4 @@
 /* Requires:
- * - auth.js
  * - game.js
  * - ui-api.js
  * - ui-base.js
@@ -19,7 +18,8 @@ const uiGame = {
           reconnectButton: document.getElementById('content_game_module_game_overlay_seat_loss_page_reconnect_button')
         },
         integrityViolationPage: {
-          root: document.getElementById('content_game_module_game_overlay_integrity_violation_page')
+          root: document.getElementById('content_game_module_game_overlay_integrity_violation_page'),
+          reconnectButton: document.getElementById('content_game_module_game_overlay_integrity_violation_page_reconnect_button')
         }
       }
     },
@@ -39,7 +39,6 @@ const uiGame = {
     },
 
     registerApiHandlers: () => {
-      auth.registerLogoutHandler(uiGame.internal.handleLogout);
       game.registerGameStateChangeHandler(uiGame.internal.handleGameStateChange);
       game.registerGameSeatLossHandler(uiGame.internal.handleGameSeatLoss);
       game.registerGameIntegrityViolationHandler(uiGame.internal.handleGameIntegrityViolation);
@@ -53,6 +52,13 @@ const uiGame = {
         uiGame.internal.hideGameOverlay();
         uiGame.internal.clearGameOverlay();
         game.joinGame();
+        uiGame.internal.enableControls();
+      });
+      uiGame.internal.elements.overlay.integrityViolationPage.reconnectButton.addEventListener('click', () => {
+        uiGame.internal.hideGameOverlay();
+        uiGame.internal.clearGameOverlay();
+        game.joinGame();
+        uiGame.internal.enableControls();
       });
     },
 
@@ -63,15 +69,10 @@ const uiGame = {
     },
 
     hideGameOverlay: () => {
-      document.addEventListener('keydown', uiGame.internal.handleKeyDown);
-      document.addEventListener('keyup', uiGame.internal.handleKeyUp);
       uiApi.hide(uiGame.internal.elements.overlay.root);
     },
 
     showGameOverlay: () => {
-      document.removeEventListener('keydown', uiGame.internal.handleKeyDown);
-      document.removeEventListener('keyup', uiGame.internal.handleKeyUp);
-      uiGame.internal.resetDirectionInput();
       uiApi.show(uiGame.internal.elements.overlay.root);
     },
 
@@ -176,6 +177,25 @@ const uiGame = {
       }
     },
 
+    enableControls: () => {
+      document.addEventListener('keydown', uiGame.internal.handleKeyDown);
+      document.addEventListener('keyup', uiGame.internal.handleKeyUp);
+    },
+
+    disableControls: () => {
+      document.removeEventListener('keydown', uiGame.internal.handleKeyDown);
+      document.removeEventListener('keyup', uiGame.internal.handleKeyUp);
+      uiGame.internal.state.keyWPressed = false;
+      uiGame.internal.state.keyWPressTime = null;
+      uiGame.internal.state.keyAPressed = false;
+      uiGame.internal.state.keyAPressTime = null;
+      uiGame.internal.state.keySPressed = false;
+      uiGame.internal.state.keySPressTime = null;
+      uiGame.internal.state.keyDPressed = false;
+      uiGame.internal.state.keyDPressTime = null;
+      game.setDirectionInput(null);
+    },
+
     updateDirectionInput: () => {
       let vertical = 0;
       if (uiGame.internal.state.keyWPressed && uiGame.internal.state.keySPressed) {
@@ -226,18 +246,6 @@ const uiGame = {
         }
       }
       game.setDirectionInput(direction);
-    },
-
-    resetDirectionInput: () => {
-      uiGame.internal.state.keyWPressed = false;
-      uiGame.internal.state.keyWPressTime = null;
-      uiGame.internal.state.keyAPressed = false;
-      uiGame.internal.state.keyAPressTime = null;
-      uiGame.internal.state.keySPressed = false;
-      uiGame.internal.state.keySPressTime = null;
-      uiGame.internal.state.keyDPressed = false;
-      uiGame.internal.state.keyDPressTime = null;
-      game.setDirectionInput(null);
     },
 
     handleKeyDown: (e) => {
@@ -298,17 +306,6 @@ const uiGame = {
       }
     },
 
-    handleLogout: () => {
-      uiGame.internal.state.keyWPressed = false;
-      uiGame.internal.state.keyWPressTime = null;
-      uiGame.internal.state.keyAPressed = false;
-      uiGame.internal.state.keyAPressTime = null;
-      uiGame.internal.state.keySPressed = false;
-      uiGame.internal.state.keySPressTime = null;
-      uiGame.internal.state.keyDPressed = false;
-      uiGame.internal.state.keyDPressTime = null;
-    },
-
     handleGameStateChange: () => {
       const snapshot = game.getGameState();
       if (snapshot == null) {
@@ -327,11 +324,13 @@ const uiGame = {
     },
 
     handleGameSeatLoss: () => {
+      uiGame.internal.disableControls();
       uiGame.internal.showGameSeatLossPage();
       uiGame.internal.showGameOverlay();
     },
 
     handleGameIntegrityViolation: () => {
+      uiGame.internal.disableControls();
       uiGame.internal.showGameIntegrityViolationPage();
       uiGame.internal.showGameOverlay();
     },
@@ -339,27 +338,23 @@ const uiGame = {
     handleModuleChange: () => {
       if (uiBase.getCurrentModule() === 'game') {
         game.joinGame();
-        document.addEventListener('keydown', uiGame.internal.handleKeyDown);
-        document.addEventListener('keyup', uiGame.internal.handleKeyUp);
+        uiGame.internal.enableControls();
       } else {
-        document.removeEventListener('keydown', uiGame.internal.handleKeyDown);
-        document.removeEventListener('keyup', uiGame.internal.handleKeyUp);
-        uiGame.internal.resetDirectionInput();
+        uiGame.internal.disableControls();
+        uiGame.internal.hideGameOverlay();
+        uiGame.internal.clearGameOverlay();
       }
     },
 
     handleOverlayAppearance: () => {
-      document.removeEventListener('keydown', uiGame.internal.handleKeyDown);
-      document.removeEventListener('keyup', uiGame.internal.handleKeyUp);
-      uiGame.internal.resetDirectionInput();
+      uiGame.internal.disableControls();
     },
 
     handleOverlayDisappearance: () => {
       if (uiBase.getCurrentModule() !== 'game') {
         return;
       }
-      document.addEventListener('keydown', uiGame.internal.handleKeyDown);
-      document.addEventListener('keyup', uiGame.internal.handleKeyUp);
+      uiGame.internal.enableControls();
     }
 
   },

@@ -247,7 +247,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         private static final double CHARACTER_LENGTH = 1;
         private static final double CHARACTER_MOVEMENT_SPEED = 1;
         private static final double CHARACTER_SPEED_SCALING = 0.005;
-        private static final double CHARACTER_POSITION_VALIDATION_MARGIN = 0.09;
+        private static final double CHARACTER_POSITION_VALIDATION_MARGIN = 0.12;
         private static final long CHARACTER_SILENT_MOVEMENT_DURATION_MAX = 100;
         private static final long CHARACTER_MOVEMENT_TIMEOUT_DURATION = 50;
         private final List<GameInput> inputQueue = new ArrayList<>();
