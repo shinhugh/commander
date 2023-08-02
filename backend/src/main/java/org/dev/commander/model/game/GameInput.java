@@ -7,7 +7,6 @@ public class GameInput {
     private Type type;
     private Double posX;
     private Double posY;
-    private Direction orientation;
 
     public long getPlayerId() {
         return playerId;
@@ -39,14 +38,6 @@ public class GameInput {
 
     public void setPosY(Double posY) {
         this.posY = posY;
-    }
-
-    public Direction getOrientation() {
-        return orientation;
-    }
-
-    public void setOrientation(Direction orientation) {
-        this.orientation = orientation;
     }
 
     public enum Type {

@@ -140,7 +140,11 @@ const uiGame = {
             delete characterElement.dataset.right;
             break;
         }
-        // TODO: Set 'moving' data attribute on characterElement if character is moving
+        if (characterModel.moving) {
+          characterElement.dataset.moving = null;
+        } else {
+          delete characterElement.dataset.moving;
+        }
       }
       cachedCharacterIds.forEach(id => {
         uiGame.internal.state.characterElements[id].remove();

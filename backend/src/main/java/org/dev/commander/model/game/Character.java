@@ -15,6 +15,7 @@ public class Character implements Matter {
     @JsonIgnore
     private long lastPositionUpdateTime;
     private Direction orientation;
+    private boolean moving;
 
     public long getId() {
         return id;
@@ -86,5 +87,13 @@ public class Character implements Matter {
 
     public void setOrientation(Direction orientation) {
         this.orientation = orientation;
+    }
+
+    public boolean isMoving() {
+        return moving;
+    }
+
+    public void setMoving(boolean moving) {
+        this.moving = moving;
     }
 }

@@ -119,14 +119,14 @@ const game = {
         clientCharacterPositionChanged = true;
       }
       clientCharacter.orientation = game.internal.directionInput;
+      clientCharacter.moving = clientCharacterPositionChanged;
       game.internal.lastGameStateProcessTime = currentTime;
       game.internal.invokeGameStateChangeHandlers();
       if (clientCharacterPositionChanged) {
         api.sendGameInput({
           type: 'position',
           posX: clientCharacter.posX,
-          posY: clientCharacter.posY,
-          orientation: clientCharacter.orientation
+          posY: clientCharacter.posY
         });
       }
     },

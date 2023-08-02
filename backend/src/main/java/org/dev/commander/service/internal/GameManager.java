@@ -244,11 +244,12 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     }
 
     private static class GameEntry {
-        private static final double CHARACTER_SPEED_SCALING = 0.005;
         private static final double CHARACTER_LENGTH = 1;
         private static final double CHARACTER_MOVEMENT_SPEED = 1;
-        private static final double CHARACTER_MOVEMENT_VALIDATION_MARGIN = 0.09;
-        private static final long CHARACTER_POSITION_SILENT_INTERVAL_MAX = 100;
+        private static final double CHARACTER_SPEED_SCALING = 0.005;
+        private static final double CHARACTER_POSITION_VALIDATION_MARGIN = 0.09;
+        private static final long CHARACTER_SILENT_MOVEMENT_DURATION_MAX = 100;
+        private static final long CHARACTER_MOVEMENT_TIMEOUT_DURATION = 100;
         private final List<GameInput> inputQueue = new ArrayList<>();
         private final Lock inputQueueLock = new ReentrantLock();
         private final GameState gameState;
@@ -343,6 +344,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                     character.setMovementSpeed(CHARACTER_MOVEMENT_SPEED);
                     character.setLastPositionUpdateTime(currentTime);
                     character.setOrientation(Direction.DOWN);
+                    character.setMoving(false);
                     gameState.getCharacters().put(playerId, character);
                 }
                 case LEAVE -> {
@@ -358,18 +360,23 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                     if (newPosX == null || newPosY == null) {
                         return true;
                     }
-                    double oldPosX = character.getPosX();
-                    double oldPosY = character.getPosY();
+                    double deltaX = newPosX - character.getPosX();
+                    double deltaY = newPosY - character.getPosY();
+                    if (deltaX == 0 && deltaY == 0) {
+                        character.setLastPositionUpdateTime(currentTime);
+                        character.setMoving(false);
+                        return true;
+                    }
                     double width = character.getWidth();
                     double height = character.getHeight();
                     if (newPosX < 0 || newPosX + width > gameState.getSpace().getWidth() || newPosY < 0 || newPosY + height > gameState.getSpace().getHeight()) {
                         gameState.getCharacters().remove(playerId);
                         return false;
                     }
-                    long duration = Math.min(currentTime - character.getLastPositionUpdateTime(), CHARACTER_POSITION_SILENT_INTERVAL_MAX);
+                    long duration = Math.min(currentTime - character.getLastPositionUpdateTime(), CHARACTER_SILENT_MOVEMENT_DURATION_MAX);
                     double radius = character.getMovementSpeed() * duration * CHARACTER_SPEED_SCALING;
-                    double proposedDistance = Math.sqrt(Math.pow(newPosX - oldPosX, 2) + Math.pow(newPosY - oldPosY, 2));
-                    if (proposedDistance > radius + CHARACTER_MOVEMENT_VALIDATION_MARGIN) {
+                    double proposedDistance = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+                    if (proposedDistance > radius + CHARACTER_POSITION_VALIDATION_MARGIN) {
                         gameState.getCharacters().remove(playerId);
                         return false;
                     }
@@ -379,21 +386,25 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                             return false;
                         }
                     }
-                    Direction orientation = input.getOrientation();
-                    if (orientation == null) {
-                        orientation = determineDirection(newPosX - oldPosX, newPosY - oldPosY);
-                        orientation = orientation == null ? Direction.DOWN : orientation;
-                    }
+                    Direction orientation = determineOrientation(deltaX, deltaY);
                     character.setPosX(newPosX);
                     character.setPosY(newPosY);
                     character.setOrientation(orientation);
+                    character.setMoving(true);
                     character.setLastPositionUpdateTime(currentTime);
                 }
             }
             return true;
         }
 
-        private static void processDuration(GameState gameState, long duration) { }
+        private static void processDuration(GameState gameState, long duration) {
+            long currentTime = currentTimeMillis();
+            for (Character character : gameState.getCharacters().values()) {
+                if (character.isMoving() && character.getLastPositionUpdateTime() + CHARACTER_MOVEMENT_TIMEOUT_DURATION < currentTime) {
+                    character.setMoving(false);
+                }
+            }
+        }
 
         private static Map<Long, GameState> applyPerspectives(GameState gameState) {
             Map<Long, GameState> playerSpecificGameStates = new HashMap<>();
@@ -421,7 +432,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             return false;
         }
 
-        private static Direction determineDirection(double deltaX, double deltaY) {
+        private static Direction determineOrientation(double deltaX, double deltaY) {
             if (deltaX < 0) {
                 if (deltaY < 0) {
                     return Direction.UP_LEFT;
@@ -482,6 +493,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                 characterClone.setMovementSpeed(character.getMovementSpeed());
                 characterClone.setLastPositionUpdateTime(character.getLastPositionUpdateTime());
                 characterClone.setOrientation(character.getOrientation());
+                characterClone.setMoving(character.isMoving());
                 characters.put(playerId, characterClone);
             }
             Set<Obstacle> obstacles = new HashSet<>();
