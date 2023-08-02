@@ -27,9 +27,11 @@ public class OutgoingMessage<T> {
     public enum Type {
         @JsonProperty("friendships_change")
         FRIENDSHIPS_CHANGE,
-        @JsonProperty("game_eviction")
-        GAME_EVICTION,
         @JsonProperty("game_snapshot")
-        GAME_SNAPSHOT
+        GAME_SNAPSHOT,
+        @JsonProperty("game_seat_usurped")
+        GAME_SEAT_USURPED,
+        @JsonProperty("game_integrity_violation")
+        GAME_INTEGRITY_VIOLATION
     }
 }

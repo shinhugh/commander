@@ -86,7 +86,14 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     public void process() {
         Set<Long> offenders = game.process();
         for (long playerId : offenders) {
-            // TODO: Handle offender (evict from game?)
+            String sessionToken = getSessionTokenForPlayer(playerId);
+            if (sessionToken == null) {
+                continue;
+            }
+            OutgoingMessage<Void> message = new OutgoingMessage<>();
+            message.setType(OutgoingMessage.Type.GAME_INTEGRITY_VIOLATION);
+            messageBroker.sendMessageBySessionToken(sessionToken, message);
+            unmapPlayerById(playerId);
         }
     }
 
@@ -125,7 +132,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         game.input(input);
         if (evictedSessionToken != null) {
             OutgoingMessage<Void> message = new OutgoingMessage<>();
-            message.setType(OutgoingMessage.Type.GAME_EVICTION);
+            message.setType(OutgoingMessage.Type.GAME_SEAT_USURPED);
             messageBroker.sendMessageBySessionToken(evictedSessionToken, message);
         }
     }
@@ -236,7 +243,6 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         return new GameEntry(gameState);
     }
 
-    // TODO: Use as data object; move logic into parent class GameManager
     private static class GameEntry {
         private static final double CHARACTER_SPEED_SCALING = 0.005;
         private static final double CHARACTER_LENGTH = 1;
