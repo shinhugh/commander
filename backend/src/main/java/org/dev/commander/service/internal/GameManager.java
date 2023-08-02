@@ -249,7 +249,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         private static final double CHARACTER_SPEED_SCALING = 0.005;
         private static final double CHARACTER_POSITION_VALIDATION_MARGIN = 0.09;
         private static final long CHARACTER_SILENT_MOVEMENT_DURATION_MAX = 100;
-        private static final long CHARACTER_MOVEMENT_TIMEOUT_DURATION = 100;
+        private static final long CHARACTER_MOVEMENT_TIMEOUT_DURATION = 50;
         private final List<GameInput> inputQueue = new ArrayList<>();
         private final Lock inputQueueLock = new ReentrantLock();
         private final GameState gameState;
@@ -380,6 +380,10 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                         gameState.getCharacters().remove(playerId);
                         return false;
                     }
+                    // TODO: Need a better way to check for collision; current technique allows jumping over obstacles
+                    //       as long as the final coordinates don't cause any overlap
+                    //       Practically impossible since the maximum duration a position update can retrospectively
+                    //       represent is 100ms, but theoretically possible with extremely high movement speed
                     for (Obstacle obstacle : gameState.getObstacles()) {
                         if (testForOverlap(character, obstacle)) {
                             gameState.getCharacters().remove(playerId);

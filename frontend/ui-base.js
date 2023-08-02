@@ -211,10 +211,10 @@ const uiBase = {
           await accounts.deleteAccount(null);
         }
         catch {
-          uiBase.internal.notify('Failed to delete account');
+          uiBase.internal.notify('Something went wrong');
           return;
         }
-        uiBase.internal.notify('Successfully deleted account');
+        uiBase.internal.notify('Account deleted');
         try {
           await auth.logout();
         }
@@ -346,20 +346,20 @@ const uiBase = {
           await friendships.requestFriendship(friendEntry.friendAccount.id);
         }
         catch {
-          uiBase.internal.notify('Failed to accept friend request');
+          uiBase.internal.notify('Something went wrong');
           return;
         }
-        uiBase.internal.notify('Accepted friend request');
+        uiBase.internal.notify('Friend request accepted');
       });
       entry.getElementsByClassName('friend_entry_deny_button')[0].addEventListener('click', async () => {
         try {
           await friendships.terminateFriendship(friendEntry.friendAccount.id);
         }
         catch {
-          uiBase.internal.notify('Failed to deny friend request');
+          uiBase.internal.notify('Something went wrong');
           return;
         }
-        uiBase.internal.notify('Denied friend request');
+        uiBase.internal.notify('Friend request denied');
       });
       uiBase.internal.elements.overlay.friendsPage.friendsList.insertBefore(entry, uiBase.internal.elements.overlay.friendsPage.friendsList.firstElementChild);
     },
@@ -372,10 +372,10 @@ const uiBase = {
           await friendships.terminateFriendship(friendEntry.friendAccount.id);
         }
         catch {
-          uiBase.internal.notify('Failed to remove friend');
+          uiBase.internal.notify('Something went wrong');
           return;
         }
-        uiBase.internal.notify('Removed friend');
+        uiBase.internal.notify('Friend removed');
       });
       uiBase.internal.elements.overlay.friendsPage.friendsList.insertBefore(entry, uiBase.internal.elements.overlay.friendsPage.friendsList.firstElementChild);
     },
@@ -388,10 +388,10 @@ const uiBase = {
           await friendships.terminateFriendship(friendEntry.friendAccount.id);
         }
         catch {
-          uiBase.internal.notify('Failed to cancel friend request');
+          uiBase.internal.notify('Something went wrong');
           return;
         }
-        uiBase.internal.notify('Canceled friend request');
+        uiBase.internal.notify('Friend request canceled');
       });
       uiBase.internal.elements.overlay.friendsPage.friendsList.insertBefore(entry, uiBase.internal.elements.overlay.friendsPage.friendsList.firstElementChild);
     },
@@ -490,15 +490,11 @@ const uiBase = {
         await auth.login(username, password);
       }
       catch (e) {
-        switch (e.message) {
-          case '400':
-            uiBase.internal.notify('Failed to login');
-            break;
-          case '401':
-            uiBase.internal.notify('Invalid credentials');
-            break;
+        if (e.message === '401') {
+          uiBase.internal.notify('Invalid credentials');
+          return;
         }
-        return;
+        uiBase.internal.notify('Something went wrong');
       }
     },
 
@@ -521,7 +517,7 @@ const uiBase = {
         }
         return;
       }
-      uiBase.internal.notify('Successfully created account');
+      uiBase.internal.notify('Account created');
       uiBase.internal.showLoginPage();
       uiBase.internal.elements.content.loginModule.pages.loginPage.usernameInput.value = account.loginName;
       uiBase.internal.elements.content.loginModule.pages.loginPage.passwordInput.value = null;
@@ -545,7 +541,7 @@ const uiBase = {
         matches = await accounts.readAccounts(accountId);
       }
       catch (e) {
-        uiBase.internal.notify('Failed to search for user');
+        uiBase.internal.notify('Something went wrong');
         return;
       }
       if (matches.length == 0) {
@@ -564,7 +560,7 @@ const uiBase = {
               uiBase.internal.notify('User is already a confirmed or requested friend');
               break;
             default:
-              uiBase.internal.notify('Failed to add friend');
+              uiBase.internal.notify('Something went wrong');
               break;
           }
           return;
@@ -594,23 +590,15 @@ const uiBase = {
         switch (e.message) {
           case '400':
             uiBase.internal.notify('Rules not met');
-            break;
-          case '401':
-            uiBase.internal.notify('Not authenticated');
-            break;
-          case '403':
-            uiBase.internal.notify('Not authorized');
-            break;
-          case '404':
-            uiBase.internal.notify('No such account');
-            break;
+            return;
           case '409':
             uiBase.internal.notify('Username already taken');
-            break;
+            return;
         }
+        uiBase.internal.notify('Something went wrong');
         return;
       }
-      uiBase.internal.notify('Successfully updated account');
+      uiBase.internal.notify('Account updated');
       try {
         await auth.logout();
       }
