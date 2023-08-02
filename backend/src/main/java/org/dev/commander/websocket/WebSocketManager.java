@@ -176,6 +176,17 @@ public class WebSocketManager extends TextWebSocketHandler implements MessageBro
     }
 
     @Override
+    public void registerIncomingMessageHandler(IncomingMessageHandler incomingMessageHandler) {
+        incomingMessageHandlersWriteLock.lock();
+        try {
+            incomingMessageHandlers.add(incomingMessageHandler);
+        }
+        finally {
+            incomingMessageHandlersWriteLock.unlock();
+        }
+    }
+
+    @Override
     public void sendMessageByAccountId(long accountId, OutgoingMessage<?> object) throws IllegalArgumentException {
         if (accountId <= 0) {
             throw new IllegalArgumentException();
@@ -253,17 +264,6 @@ public class WebSocketManager extends TextWebSocketHandler implements MessageBro
                 connection.close();
             }
             catch (IOException ignored) { }
-        }
-    }
-
-    @Override
-    public void registerIncomingMessageHandler(IncomingMessageHandler incomingMessageHandler) {
-        incomingMessageHandlersWriteLock.lock();
-        try {
-            incomingMessageHandlers.add(incomingMessageHandler);
-        }
-        finally {
-            incomingMessageHandlersWriteLock.unlock();
         }
     }
 
