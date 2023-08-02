@@ -32,22 +32,17 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final GameEntry game = generateGameEntry();
     private final Map<Long, String> playerIdToSessionTokenMap = new HashMap<>();
-    private final Lock playerIdToSessionTokenMapReadLock;
-    private final Lock playerIdToSessionTokenMapWriteLock;
-    private final Map<Long, Long> accountIdToPlayerIdMap = new HashMap<>();
-    private final Lock accountIdToPlayerIdMapReadLock;
-    private final Lock accountIdToPlayerIdMapWriteLock;
+    private final Map<String, Long> sessionTokenToPlayerIdMap = new HashMap<>();
+    private final Lock playerMapReadLock;
+    private final Lock playerMapWriteLock;
 
     public GameManager(PlayerService playerService, MessageBroker messageBroker, IdentificationService identificationService) {
         this.playerService = playerService;
         this.messageBroker = messageBroker;
         this.identificationService = identificationService;
-        ReadWriteLock playerIdToSessionTokenMapReadWriteLock = new ReentrantReadWriteLock();
-        playerIdToSessionTokenMapReadLock = playerIdToSessionTokenMapReadWriteLock.readLock();
-        playerIdToSessionTokenMapWriteLock = playerIdToSessionTokenMapReadWriteLock.writeLock();
-        ReadWriteLock accountIdToPlayerIdMapReadWriteLock = new ReentrantReadWriteLock();
-        accountIdToPlayerIdMapReadLock = accountIdToPlayerIdMapReadWriteLock.readLock();
-        accountIdToPlayerIdMapWriteLock = accountIdToPlayerIdMapReadWriteLock.writeLock();
+        ReadWriteLock playerMapReadWriteLock = new ReentrantReadWriteLock();
+        playerMapReadLock = playerMapReadWriteLock.readLock();
+        playerMapWriteLock = playerMapReadWriteLock.writeLock();
         this.messageBroker.registerConnectionEventHandler(this);
         this.messageBroker.registerIncomingMessageHandler(this);
         game.resetProcessingPoint();
@@ -58,33 +53,16 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
 
     @Override
     public void handleClosedConnection(Authentication authentication) {
-        long accountId = identificationService.identifyAccount(authentication).getId();
         String sessionToken = (String) authentication.getCredentials();
-        long playerId = getPlayerId(accountId);
-        boolean playerLeft = false;
-        playerIdToSessionTokenMapWriteLock.lock();
-        try {
-            if (Objects.equals(playerIdToSessionTokenMap.get(playerId), sessionToken)) {
-                playerIdToSessionTokenMap.remove(playerId);
-                playerLeft = true;
-            }
+        Long playerId = getPlayerIdForSession(sessionToken);
+        if (playerId == null) {
+            return;
         }
-        finally {
-            playerIdToSessionTokenMapWriteLock.unlock();
-        }
-        if (playerLeft) {
-            GameInput input = new GameInput();
-            input.setPlayerId(getPlayerId(accountId));
-            input.setType(GameInput.Type.LEAVE);
-            game.input(input);
-            accountIdToPlayerIdMapWriteLock.lock();
-            try {
-                accountIdToPlayerIdMap.remove(accountId);
-            }
-            finally {
-                accountIdToPlayerIdMapWriteLock.unlock();
-            }
-        }
+        unmapPlayerBySessionToken(sessionToken);
+        GameInput input = new GameInput();
+        input.setPlayerId(playerId);
+        input.setType(GameInput.Type.LEAVE);
+        game.input(input);
     }
 
     @Override
@@ -116,13 +94,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     public void broadcast() {
         Map<Long, GameState> snapshot = game.snapshot();
         Map<Long, String> destinations;
-        playerIdToSessionTokenMapReadLock.lock();
-        try {
-            destinations = new HashMap<>(playerIdToSessionTokenMap);
-        }
-        finally {
-            playerIdToSessionTokenMapReadLock.unlock();
-        }
+        destinations = clonePlayerMap();
         for (Map.Entry<Long, String> destination : destinations.entrySet()) { // TODO: Parallelize
             long playerId = destination.getKey();
             String sessionToken = destination.getValue();
@@ -138,17 +110,15 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     }
 
     private void handleGameJoin(Authentication authentication) {
-        long playerId = getPlayerId(identificationService.identifyAccount(authentication).getId());
         String sessionToken = (String) authentication.getCredentials();
-        String evictedSessionToken;
-        playerIdToSessionTokenMapWriteLock.lock();
-        try {
-            evictedSessionToken = playerIdToSessionTokenMap.get(playerId);
-            playerIdToSessionTokenMap.put(playerId, sessionToken);
+        Long playerId = getPlayerIdForSession(sessionToken);
+        if (playerId != null) {
+            return;
         }
-        finally {
-            playerIdToSessionTokenMapWriteLock.unlock();
-        }
+        playerId = getPlayerIdForAccount(identificationService.identifyAccount(authentication).getId());
+        String evictedSessionToken = getSessionTokenForPlayer(playerId);
+        unmapPlayerById(playerId);
+        mapPlayer(playerId, sessionToken);
         GameInput input = new GameInput();
         input.setPlayerId(playerId);
         input.setType(GameInput.Type.JOIN);
@@ -162,57 +132,88 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
 
     private void handleGameInput(Authentication authentication, GameInput input) {
         String sessionToken = (String) authentication.getCredentials();
-        long playerId = getPlayerId(identificationService.identifyAccount(authentication).getId());
-        String expectedSessionToken;
-        playerIdToSessionTokenMapReadLock.lock();
-        try {
-            expectedSessionToken = playerIdToSessionTokenMap.get(playerId);
-        }
-        finally {
-            playerIdToSessionTokenMapReadLock.unlock();
-        }
-        if (!Objects.equals(expectedSessionToken, sessionToken)) {
+        Long playerId = getPlayerIdForSession(sessionToken);
+        if (playerId == null) {
             return;
         }
         input.setPlayerId(playerId);
         game.input(input);
     }
 
-    private long getPlayerId(long accountId) {
-        Long playerId;
-        accountIdToPlayerIdMapReadLock.lock();
-        try {
-            playerId = accountIdToPlayerIdMap.get(accountId);
-        }
-        finally {
-            accountIdToPlayerIdMapReadLock.unlock();
-        }
-        if (playerId != null) {
-            return playerId;
-        }
+    private long getPlayerIdForAccount(long accountId) {
         List<Player> players = playerService.readPlayers(null, accountId);
-        Player player = players.isEmpty() ? null : players.get(0);
-        if (player != null) {
-            accountIdToPlayerIdMapWriteLock.lock();
-            try {
-                accountIdToPlayerIdMap.put(accountId, player.getId());
-            }
-            finally {
-                accountIdToPlayerIdMapWriteLock.unlock();
-            }
-            return player.getId();
+        if (!players.isEmpty()) {
+            return players.get(0).getId();
         }
-        player = new Player();
+        Player player = new Player();
         player.setAccountId(accountId);
         player = playerService.createPlayer(player);
-        accountIdToPlayerIdMapWriteLock.lock();
+        return player.getId();
+    }
+
+    private Long getPlayerIdForSession(String sessionToken) {
+        playerMapReadLock.lock();
         try {
-            accountIdToPlayerIdMap.put(accountId, player.getId());
+            return sessionTokenToPlayerIdMap.get(sessionToken);
         }
         finally {
-            accountIdToPlayerIdMapWriteLock.unlock();
+            playerMapReadLock.unlock();
         }
-        return player.getId();
+    }
+
+    private String getSessionTokenForPlayer(long playerId) {
+        playerMapReadLock.lock();
+        try {
+            return playerIdToSessionTokenMap.get(playerId);
+        }
+        finally {
+            playerMapReadLock.unlock();
+        }
+    }
+
+    private Map<Long, String> clonePlayerMap() {
+        playerMapReadLock.lock();
+        try {
+            return new HashMap<>(playerIdToSessionTokenMap);
+        }
+        finally {
+            playerMapReadLock.unlock();
+        }
+    }
+
+    private void mapPlayer(long id, String sessionToken) {
+        playerMapWriteLock.lock();
+        try {
+            playerIdToSessionTokenMap.put(id, sessionToken);
+            sessionTokenToPlayerIdMap.put(sessionToken, id);
+        }
+        finally {
+            playerMapWriteLock.unlock();
+        }
+    }
+
+    private void unmapPlayerBySessionToken(String sessionToken) {
+        playerMapWriteLock.lock();
+        try {
+            Long id = sessionTokenToPlayerIdMap.get(sessionToken);
+            playerIdToSessionTokenMap.remove(id);
+            sessionTokenToPlayerIdMap.remove(sessionToken);
+        }
+        finally {
+            playerMapWriteLock.unlock();
+        }
+    }
+
+    private void unmapPlayerById(long id) {
+        playerMapWriteLock.lock();
+        try {
+            String sessionToken = playerIdToSessionTokenMap.get(id);
+            playerIdToSessionTokenMap.remove(id);
+            sessionTokenToPlayerIdMap.remove(sessionToken);
+        }
+        finally {
+            playerMapWriteLock.unlock();
+        }
     }
 
     // TODO: Read map data from external configuration file
