@@ -23,7 +23,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         ((ServletWebSocketHandlerRegistry) registry).setOrder(-1);
         registry
-                .addHandler(webSocketManager, "/api/ws")
+                .addHandler(webSocketManager, "/ws")
                 .addInterceptors(securityHandshakeInterceptor);
     }
 }

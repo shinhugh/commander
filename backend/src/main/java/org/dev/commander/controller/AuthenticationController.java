@@ -26,7 +26,7 @@ public class AuthenticationController {
     @PostMapping
     public ResponseEntity<Session> login(Authentication authentication, @RequestBody(required = false) Credentials credentials) {
         Session session = externalAuthenticationService.login(authentication, credentials);
-        long maxAge = (session.getExpirationTime() - session.getCreationTime()) / 1000;
+        long maxAge = (session.getExpirationTime() - session.getCreationTime()) / 1000; // TODO: Use current time, not creation time
         String xAuthorizationCookieHeaderValue = "X-Authorization=" + session.getToken() + "; Max-Age=" + maxAge + "; SameSite=Strict";
         HttpHeaders headers = new HttpHeaders();
         headers.add("Set-Cookie", xAuthorizationCookieHeaderValue);
