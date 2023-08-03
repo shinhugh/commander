@@ -10,7 +10,10 @@ const uiGame = {
 
     elements: {
       root: document.getElementById('content_game_module_game'),
-      map: document.getElementById('content_game_module_game_map'),
+      scene: {
+        root: document.getElementById('content_game_module_game_scene'),
+        field: document.getElementById('content_game_module_game_scene_field')
+      },
       overlay: {
         root: document.getElementById('content_game_module_game_overlay'),
         seatLossPage: {
@@ -26,6 +29,8 @@ const uiGame = {
 
     state: {
       zoom: 1.1,
+      fieldRotation: 70,
+      fieldPerspectiveSideOffsetScaling: 8,
       keyWPressed: false,
       keyWPressTime: null,
       keyAPressed: false,
@@ -92,20 +97,25 @@ const uiGame = {
       uiApi.show(uiGame.internal.elements.overlay.integrityViolationPage.root);
     },
 
-    updateMapElement: (spaceModel, clientCharacterModel) => {
-      const rootHeight = uiGame.internal.elements.root.offsetHeight;
-      const rootWidth = uiGame.internal.elements.root.offsetWidth;
-      const spaceHeight = spaceModel.height;
-      const spaceWidth = spaceModel.width;
-      const scale = uiGame.internal.state.zoom * Math.max((rootHeight / spaceHeight), (rootWidth / spaceWidth));
-      const mapHeight = scale * spaceHeight;
-      const mapWidth = scale * spaceWidth;
-      const mapTop = ((rootHeight - mapHeight) / (spaceHeight - clientCharacterModel.height)) * clientCharacterModel.posY;
-      const mapLeft = ((rootWidth - mapWidth) / (spaceWidth - clientCharacterModel.width)) * clientCharacterModel.posX;
-      uiGame.internal.elements.map.style.height = mapHeight + 'px';
-      uiGame.internal.elements.map.style.width = mapWidth + 'px';
-      uiGame.internal.elements.map.style.top = mapTop + 'px';
-      uiGame.internal.elements.map.style.left = mapLeft + 'px';
+    updateFieldElement: (spaceModel, clientCharacterModel) => {
+      const fieldElement = uiGame.internal.elements.scene.field;
+      const scale = fieldElement.offsetHeight / spaceModel.height;
+      const sceneElementWidth = uiGame.internal.elements.scene.root.offsetWidth;
+      const sceneElementHeight = uiGame.internal.elements.scene.root.offsetHeight;
+      const fieldElementWidth = scale * spaceModel.width;
+      const clientCharacterElementWidth = scale * clientCharacterModel.width;
+      const unboundedTranslateX = (sceneElementWidth - clientCharacterElementWidth) / 2 + (clientCharacterElementWidth - fieldElementWidth) / (spaceModel.width - clientCharacterModel.width) * clientCharacterModel.posX;
+      const offset = uiGame.internal.state.fieldPerspectiveSideOffsetScaling * Math.sqrt(sceneElementHeight);
+      const lowerBound = sceneElementWidth - fieldElementWidth - offset;
+      const upperBound = offset;
+      let translateX;
+      if (sceneElementWidth >= fieldElementWidth + 2 * offset) {
+        translateX = (sceneElementWidth - fieldElementWidth) / 2;
+      } else {
+        translateX = Math.min(upperBound, Math.max(lowerBound, unboundedTranslateX));
+      }
+      fieldElement.style.width = fieldElementWidth + 'px';
+      fieldElement.style.transform = 'translateY(50%) rotateX(' + uiGame.internal.state.fieldRotation + 'deg) translateY(50%) translateX(' + translateX + 'px)';
       return scale;
     },
 
@@ -122,7 +132,7 @@ const uiGame = {
           characterElement = document.createElement('div');
           characterElement.classList.add('game_character');
           characterElement.appendChild(spriteElement);
-          uiGame.internal.elements.map.appendChild(characterElement);
+          uiGame.internal.elements.scene.field.appendChild(characterElement);
           uiGame.internal.state.characterElements[characterModel.id] = characterElement;
         }
         characterElement.style.top = (scale * characterModel.posY) + 'px';
@@ -163,7 +173,7 @@ const uiGame = {
         } else {
           obstacleElement = document.createElement('div');
           obstacleElement.classList.add('game_obstacle');
-          uiGame.internal.elements.map.appendChild(obstacleElement);
+          uiGame.internal.elements.scene.field.appendChild(obstacleElement);
           uiGame.internal.state.obstacleElements[obstacleModel.id] = obstacleElement;
         }
         obstacleElement.style.top = (scale * obstacleModel.posY) + 'px';
@@ -309,7 +319,7 @@ const uiGame = {
     handleGameStateChange: () => {
       const snapshot = game.getGameState();
       if (snapshot == null) {
-        uiGame.internal.elements.map.innerHTML = null;
+        uiGame.internal.elements.scene.field.innerHTML = null;
         uiGame.internal.state.characterElements = { };
         uiGame.internal.state.obstacleElements = { };
         return;
@@ -318,7 +328,7 @@ const uiGame = {
       if (clientCharacter == null) {
         return;
       }
-      const scale = uiGame.internal.updateMapElement(snapshot.space, clientCharacter);
+      const scale = uiGame.internal.updateFieldElement(snapshot.space, clientCharacter);
       uiGame.internal.updateCharacterElements(Object.values(snapshot.characters), scale);
       uiGame.internal.updateObstacleElements(snapshot.obstacles, scale);
     },
