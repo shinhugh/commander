@@ -25,7 +25,7 @@
   left: 0;
   overflow: hidden;
   perspective-origin: center;
-  perspective: 2800px;
+  perspective: 65vh;
 }
 
 #content_game_module_game_scene_field {
