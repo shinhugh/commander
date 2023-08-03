@@ -226,14 +226,14 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     // TODO: Read map data from external configuration file
     private static GameEntry generateGameEntry() {
         Space space = new Space();
-        space.setWidth(48);
-        space.setHeight(16);
+        space.setWidth(64);
+        space.setHeight(8);
         Obstacle obstacle = new Obstacle();
         obstacle.setId(1);
-        obstacle.setWidth(3);
+        obstacle.setWidth(4);
         obstacle.setHeight(2);
-        obstacle.setPosX(18);
-        obstacle.setPosY(8);
+        obstacle.setPosX(30);
+        obstacle.setPosY(3);
         Set<Obstacle> obstacles = new HashSet<>();
         obstacles.add(obstacle);
         GameState gameState = new GameState();
@@ -333,7 +333,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                         return true;
                     }
                     double posX = (gameState.getSpace().getWidth() - CHARACTER_LENGTH) / 2;
-                    double posY = (gameState.getSpace().getHeight() - CHARACTER_LENGTH) / 2;
+                    double posY = gameState.getSpace().getHeight() - CHARACTER_LENGTH - 1;
                     Character character = new Character();
                     character.setId(generateCharacterId(gameState));
                     character.setPlayerId(playerId);

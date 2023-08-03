@@ -30,7 +30,6 @@ const uiGame = {
     state: {
       zoom: 1.1,
       fieldRotation: 70,
-      fieldPerspectiveSideOffsetScaling: 700,
       keyWPressed: false,
       keyWPressTime: null,
       keyAPressed: false,
@@ -101,20 +100,9 @@ const uiGame = {
       const fieldElement = uiGame.internal.elements.scene.field;
       const gameUnitToPixelMultiplier = fieldElement.offsetHeight / spaceModel.height;
       const sceneElementWidth = uiGame.internal.elements.scene.root.offsetWidth;
-      const sceneElementHeight = uiGame.internal.elements.scene.root.offsetHeight;
       const fieldElementWidth = gameUnitToPixelMultiplier * spaceModel.width;
       const clientCharacterElementWidth = gameUnitToPixelMultiplier * clientCharacterModel.width;
-      const halfwayPoint = (sceneElementWidth - fieldElementWidth) / 2;
-      const unboundedTranslateX = (sceneElementWidth - clientCharacterElementWidth) / 2 + (clientCharacterElementWidth - fieldElementWidth) / (spaceModel.width - clientCharacterModel.width) * clientCharacterModel.posX;
-      const offset = uiGame.internal.state.fieldPerspectiveSideOffsetScaling * Math.pow(sceneElementWidth / sceneElementHeight, 0.7);
-      const lowerBound = sceneElementWidth - fieldElementWidth - offset;
-      const upperBound = offset;
-      let translateX;
-      if (sceneElementWidth >= fieldElementWidth + 2 * offset) {
-        translateX = halfwayPoint;
-      } else {
-        translateX = Math.min(upperBound, Math.max(lowerBound, unboundedTranslateX));
-      }
+      const translateX = (sceneElementWidth - clientCharacterElementWidth) / 2 + (clientCharacterElementWidth - fieldElementWidth) / (spaceModel.width - clientCharacterModel.width) * clientCharacterModel.posX;
       fieldElement.style.width = fieldElementWidth + 'px';
       fieldElement.style.transform = 'translateX(' + translateX + 'px) translateY(40%) rotateX(' + uiGame.internal.state.fieldRotation + 'deg) translateY(50%)';
       return gameUnitToPixelMultiplier;
