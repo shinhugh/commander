@@ -23,44 +23,6 @@
   position: absolute;
   top: 0;
   left: 0;
-  overflow: hidden;
-  perspective-origin: center;
-  perspective: 65vh;
-}
-
-#content_game_module_game_scene_field {
-  height: 50%;
-  position: absolute;
-  background: url('assets/texture-grass.jpg');
-  background-size: 15%;
-}
-
-.game_character {
-  position: absolute;
-  overflow: visible;
-}
-
-.game_character_sprite {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  background: black;
-  border-left: 6px solid lawngreen;
-}
-
-[data-moving]>.game_character_sprite {
-  background: gray;
-}
-
-[data-right]>.game_character_sprite {
-  transform: scaleX(-1);
-}
-
-.game_obstacle {
-  position: absolute;
-  background: white;
 }
 
 #content_game_module_game_overlay {

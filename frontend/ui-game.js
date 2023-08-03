@@ -10,6 +10,7 @@ import { uiApi } from './ui-api';
 import { uiBase } from './ui-base';
 import * as THREE from 'three';
 
+ // TODO: Scaling from game units to 3js units? Currently 1:1
 const uiGame = {
 
   internal: {
@@ -32,7 +33,6 @@ const uiGame = {
 
     state: {
       zoom: 1.1,
-      fieldRotation: 70, // TODO: Necessary?
       keyWPressed: false,
       keyWPressTime: null,
       keyAPressed: false,
@@ -41,8 +41,12 @@ const uiGame = {
       keySPressTime: null,
       keyDPressed: false,
       keyDPressTime: null,
-      characterElements: { },
-      obstacleElements: { }
+      renderer: null,
+      scene: null,
+      camera: null,
+      fieldMesh: null,
+      characterMeshes: { },
+      obstacleMeshes: { }
     },
 
     registerApiHandlers: () => {
@@ -99,19 +103,64 @@ const uiGame = {
       uiApi.show(uiGame.internal.elements.overlay.integrityViolationPage.root);
     },
 
-    setupScene: () => {
-      // TODO: Implement
+    tearDownScene: () => {
+      // TODO: Clean up 3js? dispose()?
+      uiGame.internal.elements.scene.innerHTML = null;
+      uiGame.internal.state.renderer = null;
+      uiGame.internal.state.scene = null;
+      uiGame.internal.state.camera = null;
+    },
+
+    setUpScene: () => {
+      if (uiGame.internal.state.renderer != null) {
+        return;
+      }
+      const renderer = new THREE.WebGLRenderer();
+      uiGame.internal.state.renderer = renderer;
+      renderer.setSize(uiGame.internal.elements.scene.offsetWidth, uiGame.internal.elements.scene.offsetHeight);
+      renderer.shadowMap.enabled = true;
+      uiGame.internal.elements.scene.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      uiGame.internal.state.scene = scene;
+
+      const camera = new THREE.PerspectiveCamera(45, uiGame.internal.elements.scene.offsetWidth / uiGame.internal.elements.scene.offsetHeight, 1, 1000);
+      uiGame.internal.state.camera = camera;
+      camera.position.set(0, -30, 60);
+      camera.lookAt(0, 0, 0);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      directionalLight.position.set(0, 0, 300);
+      directionalLight.castShadow = true;
+      scene.add(directionalLight);
+
+      const animate = () => {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      };
+      animate();
     },
 
     updateFieldElement: (spaceModel) => {
+      if (uiGame.internal.state.fieldMesh != null) {
+        return;
+      }
+      const fieldGeometry = new THREE.PlaneGeometry(spaceModel.width, spaceModel.height);
+      const fieldMaterial = new THREE.MeshPhongMaterial({
+        color: 0xffffff,
+        shininess: 100
+      });
+      const fieldMesh = new THREE.Mesh(fieldGeometry, fieldMaterial);
+      fieldMesh.receiveShadow = true;
+      uiGame.internal.state.scene.add(fieldMesh);
+      uiGame.internal.state.fieldMesh = fieldMesh;
+    },
+
+    updateCharacterMeshes: (characterModels) => {
       // TODO: Implement
     },
 
-    updateCharacterElements: (characterModels) => {
-      // TODO: Implement
-    },
-
-    updateObstacleElements: (obstacleModels) => {
+    updateObstacleMeshes: (obstacleModels) => {
       // TODO: Implement
     },
 
@@ -252,8 +301,8 @@ const uiGame = {
       const snapshot = game.getGameState();
       if (snapshot == null) {
         // TODO: Remove entities from field
-        uiGame.internal.state.characterElements = { };
-        uiGame.internal.state.obstacleElements = { };
+        uiGame.internal.state.characterMeshes = { };
+        uiGame.internal.state.obstacleMeshes = { };
         return;
       }
       const clientCharacter = snapshot.characters[snapshot.clientPlayerId];
@@ -261,8 +310,8 @@ const uiGame = {
         return;
       }
       uiGame.internal.updateFieldElement(snapshot.space);
-      uiGame.internal.updateCharacterElements(Object.values(snapshot.characters));
-      uiGame.internal.updateObstacleElements(snapshot.obstacles);
+      uiGame.internal.updateCharacterMeshes(Object.values(snapshot.characters));
+      uiGame.internal.updateObstacleMeshes(snapshot.obstacles);
       uiGame.internal.updateCamera();
     },
 
@@ -281,9 +330,11 @@ const uiGame = {
     handleModuleChange: () => {
       if (uiBase.getCurrentModule() === 'game') {
         game.joinGame();
+        uiGame.internal.setUpScene();
         uiGame.internal.enableControls();
       } else {
         uiGame.internal.disableControls();
+        uiGame.internal.tearDownScene();
         uiGame.internal.hideGameOverlay();
         uiGame.internal.clearGameOverlay();
       }
@@ -306,7 +357,6 @@ const uiGame = {
     uiGame.internal.clearUi();
     uiGame.internal.registerApiHandlers();
     uiGame.internal.registerUiHandlers();
-    uiGame.internal.setupScene();
   }
 
 };
