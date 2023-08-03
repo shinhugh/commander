@@ -14,6 +14,8 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @ComponentScan("org.dev.commander.websocket")
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
+    private static final String ALLOWED_ORIGIN = "http://localhost";
+
     @Autowired
     private WebSocketManager webSocketManager;
     @Autowired
@@ -24,6 +26,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
         ((ServletWebSocketHandlerRegistry) registry).setOrder(-1);
         registry
                 .addHandler(webSocketManager, "/ws")
+                .setAllowedOrigins(ALLOWED_ORIGIN)
                 .addInterceptors(securityHandshakeInterceptor);
     }
 }

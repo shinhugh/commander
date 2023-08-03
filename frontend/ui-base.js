@@ -510,11 +510,12 @@ const uiBase = {
         switch (e.message) {
           case '400':
             uiBase.internal.notify('Rules not met');
-            break;
+            return;
           case '409':
             uiBase.internal.notify('Username already taken');
-            break;
+            return;
         }
+        uiBase.internal.notify('Something went wrong');
         return;
       }
       uiBase.internal.notify('Account created');
@@ -555,14 +556,11 @@ const uiBase = {
           await friendships.requestFriendship(accountId);
         }
         catch (e) {
-          switch (e.message) {
-            case '409':
-              uiBase.internal.notify('User is already a confirmed or requested friend');
-              break;
-            default:
-              uiBase.internal.notify('Something went wrong');
-              break;
+          if (e.message === '409') {
+            uiBase.internal.notify('User is already a confirmed or requested friend');
+            return;
           }
+          uiBase.internal.notify('Something went wrong');
           return;
         }
         uiApi.cloak(uiBase.internal.elements.overlay.friendsPage.addFriendSection.result.root);

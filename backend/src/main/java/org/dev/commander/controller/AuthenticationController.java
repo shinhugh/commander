@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.Objects;
 
+import static java.lang.System.currentTimeMillis;
+
 @RestController
 @RequestMapping("/api/auth")
 @Order(-1)
@@ -25,9 +27,10 @@ public class AuthenticationController {
 
     @PostMapping
     public ResponseEntity<Session> login(Authentication authentication, @RequestBody(required = false) Credentials credentials) {
+        long currentTime = currentTimeMillis();
         Session session = externalAuthenticationService.login(authentication, credentials);
-        long maxAge = (session.getExpirationTime() - session.getCreationTime()) / 1000; // TODO: Use current time, not creation time
-        String xAuthorizationCookieHeaderValue = "X-Authorization=" + session.getToken() + "; Max-Age=" + maxAge + "; SameSite=Strict";
+        long maxAge = (session.getExpirationTime() - currentTime) / 1000;
+        String xAuthorizationCookieHeaderValue = "X-Authorization=" + session.getToken() + "; Path=/; Max-Age=" + maxAge + "; SameSite=Strict";
         HttpHeaders headers = new HttpHeaders();
         headers.add("Set-Cookie", xAuthorizationCookieHeaderValue);
         return new ResponseEntity<>(session, headers, HttpStatus.OK);
