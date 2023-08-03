@@ -5,6 +5,11 @@
  * - ui-api.js
  */
 
+import { auth } from './auth';
+import { accounts } from './accounts';
+import { friendships } from './friendships';
+import { uiApi } from './ui-api';
+
 const uiBase = {
 
   internal: {
@@ -669,4 +674,8 @@ const uiBase = {
 
 };
 
-uiBase.initialize();
+window.addEventListener('DOMContentLoaded', () => {
+  uiBase.initialize();
+});
+
+export { uiBase };

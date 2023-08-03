@@ -3,6 +3,9 @@
  * - auth.js
  */
 
+import { api } from './api';
+import { auth } from './auth';
+
 const friendships = {
 
   internal: {
@@ -64,4 +67,8 @@ const friendships = {
 
 };
 
-friendships.initialize();
+window.addEventListener('DOMContentLoaded', () => {
+  friendships.initialize();
+});
+
+export { friendships };

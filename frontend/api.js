@@ -247,3 +247,5 @@ const api = {
   }
 
 };
+
+export { api };

@@ -2,8 +2,13 @@
  * - game.js
  * - ui-api.js
  * - ui-base.js
- * - 3js // TODO: How to integrate 3js?
+ * - 3js
  */
+
+import { game } from './game';
+import { uiApi } from './ui-api';
+import { uiBase } from './ui-base';
+import * as THREE from 'three';
 
 const uiGame = {
 
@@ -95,7 +100,7 @@ const uiGame = {
     },
 
     setupScene: () => {
-      // TODO: Set up 3js
+      // TODO: Implement
     },
 
     updateFieldElement: (spaceModel) => {
@@ -306,4 +311,8 @@ const uiGame = {
 
 };
 
-uiGame.initialize();
+window.addEventListener('DOMContentLoaded', () => {
+  uiGame.initialize();
+});
+
+export { uiGame };
