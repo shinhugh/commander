@@ -60,6 +60,7 @@ const uiGame = {
     },
 
     registerUiHandlers: () => {
+      new ResizeObserver(uiGame.internal.resizeScene).observe(uiGame.internal.elements.scene);
       uiGame.internal.elements.overlay.seatLossPage.reconnectButton.addEventListener('click', () => {
         uiGame.internal.hideGameOverlay();
         uiGame.internal.clearGameOverlay();
@@ -122,21 +123,25 @@ const uiGame = {
       const renderer = new THREE.WebGLRenderer();
       uiGame.internal.state.renderer = renderer;
       renderer.setSize(uiGame.internal.elements.scene.offsetWidth, uiGame.internal.elements.scene.offsetHeight);
-      renderer.shadowMap.enabled = true;
       uiGame.internal.elements.scene.appendChild(renderer.domElement);
 
       const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xd9c880);
       uiGame.internal.state.scene = scene;
 
       const camera = new THREE.PerspectiveCamera(45, uiGame.internal.elements.scene.offsetWidth / uiGame.internal.elements.scene.offsetHeight, 1, 1000);
       uiGame.internal.state.camera = camera;
-      camera.position.set(0, 0, 30);
+      camera.position.set(0, -16, 6);
       camera.lookAt(0, 0, 0);
+      // camera.position.set(0, -4, 15);
+      // camera.lookAt(0, -4, 0);
 
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-      directionalLight.position.set(0, 0, 300);
-      directionalLight.castShadow = true;
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(0, -40, 40);
       scene.add(directionalLight);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+      scene.add(ambientLight);
 
       const animate = () => {
         requestAnimationFrame(animate);
@@ -145,14 +150,28 @@ const uiGame = {
       animate();
     },
 
+    resizeScene: () => {
+      if (uiGame.internal.state.renderer == null) {
+        return;
+      }
+      const width = uiGame.internal.elements.scene.offsetWidth;
+      const height = uiGame.internal.elements.scene.offsetHeight;
+      uiGame.internal.state.camera.aspect = width / height;
+      uiGame.internal.state.camera.updateProjectionMatrix();
+      uiGame.internal.state.renderer.setSize(width, height);
+    },
+
     updateFieldElement: (spaceModel) => {
       if (uiGame.internal.state.fieldMesh != null) {
         return;
       }
       const fieldGeometry = new THREE.PlaneGeometry(spaceModel.width, spaceModel.height);
+      const fieldTexture = new THREE.TextureLoader().load('assets/texture-grass.jpg');
+      fieldTexture.wrapS = THREE.RepeatWrapping;
+      fieldTexture.wrapT = THREE.RepeatWrapping;
+      fieldTexture.repeat.set(5, 1);
       const fieldMaterial = new THREE.MeshPhongMaterial({
-        color: 0xffffff,
-        shininess: 100
+        map: fieldTexture
       });
       const fieldMesh = new THREE.Mesh(fieldGeometry, fieldMaterial);
       fieldMesh.position.x = spaceModel.width / 2;
@@ -170,9 +189,13 @@ const uiGame = {
           characterMesh = uiGame.internal.state.characterMeshes[characterModel.id];
           staleCharacterIds.delete(characterModel.id.toString());
         } else {
-          const characterGeometry = new THREE.BoxGeometry(characterModel.width, characterModel.height, 3); // TODO: Character z-length?
-          const characterMaterial = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
+          const characterGeometry = new THREE.BoxGeometry(characterModel.width, characterModel.height, 2); // TODO: Character z-length?
+          const characterMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+          characterMaterial.transparent = true;
+          characterMaterial.opacity = 0.8;
           characterMesh = new THREE.Mesh(characterGeometry, characterMaterial);
+          characterMesh.position.z = 1;
+          characterMesh.castShadow = true;
           uiGame.internal.state.scene.add(characterMesh);
           uiGame.internal.state.characterMeshes[characterModel.id] = characterMesh;
         }
@@ -186,11 +209,34 @@ const uiGame = {
     },
 
     updateObstacleMeshes: (obstacleModels) => {
-      // TODO: Implement
+      const staleObstacleIds = new Set(Object.keys(uiGame.internal.state.obstacleMeshes));
+      for (const obstacleModel of obstacleModels) {
+        let obstacleMesh;
+        if (staleObstacleIds.has(obstacleModel.id.toString())) {
+          obstacleMesh = uiGame.internal.state.obstacleMeshes[obstacleModel.id];
+          staleObstacleIds.delete(obstacleModel.id.toString());
+        } else {
+          const obstacleGeometry = new THREE.BoxGeometry(obstacleModel.width, obstacleModel.height, 3); // TODO: Obstacle z-length?
+          const obstacleMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
+          obstacleMaterial.transparent = true;
+          obstacleMaterial.opacity = 0.5;
+          obstacleMesh = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+          obstacleMesh.position.z = 1.5;
+          obstacleMesh.castShadow = true;
+          uiGame.internal.state.scene.add(obstacleMesh);
+          uiGame.internal.state.obstacleMeshes[obstacleModel.id] = obstacleMesh;
+        }
+        obstacleMesh.position.x = obstacleModel.posX + obstacleModel.width / 2;
+        obstacleMesh.position.y = -1 * (obstacleModel.posY + obstacleModel.height / 2);
+      }
+      for (const staleObstacleId of staleObstacleIds) {
+        uiGame.internal.state.scene.remove(uiGame.internal.state.obstacleMeshes[staleObstacleId]);
+        delete uiGame.internal.state.obstacleMeshes[staleObstacleId];
+      }
     },
 
     updateCamera:(space, clientCharacterModel) => {
-      // TODO: Implement
+      uiGame.internal.state.camera.position.x = clientCharacterModel.posX + clientCharacterModel.width / 2;
     },
 
     enableControls: () => {
