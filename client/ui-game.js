@@ -1,10 +1,12 @@
 /* Requires:
+ * - api.js
  * - game.js
  * - ui-api.js
  * - ui-base.js
  * - 3js
  */
 
+import { api } from './api';
 import { game } from './game';
 import { uiApi } from './ui-api';
 import { uiBase } from './ui-base';
@@ -26,6 +28,9 @@ const uiGame = {
       },
       overlay: {
         root: document.getElementById('content_game_module_game_overlay'),
+        disconnectPage: {
+          root: document.getElementById('content_game_module_game_overlay_disconnect_page')
+        },
         seatLossPage: {
           root: document.getElementById('content_game_module_game_overlay_seat_loss_page'),
           reconnectButton: document.getElementById('content_game_module_game_overlay_seat_loss_page_reconnect_button')
@@ -59,6 +64,8 @@ const uiGame = {
     },
 
     registerApiHandlers: () => {
+      api.registerEstablishedConnectionHandler(uiGame.internal.handleEstablishedConnection);
+      api.registerClosedConnectionHandler(uiGame.internal.handleClosedConnection);
       game.registerGameStateChangeHandler(uiGame.internal.handleGameStateChange);
       game.registerGameChatHandler(uiGame.internal.handleGameChat);
       game.registerGameSeatLossHandler(uiGame.internal.handleGameSeatLoss);
@@ -119,6 +126,11 @@ const uiGame = {
 
     showChatbox: () => {
       uiApi.show(uiGame.internal.elements.chatbox.root);
+    },
+
+    showDisconnectPage: () => {
+      uiGame.internal.clearGameOverlay();
+      uiApi.show(uiGame.internal.elements.overlay.disconnectPage.root);
     },
 
     showGameSeatLossPage: () => {
@@ -497,6 +509,16 @@ const uiGame = {
           uiGame.internal.elements.scene.focus();
           return;
       }
+    },
+
+    handleEstablishedConnection: () => {
+      uiGame.internal.hideGameOverlay();
+      uiGame.internal.clearGameOverlay();
+    },
+
+    handleClosedConnection: () => {
+      uiGame.internal.showDisconnectPage();
+      uiGame.internal.showGameOverlay();
     },
 
     handleGameStateChange: () => {
