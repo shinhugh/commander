@@ -20,6 +20,19 @@
   background: #74bfa0;
 }
 
+#overlay_controls_page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  font-size: 2.5rem;
+}
+
+#overlay_controls_page>div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8rem;
+}
+
 #overlay_friends_page {
   height: 70vh;
   width: 60vw;

@@ -104,6 +104,7 @@ const uiGame = {
     clearUi: () => {
       uiApi.hide(uiGame.internal.elements.chatbox.root);
       uiApi.hide(uiGame.internal.elements.overlay.root);
+      uiApi.hide(uiGame.internal.elements.overlay.disconnectPage.root);
       uiApi.hide(uiGame.internal.elements.overlay.seatLossPage.root);
       uiApi.hide(uiGame.internal.elements.overlay.integrityViolationPage.root);
     },

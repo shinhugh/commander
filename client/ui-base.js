@@ -49,12 +49,16 @@ const uiBase = {
       topBar: {
         root: document.getElementById('top_bar'),
         title: document.getElementById('top_bar_title'),
+        controlsButton: document.getElementById('top_bar_controls_button'),
         friendsButton: document.getElementById('top_bar_friends_button'),
         accountButton: document.getElementById('top_bar_account_button'),
         logoutButton: document.getElementById('top_bar_logout_button')
       },
       overlay: {
         root: document.getElementById('overlay'),
+        controlsPage: {
+          root: document.getElementById('overlay_controls_page')
+        },
         friendsPage: {
           root: document.getElementById('overlay_friends_page'),
           friendsList: document.getElementById('overlay_friends_page_friends_list'),
@@ -156,6 +160,10 @@ const uiBase = {
       uiBase.internal.elements.content.loginModule.pages.createAccountPage.createAccountButton.addEventListener('click', async () => {
         await uiBase.internal.parseInputAndCreateAccount();
       });
+      uiBase.internal.elements.topBar.controlsButton.addEventListener('click', () => {
+        uiBase.internal.showControlsPage();
+        uiBase.internal.showOverlay();
+      });
       uiBase.internal.elements.topBar.friendsButton.addEventListener('click', () => {
         uiBase.internal.clearFriendshipSearchResult();
         uiBase.internal.elements.overlay.friendsPage.addFriendSection.idInput.value = null;
@@ -174,12 +182,19 @@ const uiBase = {
       });
       uiBase.internal.elements.overlay.root.addEventListener('click', () => {
         uiBase.internal.hideOverlay();
+        uiBase.internal.clearOverlay();
       });
       for (const child of uiBase.internal.elements.overlay.root.children) {
         child.addEventListener('click', e => {
           e.stopPropagation();
         });
       }
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          uiBase.internal.hideOverlay();
+          uiBase.internal.clearOverlay();
+        }
+      });
       uiBase.internal.elements.overlay.friendsPage.addFriendSection.idInput.addEventListener('keydown', async e => {
         if (e.key === 'Enter') {
           await uiBase.internal.parseInputAndShowFriendshipSearchResult();
@@ -311,12 +326,14 @@ const uiBase = {
     },
 
     hideTopBarButtons: () => {
+      uiApi.hide(uiBase.internal.elements.topBar.controlsButton);
       uiApi.hide(uiBase.internal.elements.topBar.friendsButton);
       uiApi.hide(uiBase.internal.elements.topBar.accountButton);
       uiApi.hide(uiBase.internal.elements.topBar.logoutButton);
     },
 
     showTopBarButtons: () => {
+      uiApi.show(uiBase.internal.elements.topBar.controlsButton);
       uiApi.show(uiBase.internal.elements.topBar.friendsButton);
       uiApi.show(uiBase.internal.elements.topBar.accountButton);
       uiApi.show(uiBase.internal.elements.topBar.logoutButton);
@@ -336,6 +353,11 @@ const uiBase = {
       for (const child of uiBase.internal.elements.overlay.root.children) {
         uiApi.hide(child);
       }
+    },
+
+    showControlsPage: () => {
+      uiBase.internal.clearOverlay();
+      uiApi.show(uiBase.internal.elements.overlay.controlsPage.root);
     },
 
     showFriendsPage: () => {
@@ -624,6 +646,7 @@ const uiBase = {
     handleLogout: () => {
       uiBase.internal.showBlocker();
       uiBase.internal.hideOverlay();
+      uiBase.internal.clearOverlay();
       uiBase.internal.hideTopBarButtons();
       uiBase.internal.showTopBarTitle();
       uiBase.internal.showLoginPage();
