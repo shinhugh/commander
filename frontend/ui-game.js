@@ -366,10 +366,10 @@ const uiGame = {
         // TODO: dispose()?
         if (uiGame.internal.state.renderer != null) {
           uiGame.internal.state.scene.remove(uiGame.internal.state.fieldMesh);
-          for (const characterMesh of uiGame.internal.state.characterMeshes) {
+          for (const characterMesh of Object.values(uiGame.internal.state.characterMeshes)) {
             uiGame.internal.state.scene.remove(characterMesh);
           }
-          for (const obstacleMesh of uiGame.internal.state.obstacleMeshes) {
+          for (const obstacleMesh of Object.values(uiGame.internal.state.obstacleMeshes)) {
             uiGame.internal.state.scene.remove(obstacleMesh);
           }
         }
