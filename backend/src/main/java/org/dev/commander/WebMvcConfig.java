@@ -16,11 +16,15 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         CorsRegistration registration = registry.addMapping("/api/**");
-        String origin = System.getenv("ORIGIN");
-        if (origin == null) {
+        String originVar = System.getenv("ORIGINS");
+        if (originVar == null) {
             registration.allowedOrigins(DEV_ORIGIN);
         } else {
-            registration.allowedOrigins(DEV_ORIGIN, origin);
+            String[] origins = originVar.split(",");
+            String[] originsWithDev = new String[origins.length + 1];
+            System.arraycopy(origins, 0, originsWithDev, 0, origins.length);
+            originsWithDev[originsWithDev.length - 1] = DEV_ORIGIN;
+            registration.allowedOrigins(originsWithDev);
         }
         registration.allowedMethods("*");
     }

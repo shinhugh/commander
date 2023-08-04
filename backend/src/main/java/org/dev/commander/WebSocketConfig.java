@@ -22,11 +22,15 @@ public class WebSocketConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         ((ServletWebSocketHandlerRegistry) registry).setOrder(-1);
         WebSocketHandlerRegistration registration = registry.addHandler(webSocketManager, "/ws");
-        String origin = System.getenv("ORIGIN");
-        if (origin == null) {
+        String originVar = System.getenv("ORIGINS");
+        if (originVar == null) {
             registration.setAllowedOrigins(DEV_ORIGIN);
         } else {
-            registration.setAllowedOrigins(DEV_ORIGIN, origin);
+            String[] origins = originVar.split(",");
+            String[] originsWithDev = new String[origins.length + 1];
+            System.arraycopy(origins, 0, originsWithDev, 0, origins.length);
+            originsWithDev[originsWithDev.length - 1] = DEV_ORIGIN;
+            registration.setAllowedOrigins(originsWithDev);
         }
         registration.addInterceptors(securityHandshakeInterceptor);
     }

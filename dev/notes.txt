@@ -8,7 +8,7 @@
   Environment=CATALINA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
   Line 15:
   New:
-  Environment=ORIGIN=http://<SERVER ORIGIN>
+  Environment=ORIGINS=http://<SERVER ORIGIN>,http://<SERVER ORIGIN>
 
 - journalctl -u tomcat10.service --since "3 min ago"
 
