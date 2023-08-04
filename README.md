@@ -1,9 +1,12 @@
-# Commander
+# Pixels
 
-*This project is under active development.*
+*This project is under active development. The game has shifted quite a bit
+from its original concept and will likely continue to do so.*
 
-A multiplayer turn-based strategy game inspired by Nintendo's classic title
-*Advance Wars*.
+A real-time social multiplayer game, designed and built from the ground up.
+
+Screenshot (2023-08-03):
+![Screenshot](dev/screenshot.png)
 
 ## Back-end
 
@@ -167,18 +170,20 @@ is not a good idea.
 
 ## Front-end
 
-There is no client yet, but the plan is to target web browsers. It will be a
-single-page app.
+*This section will be populated soon.*
 
 ## Development status
 
-The back-end (server-side) is currently under development. The front-end
-(client-side) will be developed once the back-end is more or less complete.
+The groundwork for the game has been complete.
 
-- Authentication (custom bearer tokens) and account management (REST API) are
-fully implemented.
-- Game instance management is currently being implemented. This includes game
-creation, player invitation, etc. It does not include the actual gameplay or
-game state.
-- The WebSocket protocol is currently being integrated into a temporary test
-controller to serve as a proof of concept for real-time game state updates.
+- Systems are in place for authentication (custom bearer tokens and cookies),
+account management, and friends (REST API).
+- Bi-directional communication is possible between the server and client, and
+both sides are able to send and receive game state updates.
+- Collision detection is implemented on both the server and client. The client
+generates new positions, and the server verifies every update to enforce game
+integrity.
+- Adjustable values such character travel error margins and update frequencies
+are still being ironed out as more testing happens.
+
+As ideas for the game get fleshed out, more game-specific logic will be added.

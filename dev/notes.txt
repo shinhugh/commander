@@ -1,4 +1,4 @@
-- CREATE DATABASE commander COLLATE utf8mb4_bin;
+- CREATE DATABASE pixels COLLATE utf8mb4_bin;
 
 - Modified /usr/lib/systemd/system/tomcat10.service:
   Line 12:
@@ -12,7 +12,7 @@
 
 - journalctl -u tomcat10.service --since "3 min ago"
 
-- . /home/dev/Documents/commander/dev/deploy.sh && sudo systemctl restart tomcat10
+- . /home/dev/Documents/pixels/dev/deploy.sh && sudo systemctl restart tomcat10
 
 - ignore unrecognized/unsupported arguments (as opposed to returning 400)
 
