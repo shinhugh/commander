@@ -265,14 +265,43 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         Space space = new Space();
         space.setWidth(64);
         space.setHeight(8);
-        Obstacle obstacle = new Obstacle();
-        obstacle.setId(1);
-        obstacle.setWidth(4);
-        obstacle.setHeight(2);
-        obstacle.setPosX(30);
-        obstacle.setPosY(3);
-        Set<Obstacle> obstacles = new HashSet<>();
-        obstacles.add(obstacle);
+        Obstacle obstacleA = new Obstacle();
+        obstacleA.setId(1);
+        obstacleA.setWidth(0.5);
+        obstacleA.setHeight(3);
+        obstacleA.setPosX(54);
+        obstacleA.setPosY(0);
+        Obstacle obstacleB = new Obstacle();
+        obstacleB.setId(2);
+        obstacleB.setWidth(0.5);
+        obstacleB.setHeight(3);
+        obstacleB.setPosX(54);
+        obstacleB.setPosY(5);
+        Obstacle obstacleC = new Obstacle();
+        obstacleC.setId(3);
+        obstacleC.setWidth(0.5);
+        obstacleC.setHeight(4);
+        obstacleC.setPosX(28);
+        obstacleC.setPosY(0);
+        Obstacle obstacleD = new Obstacle();
+        obstacleD.setId(4);
+        obstacleD.setWidth(3);
+        obstacleD.setHeight(0.5);
+        obstacleD.setPosX(28);
+        obstacleD.setPosY(4);
+        Obstacle obstacleE = new Obstacle();
+        obstacleE.setId(5);
+        obstacleE.setWidth(3);
+        obstacleE.setHeight(0.5);
+        obstacleE.setPosX(33);
+        obstacleE.setPosY(4);
+        Obstacle obstacleF = new Obstacle();
+        obstacleF.setId(6);
+        obstacleF.setWidth(0.5);
+        obstacleF.setHeight(4);
+        obstacleF.setPosX(35.5);
+        obstacleF.setPosY(0);
+        Set<Obstacle> obstacles = Set.of(obstacleA, obstacleB, obstacleC, obstacleD, obstacleE, obstacleF);
         GameState gameState = new GameState();
         gameState.setSpace(space);
         gameState.setCharacters(new HashMap<>());
@@ -281,7 +310,8 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     }
 
     private static class GameEntry {
-        private static final double CHARACTER_LENGTH = 1;
+        private static final double CHARACTER_WIDTH = 1;
+        private static final double CHARACTER_HEIGHT = 0.25;
         private static final double CHARACTER_MOVEMENT_SPEED = 1;
         private static final double CHARACTER_SPEED_SCALING = 0.005;
         private static final double CHARACTER_POSITION_VALIDATION_MARGIN = 0.12;
@@ -369,13 +399,13 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                     if (gameState.getCharacters().containsKey(playerId)) {
                         return true;
                     }
-                    double posX = (gameState.getSpace().getWidth() - CHARACTER_LENGTH) / 2;
-                    double posY = gameState.getSpace().getHeight() - CHARACTER_LENGTH - 1;
+                    double posX = (gameState.getSpace().getWidth() - CHARACTER_WIDTH) / 2;
+                    double posY = 1;
                     Character character = new Character();
                     character.setId(generateCharacterId(gameState));
                     character.setPlayerId(playerId);
-                    character.setWidth(CHARACTER_LENGTH);
-                    character.setHeight(CHARACTER_LENGTH);
+                    character.setWidth(CHARACTER_WIDTH);
+                    character.setHeight(CHARACTER_HEIGHT);
                     character.setPosX(posX);
                     character.setPosY(posY);
                     character.setMovementSpeed(CHARACTER_MOVEMENT_SPEED);

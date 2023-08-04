@@ -255,8 +255,6 @@ const uiGame = {
         } else {
           const characterGeometry = new THREE.BoxGeometry(characterModel.width, characterModel.height, uiGame.internal.state.characterZLength);
           const characterMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
-          characterMaterial.transparent = true;
-          characterMaterial.opacity = 0.8;
           characterMesh = new THREE.Mesh(characterGeometry, characterMaterial);
           characterMesh.position.z = 1;
           characterMesh.castShadow = true;
@@ -309,7 +307,7 @@ const uiGame = {
           const obstacleGeometry = new THREE.BoxGeometry(obstacleModel.width, obstacleModel.height, uiGame.internal.state.obstacleZLength);
           const obstacleMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
           obstacleMaterial.transparent = true;
-          obstacleMaterial.opacity = 0.5;
+          obstacleMaterial.opacity = 0.8;
           obstacleMesh = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
           obstacleMesh.position.z = 1.5;
           obstacleMesh.castShadow = true;
