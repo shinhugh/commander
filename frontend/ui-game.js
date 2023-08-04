@@ -10,8 +10,7 @@ import { uiApi } from './ui-api';
 import { uiBase } from './ui-base';
 import * as THREE from 'three';
 
- // TODO: Scaling from game units to 3js units? Currently 1:1
- // TODO: Resizing elements?
+ // TODO: Resize 3js elements if their game entities change size?
 const uiGame = {
 
   internal: {
@@ -124,25 +123,18 @@ const uiGame = {
       uiGame.internal.state.renderer = renderer;
       renderer.setSize(uiGame.internal.elements.scene.offsetWidth, uiGame.internal.elements.scene.offsetHeight);
       uiGame.internal.elements.scene.appendChild(renderer.domElement);
-
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0xd9c880);
       uiGame.internal.state.scene = scene;
-
       const camera = new THREE.PerspectiveCamera(45, uiGame.internal.elements.scene.offsetWidth / uiGame.internal.elements.scene.offsetHeight, 1, 1000);
       uiGame.internal.state.camera = camera;
       camera.position.set(0, -16, 6);
       camera.lookAt(0, 0, 0);
-      // camera.position.set(0, -4, 15);
-      // camera.lookAt(0, -4, 0);
-
       const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
       directionalLight.position.set(0, -40, 40);
       scene.add(directionalLight);
-
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
       scene.add(ambientLight);
-
       const animate = () => {
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
@@ -371,7 +363,17 @@ const uiGame = {
     handleGameStateChange: () => {
       const snapshot = game.getGameState();
       if (snapshot == null) {
-        // TODO: Remove field, characters, and obstacles; dispose()?
+        // TODO: dispose()?
+        if (uiGame.internal.state.renderer != null) {
+          uiGame.internal.state.scene.remove(uiGame.internal.state.fieldMesh);
+          for (const characterMesh of uiGame.internal.state.characterMeshes) {
+            uiGame.internal.state.scene.remove(characterMesh);
+          }
+          for (const obstacleMesh of uiGame.internal.state.obstacleMeshes) {
+            uiGame.internal.state.scene.remove(obstacleMesh);
+          }
+        }
+        uiGame.internal.state.fieldMesh = null;
         uiGame.internal.state.characterMeshes = { };
         uiGame.internal.state.obstacleMeshes = { };
         return;
