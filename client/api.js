@@ -244,6 +244,17 @@ const api = {
       type: 'game_input',
       payload: input
     });
+  },
+
+  sendGameChat: (dstPlayerId, toPublic, content) => {
+    api.internal.sendObjectOverSocket({
+      type: 'game_chat',
+      payload: {
+        dstPlayerId: dstPlayerId,
+        toPublic: toPublic,
+        content: content
+      }
+    });
   }
 
 };

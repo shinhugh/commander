@@ -9,6 +9,7 @@ import { game } from './game';
 import { uiApi } from './ui-api';
 import { uiBase } from './ui-base';
 import * as THREE from 'three';
+import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 
  // TODO: Resize 3js elements if their game entities change size?
 const uiGame = {
@@ -18,6 +19,11 @@ const uiGame = {
     elements: {
       root: document.getElementById('content_game_module_game'),
       scene: document.getElementById('content_game_module_game_scene'),
+      chatbox: {
+        root: document.getElementById('content_game_module_game_chatbox'),
+        composer: document.getElementById('content_game_module_game_chatbox_composer'),
+        sendButton: document.getElementById('content_game_module_game_chatbox_send_button')
+      },
       overlay: {
         root: document.getElementById('content_game_module_game_overlay'),
         seatLossPage: {
@@ -42,15 +48,19 @@ const uiGame = {
       keyDPressed: false,
       keyDPressTime: null,
       renderer: null,
+      cssRenderer: null,
       scene: null,
       camera: null,
       fieldMesh: null,
       characterMeshes: { },
+      chatBubbleMeshes: { },
+      chatBubbleHideTimeouts: { },
       obstacleMeshes: { }
     },
 
     registerApiHandlers: () => {
       game.registerGameStateChangeHandler(uiGame.internal.handleGameStateChange);
+      game.registerGameChatHandler(uiGame.internal.handleGameChat);
       game.registerGameSeatLossHandler(uiGame.internal.handleGameSeatLoss);
       game.registerGameIntegrityViolationHandler(uiGame.internal.handleGameIntegrityViolation);
       uiBase.registerModuleChangeHandler(uiGame.internal.handleModuleChange);
@@ -60,21 +70,30 @@ const uiGame = {
 
     registerUiHandlers: () => {
       new ResizeObserver(uiGame.internal.resizeScene).observe(uiGame.internal.elements.scene);
+      uiGame.internal.elements.scene.addEventListener('click', () => {
+        uiGame.internal.disableChatControls();
+        uiGame.internal.enableGameControls();
+        uiGame.internal.hideChatbox();
+      });
+      uiGame.internal.elements.chatbox.sendButton.addEventListener('click', () => {
+        uiGame.internal.parseChatboxComposerAndSendChat();
+      });
       uiGame.internal.elements.overlay.seatLossPage.reconnectButton.addEventListener('click', () => {
         uiGame.internal.hideGameOverlay();
         uiGame.internal.clearGameOverlay();
         game.joinGame();
-        uiGame.internal.enableControls();
+        uiGame.internal.enableGameControls();
       });
       uiGame.internal.elements.overlay.integrityViolationPage.reconnectButton.addEventListener('click', () => {
         uiGame.internal.hideGameOverlay();
         uiGame.internal.clearGameOverlay();
         game.joinGame();
-        uiGame.internal.enableControls();
+        uiGame.internal.enableGameControls();
       });
     },
 
     clearUi: () => {
+      uiApi.hide(uiGame.internal.elements.chatbox.root);
       uiApi.hide(uiGame.internal.elements.overlay.root);
       uiApi.hide(uiGame.internal.elements.overlay.seatLossPage.root);
       uiApi.hide(uiGame.internal.elements.overlay.integrityViolationPage.root);
@@ -94,6 +113,14 @@ const uiGame = {
       }
     },
 
+    hideChatbox: () => {
+      uiApi.hide(uiGame.internal.elements.chatbox.root);
+    },
+
+    showChatbox: () => {
+      uiApi.show(uiGame.internal.elements.chatbox.root);
+    },
+
     showGameSeatLossPage: () => {
       uiGame.internal.clearGameOverlay();
       uiApi.show(uiGame.internal.elements.overlay.seatLossPage.root);
@@ -104,14 +131,35 @@ const uiGame = {
       uiApi.show(uiGame.internal.elements.overlay.integrityViolationPage.root);
     },
 
+    parseChatboxComposerAndSendChat: () => {
+      const content = uiGame.internal.elements.chatbox.composer.value;
+      if (content.length === 0) {
+        return;
+      }
+      game.sendChat(null, true, content);
+      uiGame.internal.elements.chatbox.composer.value = null;
+    },
+
+    removeAllChildrenOfMesh: (mesh) => {
+      for (let i = mesh.children.length - 1; i >= 0; i--) {
+        mesh.remove(mesh.children[i]);
+      }
+    },
+
     tearDownScene: () => {
       // TODO: Clean up 3js? dispose()?
       uiGame.internal.elements.scene.innerHTML = null;
       uiGame.internal.state.renderer = null;
+      uiGame.internal.state.cssRenderer = null;
       uiGame.internal.state.scene = null;
       uiGame.internal.state.camera = null;
       uiGame.internal.state.fieldMesh = null;
       uiGame.internal.state.characterMeshes = { };
+      uiGame.internal.state.chatBubbleMeshes = { };
+      for (const timeout of Object.values(uiGame.internal.state.chatBubbleHideTimeouts)) {
+        clearTimeout(timeout);
+      }
+      uiGame.internal.state.chatBubbleHideTimeouts = { };
       uiGame.internal.state.obstacleMeshes = { };
     },
 
@@ -121,8 +169,16 @@ const uiGame = {
       }
       const renderer = new THREE.WebGLRenderer();
       uiGame.internal.state.renderer = renderer;
+      renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(uiGame.internal.elements.scene.offsetWidth, uiGame.internal.elements.scene.offsetHeight);
       uiGame.internal.elements.scene.appendChild(renderer.domElement);
+      const cssRenderer = new CSS3DRenderer();
+      uiGame.internal.state.cssRenderer = cssRenderer;
+      cssRenderer.setSize(uiGame.internal.elements.scene.offsetWidth, uiGame.internal.elements.scene.offsetHeight);
+      cssRenderer.domElement.style.position = 'absolute';
+      cssRenderer.domElement.style.top = '0';
+      cssRenderer.domElement.style.left = '0';
+      uiGame.internal.elements.scene.appendChild(cssRenderer.domElement);
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0xd9c880);
       uiGame.internal.state.scene = scene;
@@ -138,6 +194,7 @@ const uiGame = {
       const animate = () => {
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
+        cssRenderer.render(scene, camera);
       };
       animate();
     },
@@ -151,6 +208,7 @@ const uiGame = {
       uiGame.internal.state.camera.aspect = width / height;
       uiGame.internal.state.camera.updateProjectionMatrix();
       uiGame.internal.state.renderer.setSize(width, height);
+      uiGame.internal.state.cssRenderer.setSize(width, height);
     },
 
     updateFieldElement: (spaceModel) => {
@@ -200,6 +258,32 @@ const uiGame = {
       }
     },
 
+    updateChatBubbleMeshes: (characterModels) => {
+      const staleChatBubbleCharacterIds = new Set(Object.keys(uiGame.internal.state.chatBubbleMeshes));
+      for (const characterModel of characterModels) {
+        let chatBubbleMesh;
+        if (staleChatBubbleCharacterIds.has(characterModel.id.toString())) {
+          chatBubbleMesh = uiGame.internal.state.chatBubbleMeshes[characterModel.id];
+          staleChatBubbleCharacterIds.delete(characterModel.id.toString());
+        } else {
+          const chatBubbleGeometry = new THREE.PlaneGeometry(1, 1);
+          const chatBubbleMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+          chatBubbleMaterial.transparent = true;
+          chatBubbleMaterial.opacity = 0;
+          chatBubbleMesh = new THREE.Mesh(chatBubbleGeometry, chatBubbleMaterial);
+          chatBubbleMesh.rotation.x = 1.5708;
+          chatBubbleMesh.position.z = 2.5; // TODO: Always 0.5 smaller than character z-length
+          uiGame.internal.state.chatBubbleMeshes[characterModel.id] = chatBubbleMesh;
+        }
+        chatBubbleMesh.position.x = characterModel.posX + characterModel.width / 2;
+        chatBubbleMesh.position.y = -1 * (characterModel.posY + characterModel.height / 2);
+      }
+      for (const staleCharacterId of staleChatBubbleCharacterIds) {
+        uiGame.internal.state.scene.remove(uiGame.internal.state.chatBubbleMeshes[staleCharacterId]);
+        delete uiGame.internal.state.chatBubbleMeshes[staleCharacterId];
+      }
+    },
+
     updateObstacleMeshes: (obstacleModels) => {
       const staleObstacleIds = new Set(Object.keys(uiGame.internal.state.obstacleMeshes));
       for (const obstacleModel of obstacleModels) {
@@ -227,18 +311,42 @@ const uiGame = {
       }
     },
 
-    updateCamera:(space, clientCharacterModel) => {
+    updateCamera: (space, clientCharacterModel) => {
       uiGame.internal.state.camera.position.x = clientCharacterModel.posX + clientCharacterModel.width / 2;
     },
 
-    enableControls: () => {
-      document.addEventListener('keydown', uiGame.internal.handleKeyDown);
-      document.addEventListener('keyup', uiGame.internal.handleKeyUp);
+    showChatBubble: (characterId, content) => {
+      const chatBubbleMesh = uiGame.internal.state.chatBubbleMeshes[characterId];
+      if (chatBubbleMesh == null) {
+        return;
+      }
+      clearTimeout(uiGame.internal.state.chatBubbleHideTimeouts[characterId]);
+      uiGame.internal.removeAllChildrenOfMesh(chatBubbleMesh);
+      const textElement = document.createElement('div');
+      textElement.innerHTML = content;
+      textElement.classList.add('chat_text');
+      const textWrapperElement = document.createElement('div');
+      textWrapperElement.classList.add('chat_text_wrapper');
+      textWrapperElement.appendChild(textElement);
+      const textObject = new CSS3DObject(textWrapperElement);
+      textObject.scale.set(0.005, 0.005, 0.005);
+      chatBubbleMesh.add(textObject);
+      uiGame.internal.state.scene.add(chatBubbleMesh);
+      uiGame.internal.state.chatBubbleHideTimeouts[characterId] = setTimeout(() => {
+        uiGame.internal.state.chatBubbleHideTimeouts[characterId] = null;
+        uiGame.internal.state.scene.remove(chatBubbleMesh);
+        uiGame.internal.removeAllChildrenOfMesh(chatBubbleMesh);
+      }, 3000);
     },
 
-    disableControls: () => {
-      document.removeEventListener('keydown', uiGame.internal.handleKeyDown);
-      document.removeEventListener('keyup', uiGame.internal.handleKeyUp);
+    enableGameControls: () => {
+      document.addEventListener('keydown', uiGame.internal.handleKeyDownGame);
+      document.addEventListener('keyup', uiGame.internal.handleKeyUpGame);
+    },
+
+    disableGameControls: () => {
+      document.removeEventListener('keydown', uiGame.internal.handleKeyDownGame);
+      document.removeEventListener('keyup', uiGame.internal.handleKeyUpGame);
       uiGame.internal.state.keyWPressed = false;
       uiGame.internal.state.keyWPressTime = null;
       uiGame.internal.state.keyAPressed = false;
@@ -248,6 +356,14 @@ const uiGame = {
       uiGame.internal.state.keyDPressed = false;
       uiGame.internal.state.keyDPressTime = null;
       game.setDirectionInput(null);
+    },
+
+    enableChatControls: () => {
+      document.addEventListener('keydown', uiGame.internal.handleKeyDownChat);
+    },
+
+    disableChatControls: () => {
+      document.removeEventListener('keydown', uiGame.internal.handleKeyDownChat);
     },
 
     updateDirectionInput: () => {
@@ -302,7 +418,7 @@ const uiGame = {
       game.setDirectionInput(direction);
     },
 
-    handleKeyDown: (e) => {
+    handleKeyDownGame: (e) => {
       switch (e.key) {
         case 'w':
           if (!uiGame.internal.state.keyWPressed) {
@@ -310,53 +426,76 @@ const uiGame = {
             uiGame.internal.state.keyWPressed = true;
           }
           uiGame.internal.updateDirectionInput();
-          break;
+          return;
         case 'a':
           if (!uiGame.internal.state.keyAPressed) {
             uiGame.internal.state.keyAPressTime = Date.now();
             uiGame.internal.state.keyAPressed = true;
           }
           uiGame.internal.updateDirectionInput();
-          break;
+          return;
         case 's':
           if (!uiGame.internal.state.keySPressed) {
             uiGame.internal.state.keySPressTime = Date.now();
             uiGame.internal.state.keySPressed = true;
           }
           uiGame.internal.updateDirectionInput();
-          break;
+          return;
         case 'd':
           if (!uiGame.internal.state.keyDPressed) {
             uiGame.internal.state.keyDPressTime = Date.now();
             uiGame.internal.state.keyDPressed = true;
           }
           uiGame.internal.updateDirectionInput();
-          break;
+          return;
+        case 'Enter':
+          uiGame.internal.disableGameControls();
+          uiGame.internal.enableChatControls();
+          uiGame.internal.showChatbox();
+          uiGame.internal.elements.chatbox.composer.focus();
+          return;
       }
     },
 
-    handleKeyUp: (e) => {
+    handleKeyUpGame: (e) => {
       switch (e.key) {
         case 'w':
           uiGame.internal.state.keyWPressed = false;
           uiGame.internal.state.keyWPressTime = null;
           uiGame.internal.updateDirectionInput();
-          break;
+          return;
         case 'a':
           uiGame.internal.state.keyAPressed = false;
           uiGame.internal.state.keyAPressTime = null;
           uiGame.internal.updateDirectionInput();
-          break;
+          return;
         case 's':
           uiGame.internal.state.keySPressed = false;
           uiGame.internal.state.keySPressTime = null;
           uiGame.internal.updateDirectionInput();
-          break;
+          return;
         case 'd':
           uiGame.internal.state.keyDPressed = false;
           uiGame.internal.state.keyDPressTime = null;
           uiGame.internal.updateDirectionInput();
-          break;
+          return;
+      }
+    },
+
+    handleKeyDownChat: (e) => {
+      uiGame.internal.elements.chatbox.composer.focus();
+      switch (e.key) {
+        case 'Enter':
+          if (uiGame.internal.elements.chatbox.composer.value.length > 0) {
+            uiGame.internal.parseChatboxComposerAndSendChat();
+            return;
+          }
+        case 'Escape':
+          uiGame.internal.disableChatControls();
+          uiGame.internal.enableGameControls();
+          uiGame.internal.hideChatbox();
+          uiGame.internal.elements.scene.focus();
+          return;
       }
     },
 
@@ -369,12 +508,20 @@ const uiGame = {
           for (const characterMesh of Object.values(uiGame.internal.state.characterMeshes)) {
             uiGame.internal.state.scene.remove(characterMesh);
           }
+          for (const chatBubbleMesh of Object.values(uiGame.internal.state.chatBubbleMeshes)) {
+            uiGame.internal.state.scene.remove(chatBubbleMesh);
+          }
           for (const obstacleMesh of Object.values(uiGame.internal.state.obstacleMeshes)) {
             uiGame.internal.state.scene.remove(obstacleMesh);
           }
         }
         uiGame.internal.state.fieldMesh = null;
         uiGame.internal.state.characterMeshes = { };
+        uiGame.internal.state.chatBubbleMeshes = { };
+        for (const timeout of Object.values(uiGame.internal.state.chatBubbleHideTimeouts)) {
+          clearTimeout(timeout);
+        }
+        uiGame.internal.state.chatBubbleHideTimeouts = { };
         uiGame.internal.state.obstacleMeshes = { };
         return;
       }
@@ -387,18 +534,30 @@ const uiGame = {
       }
       uiGame.internal.updateFieldElement(snapshot.space);
       uiGame.internal.updateCharacterMeshes(Object.values(snapshot.characters));
+      uiGame.internal.updateChatBubbleMeshes(Object.values(snapshot.characters));
       uiGame.internal.updateObstacleMeshes(snapshot.obstacles);
       uiGame.internal.updateCamera(snapshot.space, clientCharacter);
     },
 
+    handleGameChat: (chat) => {
+      const characterId = game.getGameState()?.characters[chat.srcPlayerId]?.id;
+      if (characterId != null) {
+        uiGame.internal.showChatBubble(characterId, chat.content);
+      }
+    },
+
     handleGameSeatLoss: () => {
-      uiGame.internal.disableControls();
+      uiGame.internal.disableGameControls();
+      uiGame.internal.disableChatControls();
+      uiGame.internal.hideChatbox();
       uiGame.internal.showGameSeatLossPage();
       uiGame.internal.showGameOverlay();
     },
 
     handleGameIntegrityViolation: () => {
-      uiGame.internal.disableControls();
+      uiGame.internal.disableGameControls();
+      uiGame.internal.disableChatControls();
+      uiGame.internal.hideChatbox();
       uiGame.internal.showGameIntegrityViolationPage();
       uiGame.internal.showGameOverlay();
     },
@@ -407,24 +566,28 @@ const uiGame = {
       if (uiBase.getCurrentModule() === 'game') {
         game.joinGame();
         uiGame.internal.setUpScene();
-        uiGame.internal.enableControls();
+        uiGame.internal.enableGameControls();
       } else {
-        uiGame.internal.disableControls();
+        uiGame.internal.disableGameControls();
+        uiGame.internal.disableChatControls();
         uiGame.internal.tearDownScene();
+        uiGame.internal.hideChatbox();
         uiGame.internal.hideGameOverlay();
         uiGame.internal.clearGameOverlay();
       }
     },
 
     handleOverlayAppearance: () => {
-      uiGame.internal.disableControls();
+      uiGame.internal.disableGameControls();
+      uiGame.internal.disableChatControls();
+      uiGame.internal.hideChatbox();
     },
 
     handleOverlayDisappearance: () => {
       if (uiBase.getCurrentModule() !== 'game') {
         return;
       }
-      uiGame.internal.enableControls();
+      uiGame.internal.enableGameControls();
     }
 
   },

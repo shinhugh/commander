@@ -28,6 +28,8 @@ const game = {
 
     gameStateChangeHandlers: [ ],
 
+    gameChatHandlers: [ ],
+
     gameSeatLossHandlers: [ ],
 
     gameIntegrityViolationHandlers: [ ],
@@ -35,6 +37,12 @@ const game = {
     invokeGameStateChangeHandlers: () => {
       for (const handler of game.internal.gameStateChangeHandlers) {
         handler();
+      }
+    },
+
+    invokeGameChatHandlers: (chat) => {
+      for (const handler of game.internal.gameChatHandlers) {
+        handler(chat);
       }
     },
 
@@ -184,18 +192,25 @@ const game = {
     },
 
     handleIncomingMessage: (message) => {
-      if (message.type === 'game_snapshot') {
-        const clientCharacter = game.internal.gameState?.characters[game.internal.gameState.clientPlayerId];
-        game.internal.gameState = message.payload;
-        if (clientCharacter != null) {
-          game.internal.gameState.characters[game.internal.gameState.clientPlayerId] = clientCharacter;
-        }
-      } else if (message.type === 'game_seat_usurped') {
-        game.internal.stopProcessing();
-        game.internal.invokeGameSeatLossHandlers();
-      } else if (message.type === 'game_integrity_violation') {
-        game.internal.stopProcessing();
-        game.internal.invokeGameIntegrityViolationHandlers();
+      switch (message.type) {
+        case 'game_snapshot':
+          const clientCharacter = game.internal.gameState?.characters[game.internal.gameState.clientPlayerId];
+          game.internal.gameState = message.payload;
+          if (clientCharacter != null) {
+            game.internal.gameState.characters[game.internal.gameState.clientPlayerId] = clientCharacter;
+          }
+          return;
+        case 'game_chat':
+          game.internal.invokeGameChatHandlers(message.payload);
+          return;
+        case 'game_seat_usurped':
+          game.internal.stopProcessing();
+          game.internal.invokeGameSeatLossHandlers();
+          return;
+        case 'game_integrity_violation':
+          game.internal.stopProcessing();
+          game.internal.invokeGameIntegrityViolationHandlers();
+          return;
       }
     },
 
@@ -212,6 +227,10 @@ const game = {
 
   registerGameStateChangeHandler: (handler) => {
     game.internal.gameStateChangeHandlers.push(handler);
+  },
+
+  registerGameChatHandler: (handler) => {
+    game.internal.gameChatHandlers.push(handler);
   },
 
   registerGameSeatLossHandler: (handler) => {
@@ -239,6 +258,13 @@ const game = {
       return;
     }
     game.internal.directionInput = direction;
+  },
+
+  sendChat: (dstPlayerId, toPublic, content) => {
+    if (content == null || content.length === 0) {
+      return;
+    }
+    api.sendGameChat(dstPlayerId, toPublic, content);
   }
 
 };

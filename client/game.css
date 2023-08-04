@@ -14,7 +14,6 @@
   left: 0;
   overflow: hidden;
   background: #d9c880;
-  color: black;
 }
 
 #content_game_module_game_scene {
@@ -23,6 +22,56 @@
   position: absolute;
   top: 0;
   left: 0;
+}
+
+.chat_text {
+  width: 15rem;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2rem;
+  text-align: center;
+  overflow-wrap: break-word;
+  font-size: 3rem;
+  color: black;
+  background: white;
+  border-radius: 1rem;
+  border: 0.5rem solid #87c8f0;
+}
+
+.chat_text_wrapper {
+  height: '2px';
+  width: '2px';
+  position: 'relative';
+  overflow: 'visible';
+}
+
+#content_game_module_game_chatbox {
+  width: calc(100% - 2rem);
+  max-width: 100vh;
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  border: 3px solid white;
+  border-radius: 5px;
+  background: #54aeb8;
+}
+
+#content_game_module_game_chatbox_composer {
+  flex: 1 1 0;
+  border: none;
+  font-size: 2rem;
+}
+
+#content_game_module_game_chatbox_send_button {
+  flex: 0 0 auto;
+  font-size: 2rem;
 }
 
 #content_game_module_game_overlay {

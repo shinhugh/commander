@@ -29,6 +29,8 @@ public class OutgoingMessage<T> {
         FRIENDSHIPS_CHANGE,
         @JsonProperty("game_snapshot")
         GAME_SNAPSHOT,
+        @JsonProperty("game_chat")
+        GAME_CHAT,
         @JsonProperty("game_seat_usurped")
         GAME_SEAT_USURPED,
         @JsonProperty("game_integrity_violation")

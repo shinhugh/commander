@@ -28,6 +28,8 @@ public class IncomingMessage {
         @JsonProperty("game_join")
         GAME_JOIN,
         @JsonProperty("game_input")
-        GAME_INPUT
+        GAME_INPUT,
+        @JsonProperty("game_chat")
+        GAME_CHAT
     }
 }

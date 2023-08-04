@@ -26,7 +26,11 @@ TODO
 
 - custom HTTP responses for all errors (404, 405, etc)
 
-- frontend: prevent vite from sending websocket request (HMR?)
+- client: prevent vite from sending websocket request (HMR?)
+
+- client: show error dialog if socket drops mid-game without logout
+
+- client: whenever user input is put into innerHTML, sanitize
 
 JSON
 

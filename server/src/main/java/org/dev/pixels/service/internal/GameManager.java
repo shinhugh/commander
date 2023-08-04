@@ -79,6 +79,16 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                 }
                 handleGameInput(authentication, input);
             }
+            case GAME_CHAT -> {
+                GameChat gameChat;
+                try {
+                    gameChat = objectMapper.convertValue(message.getPayload(), GameChat.class);
+                }
+                catch (IllegalArgumentException ex) {
+                    return;
+                }
+                handleGameChat(authentication, gameChat);
+            }
         }
     }
 
@@ -100,8 +110,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     @Scheduled(fixedRate = BROADCAST_INTERVAL)
     public void broadcast() {
         Map<Long, GameState> snapshot = game.snapshot();
-        Map<Long, String> destinations;
-        destinations = clonePlayerMap();
+        Map<Long, String> destinations = clonePlayerMap();
         for (Map.Entry<Long, String> destination : destinations.entrySet()) { // TODO: Parallelize
             long playerId = destination.getKey();
             String sessionToken = destination.getValue();
@@ -145,6 +154,34 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         }
         input.setPlayerId(playerId);
         game.input(input);
+    }
+
+    private void handleGameChat(Authentication authentication, GameChat chat) {
+        String srcSessionToken = (String) authentication.getCredentials();
+        Long srcPlayerId = getPlayerIdForSession(srcSessionToken);
+        if (srcPlayerId == null) {
+            return;
+        }
+        if (chat.getContent() == null || chat.getContent().length() == 0) {
+            return;
+        }
+        chat.setSrcPlayerId(srcPlayerId);
+        Long dstPlayerId = chat.getDstPlayerId();
+        chat.setDstPlayerId(null);
+        OutgoingMessage<GameChat> message = new OutgoingMessage<>();
+        message.setType(OutgoingMessage.Type.GAME_CHAT);
+        message.setPayload(chat);
+        if (chat.getToPublic() != null && chat.getToPublic()) {
+            Map<Long, String> destinations = clonePlayerMap();
+            for (Map.Entry<Long, String> destination : destinations.entrySet()) {
+                messageBroker.sendMessageBySessionToken(destination.getValue(), message);
+            }
+            return;
+        }
+        if (dstPlayerId == null || dstPlayerId <= 0) {
+            return;
+        }
+        messageBroker.sendMessageBySessionToken(getSessionTokenForPlayer(dstPlayerId), message);
     }
 
     private long getPlayerIdForAccount(long accountId) {

@@ -344,6 +344,24 @@ client's own character).
 
 ---
 
+Server-to-client: **Chat message**
+
+```
+{
+  "type": "game_chat",
+  "payload": {
+    "srcPlayerId": 5,
+    "toPublic": false,
+    "content": "hey there"
+  }
+}
+```
+
+When the server receives a chat message from a client, it broadcasts this
+message to all intended recipients.
+
+---
+
 Server-to-client: **Account seat loss for game**
 
 ```
@@ -408,6 +426,26 @@ WebSocket messages indicate a type, this input message must specify a second
 "inner" type, which describes the type of game action. However, unlike the
 "outer" layer, the rest of the data is stored in the same level, as opposed to
 in a nested `payload` field.
+
+---
+
+Client-to-server: **Chat message**
+
+```
+{
+  "type": "game_chat",
+  "payload": {
+    "dstPlayerId": 2,
+    "toPublic": false,
+    "content": "hey there"
+  }
+}
+```
+
+The client sends this message to send a chat message to either all active users
+or another specific player. If the `public` field is set to `true`, the message
+will be broadcasted to all active players; otherwise, the `dstPlayerId` field
+must be populated with the ID of the intended recipient player.
 
 ---
 
