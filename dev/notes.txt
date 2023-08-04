@@ -6,6 +6,9 @@
   Environment=CATALINA_OPTS=
   To:
   Environment=CATALINA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+  Line 15:
+  New:
+  Environment=ORIGINS=http://<SERVER ORIGIN>,http://<SERVER ORIGIN>
 
 - journalctl -u tomcat10.service --since "3 min ago"
 
@@ -22,6 +25,8 @@
 TODO
 
 - custom HTTP responses for all errors (404, 405, etc)
+
+- frontend: prevent vite from sending websocket request (HMR?)
 
 JSON
 

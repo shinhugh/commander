@@ -2,7 +2,7 @@ const api = {
 
   internal: {
 
-    endpoint: window.location.hostname + ':' + window.location.port,
+    endpoint: window.location.hostname,
 
     authorizationToken: null,
 
@@ -89,7 +89,7 @@ const api = {
   },
 
   connectSocket: async () => {
-    const url = 'ws://' + api.internal.endpoint + '/api/ws';
+    const url = 'ws://' + api.internal.endpoint + '/ws';
     const socket = await new Promise((resolve, reject) => {
       const errorEventHandler = () => {
         reject();
@@ -247,3 +247,5 @@ const api = {
   }
 
 };
+
+export { api };

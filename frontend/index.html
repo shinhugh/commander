@@ -12,14 +12,14 @@
   <link rel="stylesheet" href="login.css">
   <link rel="stylesheet" href="game.css">
   <link rel="stylesheet" href="overlay.css">
-  <script src="api.js" defer></script>
-  <script src="auth.js" defer></script>
-  <script src="accounts.js" defer></script>
-  <script src="friendships.js" defer></script>
-  <script src="game.js" defer></script>
-  <script src="ui-api.js" defer></script>
-  <script src="ui-base.js" defer></script>
-  <script src="ui-game.js" defer></script>
+  <script src="api.js" type="module"></script>
+  <script src="auth.js" type="module"></script>
+  <script src="accounts.js" type="module"></script>
+  <script src="friendships.js" type="module"></script>
+  <script src="game.js" type="module"></script>
+  <script src="ui-api.js" type="module"></script>
+  <script src="ui-base.js" type="module"></script>
+  <script src="ui-game.js" type="module"></script>
 </head>
 <body>
 
@@ -69,9 +69,7 @@
     <!-- Game module -->
     <div id="content_game_module">
       <div id="content_game_module_game">
-        <div id="content_game_module_game_scene">
-          <div id="content_game_module_game_scene_field"></div>
-        </div>
+        <div id="content_game_module_game_scene"></div>
         <div id="content_game_module_game_overlay">
           <div id="content_game_module_game_overlay_seat_loss_page">
             <p>You have joined the game from a different device.</p>

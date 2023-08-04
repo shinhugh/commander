@@ -3,6 +3,9 @@
  * - auth.js
  */
 
+import { api } from './api';
+import { auth } from './auth';
+
 const accounts = {
 
   internal: {
@@ -63,4 +66,8 @@ const accounts = {
 
 };
 
-accounts.initialize();
+window.addEventListener('DOMContentLoaded', () => {
+  accounts.initialize();
+});
+
+export { accounts };

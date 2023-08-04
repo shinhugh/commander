@@ -2,18 +2,22 @@
  * - game.js
  * - ui-api.js
  * - ui-base.js
+ * - 3js
  */
 
+import { game } from './game';
+import { uiApi } from './ui-api';
+import { uiBase } from './ui-base';
+import * as THREE from 'three';
+
+ // TODO: Resize 3js elements if their game entities change size?
 const uiGame = {
 
   internal: {
 
     elements: {
       root: document.getElementById('content_game_module_game'),
-      scene: {
-        root: document.getElementById('content_game_module_game_scene'),
-        field: document.getElementById('content_game_module_game_scene_field')
-      },
+      scene: document.getElementById('content_game_module_game_scene'),
       overlay: {
         root: document.getElementById('content_game_module_game_overlay'),
         seatLossPage: {
@@ -29,7 +33,6 @@ const uiGame = {
 
     state: {
       zoom: 1.1,
-      fieldRotation: 70,
       keyWPressed: false,
       keyWPressTime: null,
       keyAPressed: false,
@@ -38,8 +41,12 @@ const uiGame = {
       keySPressTime: null,
       keyDPressed: false,
       keyDPressTime: null,
-      characterElements: { },
-      obstacleElements: { }
+      renderer: null,
+      scene: null,
+      camera: null,
+      fieldMesh: null,
+      characterMeshes: { },
+      obstacleMeshes: { }
     },
 
     registerApiHandlers: () => {
@@ -52,6 +59,7 @@ const uiGame = {
     },
 
     registerUiHandlers: () => {
+      new ResizeObserver(uiGame.internal.resizeScene).observe(uiGame.internal.elements.scene);
       uiGame.internal.elements.overlay.seatLossPage.reconnectButton.addEventListener('click', () => {
         uiGame.internal.hideGameOverlay();
         uiGame.internal.clearGameOverlay();
@@ -96,84 +104,131 @@ const uiGame = {
       uiApi.show(uiGame.internal.elements.overlay.integrityViolationPage.root);
     },
 
-    updateFieldElement: (spaceModel, clientCharacterModel) => {
-      const fieldElement = uiGame.internal.elements.scene.field;
-      const gameUnitToPixelMultiplier = fieldElement.offsetHeight / spaceModel.height;
-      const sceneElementWidth = uiGame.internal.elements.scene.root.offsetWidth;
-      const fieldElementWidth = gameUnitToPixelMultiplier * spaceModel.width;
-      const clientCharacterElementWidth = gameUnitToPixelMultiplier * clientCharacterModel.width;
-      const translateX = (sceneElementWidth - clientCharacterElementWidth) / 2 + (clientCharacterElementWidth - fieldElementWidth) / (spaceModel.width - clientCharacterModel.width) * clientCharacterModel.posX;
-      fieldElement.style.width = fieldElementWidth + 'px';
-      fieldElement.style.transform = 'translateX(' + translateX + 'px) translateY(40%) rotateX(' + uiGame.internal.state.fieldRotation + 'deg) translateY(50%)';
-      return gameUnitToPixelMultiplier;
+    tearDownScene: () => {
+      // TODO: Clean up 3js? dispose()?
+      uiGame.internal.elements.scene.innerHTML = null;
+      uiGame.internal.state.renderer = null;
+      uiGame.internal.state.scene = null;
+      uiGame.internal.state.camera = null;
+      uiGame.internal.state.fieldMesh = null;
+      uiGame.internal.state.characterMeshes = { };
+      uiGame.internal.state.obstacleMeshes = { };
     },
 
-    updateCharacterElements: (characterModels, scale) => {
-      let cachedCharacterIds = new Set(Object.keys(uiGame.internal.state.characterElements));
-      for (const characterModel of characterModels) {
-        let characterElement;
-        if (cachedCharacterIds.has(characterModel.id.toString())) {
-          characterElement = uiGame.internal.state.characterElements[characterModel.id];
-          cachedCharacterIds.delete(characterModel.id.toString());
-        } else {
-          const spriteElement = document.createElement('div');
-          spriteElement.classList.add('game_character_sprite');
-          characterElement = document.createElement('div');
-          characterElement.classList.add('game_character');
-          characterElement.appendChild(spriteElement);
-          uiGame.internal.elements.scene.field.appendChild(characterElement);
-          uiGame.internal.state.characterElements[characterModel.id] = characterElement;
-        }
-        characterElement.style.top = (scale * characterModel.posY) + 'px';
-        characterElement.style.left = (scale * characterModel.posX) + 'px';
-        characterElement.style.height = (scale * characterModel.height) + 'px';
-        characterElement.style.width = (scale * characterModel.width) + 'px';
-        switch (characterModel.orientation) {
-          case 'up_right':
-          case 'right':
-          case 'down_right':
-            characterElement.dataset.right = null;
-            break;
-          case 'down_left':
-          case 'left':
-          case 'up_left':
-            delete characterElement.dataset.right;
-            break;
-        }
-        if (characterModel.moving) {
-          characterElement.dataset.moving = null;
-        } else {
-          delete characterElement.dataset.moving;
-        }
+    setUpScene: () => {
+      if (uiGame.internal.state.renderer != null) {
+        return;
       }
-      cachedCharacterIds.forEach(id => {
-        uiGame.internal.state.characterElements[id].remove();
-        delete uiGame.internal.state.characterElements[id];
+      const renderer = new THREE.WebGLRenderer();
+      uiGame.internal.state.renderer = renderer;
+      renderer.setSize(uiGame.internal.elements.scene.offsetWidth, uiGame.internal.elements.scene.offsetHeight);
+      uiGame.internal.elements.scene.appendChild(renderer.domElement);
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xd9c880);
+      uiGame.internal.state.scene = scene;
+      const camera = new THREE.PerspectiveCamera(45, uiGame.internal.elements.scene.offsetWidth / uiGame.internal.elements.scene.offsetHeight, 1, 1000);
+      uiGame.internal.state.camera = camera;
+      camera.position.set(0, -16, 6);
+      camera.lookAt(0, 0, 0);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(0, -40, 40);
+      scene.add(directionalLight);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+      scene.add(ambientLight);
+      const animate = () => {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      };
+      animate();
+    },
+
+    resizeScene: () => {
+      if (uiGame.internal.state.renderer == null) {
+        return;
+      }
+      const width = uiGame.internal.elements.scene.offsetWidth;
+      const height = uiGame.internal.elements.scene.offsetHeight;
+      uiGame.internal.state.camera.aspect = width / height;
+      uiGame.internal.state.camera.updateProjectionMatrix();
+      uiGame.internal.state.renderer.setSize(width, height);
+    },
+
+    updateFieldElement: (spaceModel) => {
+      if (uiGame.internal.state.fieldMesh != null) {
+        return;
+      }
+      const fieldGeometry = new THREE.PlaneGeometry(spaceModel.width, spaceModel.height);
+      const fieldTexture = new THREE.TextureLoader().load('assets/texture-grass.jpg');
+      fieldTexture.wrapS = THREE.RepeatWrapping;
+      fieldTexture.wrapT = THREE.RepeatWrapping;
+      fieldTexture.repeat.set(5, 1);
+      const fieldMaterial = new THREE.MeshPhongMaterial({
+        map: fieldTexture
       });
+      const fieldMesh = new THREE.Mesh(fieldGeometry, fieldMaterial);
+      fieldMesh.position.x = spaceModel.width / 2;
+      fieldMesh.position.y = spaceModel.height / -2;
+      fieldMesh.receiveShadow = true;
+      uiGame.internal.state.scene.add(fieldMesh);
+      uiGame.internal.state.fieldMesh = fieldMesh;
     },
 
-    updateObstacleElements: (obstacleModels, scale) => {
-      let cachedObstacleIds = new Set(Object.keys(uiGame.internal.state.obstacleElements));
-      for (const obstacleModel of obstacleModels) {
-        let obstacleElement;
-        if (cachedObstacleIds.has(obstacleModel.id.toString())) {
-          obstacleElement = uiGame.internal.state.obstacleElements[obstacleModel.id];
-          cachedObstacleIds.delete(obstacleModel.id.toString());
+    updateCharacterMeshes: (characterModels) => {
+      const staleCharacterIds = new Set(Object.keys(uiGame.internal.state.characterMeshes));
+      for (const characterModel of characterModels) {
+        let characterMesh;
+        if (staleCharacterIds.has(characterModel.id.toString())) {
+          characterMesh = uiGame.internal.state.characterMeshes[characterModel.id];
+          staleCharacterIds.delete(characterModel.id.toString());
         } else {
-          obstacleElement = document.createElement('div');
-          obstacleElement.classList.add('game_obstacle');
-          uiGame.internal.elements.scene.field.appendChild(obstacleElement);
-          uiGame.internal.state.obstacleElements[obstacleModel.id] = obstacleElement;
+          const characterGeometry = new THREE.BoxGeometry(characterModel.width, characterModel.height, 2); // TODO: Character z-length?
+          const characterMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+          characterMaterial.transparent = true;
+          characterMaterial.opacity = 0.8;
+          characterMesh = new THREE.Mesh(characterGeometry, characterMaterial);
+          characterMesh.position.z = 1;
+          characterMesh.castShadow = true;
+          uiGame.internal.state.scene.add(characterMesh);
+          uiGame.internal.state.characterMeshes[characterModel.id] = characterMesh;
         }
-        obstacleElement.style.top = (scale * obstacleModel.posY) + 'px';
-        obstacleElement.style.left = (scale * obstacleModel.posX) + 'px';
-        obstacleElement.style.height = (scale * obstacleModel.height) + 'px';
-        obstacleElement.style.width = (scale * obstacleModel.width) + 'px';
-        cachedObstacleIds.forEach(id => {
-          uiGame.internal.state.obstacleElements[id].remove();
-          delete uiGame.internal.state.obstacleElements[id];
-        });
+        characterMesh.position.x = characterModel.posX + characterModel.width / 2;
+        characterMesh.position.y = -1 * (characterModel.posY + characterModel.height / 2);
       }
+      for (const staleCharacterId of staleCharacterIds) {
+        uiGame.internal.state.scene.remove(uiGame.internal.state.characterMeshes[staleCharacterId]);
+        delete uiGame.internal.state.characterMeshes[staleCharacterId];
+      }
+    },
+
+    updateObstacleMeshes: (obstacleModels) => {
+      const staleObstacleIds = new Set(Object.keys(uiGame.internal.state.obstacleMeshes));
+      for (const obstacleModel of obstacleModels) {
+        let obstacleMesh;
+        if (staleObstacleIds.has(obstacleModel.id.toString())) {
+          obstacleMesh = uiGame.internal.state.obstacleMeshes[obstacleModel.id];
+          staleObstacleIds.delete(obstacleModel.id.toString());
+        } else {
+          const obstacleGeometry = new THREE.BoxGeometry(obstacleModel.width, obstacleModel.height, 3); // TODO: Obstacle z-length?
+          const obstacleMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
+          obstacleMaterial.transparent = true;
+          obstacleMaterial.opacity = 0.5;
+          obstacleMesh = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+          obstacleMesh.position.z = 1.5;
+          obstacleMesh.castShadow = true;
+          uiGame.internal.state.scene.add(obstacleMesh);
+          uiGame.internal.state.obstacleMeshes[obstacleModel.id] = obstacleMesh;
+        }
+        obstacleMesh.position.x = obstacleModel.posX + obstacleModel.width / 2;
+        obstacleMesh.position.y = -1 * (obstacleModel.posY + obstacleModel.height / 2);
+      }
+      for (const staleObstacleId of staleObstacleIds) {
+        uiGame.internal.state.scene.remove(uiGame.internal.state.obstacleMeshes[staleObstacleId]);
+        delete uiGame.internal.state.obstacleMeshes[staleObstacleId];
+      }
+    },
+
+    updateCamera:(space, clientCharacterModel) => {
+      uiGame.internal.state.camera.position.x = clientCharacterModel.posX + clientCharacterModel.width / 2;
     },
 
     enableControls: () => {
@@ -308,18 +363,32 @@ const uiGame = {
     handleGameStateChange: () => {
       const snapshot = game.getGameState();
       if (snapshot == null) {
-        uiGame.internal.elements.scene.field.innerHTML = null;
-        uiGame.internal.state.characterElements = { };
-        uiGame.internal.state.obstacleElements = { };
+        // TODO: dispose()?
+        if (uiGame.internal.state.renderer != null) {
+          uiGame.internal.state.scene.remove(uiGame.internal.state.fieldMesh);
+          for (const characterMesh of Object.values(uiGame.internal.state.characterMeshes)) {
+            uiGame.internal.state.scene.remove(characterMesh);
+          }
+          for (const obstacleMesh of Object.values(uiGame.internal.state.obstacleMeshes)) {
+            uiGame.internal.state.scene.remove(obstacleMesh);
+          }
+        }
+        uiGame.internal.state.fieldMesh = null;
+        uiGame.internal.state.characterMeshes = { };
+        uiGame.internal.state.obstacleMeshes = { };
+        return;
+      }
+      if (uiGame.internal.state.renderer == null) {
         return;
       }
       const clientCharacter = snapshot.characters[snapshot.clientPlayerId];
       if (clientCharacter == null) {
         return;
       }
-      const scale = uiGame.internal.updateFieldElement(snapshot.space, clientCharacter);
-      uiGame.internal.updateCharacterElements(Object.values(snapshot.characters), scale);
-      uiGame.internal.updateObstacleElements(snapshot.obstacles, scale);
+      uiGame.internal.updateFieldElement(snapshot.space);
+      uiGame.internal.updateCharacterMeshes(Object.values(snapshot.characters));
+      uiGame.internal.updateObstacleMeshes(snapshot.obstacles);
+      uiGame.internal.updateCamera(snapshot.space, clientCharacter);
     },
 
     handleGameSeatLoss: () => {
@@ -337,9 +406,11 @@ const uiGame = {
     handleModuleChange: () => {
       if (uiBase.getCurrentModule() === 'game') {
         game.joinGame();
+        uiGame.internal.setUpScene();
         uiGame.internal.enableControls();
       } else {
         uiGame.internal.disableControls();
+        uiGame.internal.tearDownScene();
         uiGame.internal.hideGameOverlay();
         uiGame.internal.clearGameOverlay();
       }
@@ -366,4 +437,8 @@ const uiGame = {
 
 };
 
-uiGame.initialize();
+window.addEventListener('DOMContentLoaded', () => {
+  uiGame.initialize();
+});
+
+export { uiGame };

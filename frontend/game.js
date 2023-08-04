@@ -2,6 +2,8 @@
  * - api.js
  */
 
+import { api } from './api';
+
 const game = {
 
   internal: {
@@ -241,4 +243,8 @@ const game = {
 
 };
 
-game.initialize();
+window.addEventListener('DOMContentLoaded', () => {
+  game.initialize();
+});
+
+export { game };

@@ -25,3 +25,5 @@ const uiApi = {
   }
 
 };
+
+export { uiApi };

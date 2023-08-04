@@ -2,6 +2,8 @@
  * - api.js
  */
 
+import { api } from './api';
+
 const auth = {
 
   internal: {
@@ -68,4 +70,8 @@ const auth = {
 
 };
 
-auth.initialize();
+window.addEventListener('DOMContentLoaded', () => {
+  auth.initialize();
+});
+
+export { auth };
