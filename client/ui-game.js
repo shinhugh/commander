@@ -43,7 +43,9 @@ const uiGame = {
     },
 
     state: {
-      zoom: 1.1,
+      characterZLength: 2,
+      chatBubbleOffset: 0.5,
+      obstacleZLength: 3,
       keyWPressed: false,
       keyWPressTime: null,
       keyAPressed: false,
@@ -159,7 +161,6 @@ const uiGame = {
     },
 
     tearDownScene: () => {
-      // TODO: Clean up 3js? dispose()?
       uiGame.internal.elements.scene.innerHTML = null;
       uiGame.internal.state.renderer = null;
       uiGame.internal.state.cssRenderer = null;
@@ -251,7 +252,7 @@ const uiGame = {
           characterMesh = uiGame.internal.state.characterMeshes[characterModel.id];
           staleCharacterIds.delete(characterModel.id.toString());
         } else {
-          const characterGeometry = new THREE.BoxGeometry(characterModel.width, characterModel.height, 2); // TODO: Character z-length?
+          const characterGeometry = new THREE.BoxGeometry(characterModel.width, characterModel.height, uiGame.internal.state.characterZLength);
           const characterMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
           characterMaterial.transparent = true;
           characterMaterial.opacity = 0.8;
@@ -284,7 +285,7 @@ const uiGame = {
           chatBubbleMaterial.opacity = 0;
           chatBubbleMesh = new THREE.Mesh(chatBubbleGeometry, chatBubbleMaterial);
           chatBubbleMesh.rotation.x = 1.5708;
-          chatBubbleMesh.position.z = 2.5; // TODO: Always 0.5 smaller than character z-length
+          chatBubbleMesh.position.z = uiGame.internal.state.characterZLength + uiGame.internal.state.chatBubbleOffset;
           uiGame.internal.state.chatBubbleMeshes[characterModel.id] = chatBubbleMesh;
         }
         chatBubbleMesh.position.x = characterModel.posX + characterModel.width / 2;
@@ -304,7 +305,7 @@ const uiGame = {
           obstacleMesh = uiGame.internal.state.obstacleMeshes[obstacleModel.id];
           staleObstacleIds.delete(obstacleModel.id.toString());
         } else {
-          const obstacleGeometry = new THREE.BoxGeometry(obstacleModel.width, obstacleModel.height, 3); // TODO: Obstacle z-length?
+          const obstacleGeometry = new THREE.BoxGeometry(obstacleModel.width, obstacleModel.height, uiGame.internal.state.obstacleZLength);
           const obstacleMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
           obstacleMaterial.transparent = true;
           obstacleMaterial.opacity = 0.5;
@@ -524,7 +525,6 @@ const uiGame = {
     handleGameStateChange: () => {
       const snapshot = game.getGameState();
       if (snapshot == null) {
-        // TODO: dispose()?
         if (uiGame.internal.state.renderer != null) {
           uiGame.internal.state.scene.remove(uiGame.internal.state.fieldMesh);
           for (const characterMesh of Object.values(uiGame.internal.state.characterMeshes)) {
