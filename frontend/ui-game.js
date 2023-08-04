@@ -11,6 +11,7 @@ import { uiBase } from './ui-base';
 import * as THREE from 'three';
 
  // TODO: Scaling from game units to 3js units? Currently 1:1
+ // TODO: Resizing elements?
 const uiGame = {
 
   internal: {
@@ -109,6 +110,9 @@ const uiGame = {
       uiGame.internal.state.renderer = null;
       uiGame.internal.state.scene = null;
       uiGame.internal.state.camera = null;
+      uiGame.internal.state.fieldMesh = null;
+      uiGame.internal.state.characterMeshes = { };
+      uiGame.internal.state.obstacleMeshes = { };
     },
 
     setUpScene: () => {
@@ -126,7 +130,7 @@ const uiGame = {
 
       const camera = new THREE.PerspectiveCamera(45, uiGame.internal.elements.scene.offsetWidth / uiGame.internal.elements.scene.offsetHeight, 1, 1000);
       uiGame.internal.state.camera = camera;
-      camera.position.set(0, -30, 60);
+      camera.position.set(0, 0, 30);
       camera.lookAt(0, 0, 0);
 
       const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
@@ -151,20 +155,41 @@ const uiGame = {
         shininess: 100
       });
       const fieldMesh = new THREE.Mesh(fieldGeometry, fieldMaterial);
+      fieldMesh.position.x = spaceModel.width / 2;
+      fieldMesh.position.y = spaceModel.height / -2;
       fieldMesh.receiveShadow = true;
       uiGame.internal.state.scene.add(fieldMesh);
       uiGame.internal.state.fieldMesh = fieldMesh;
     },
 
     updateCharacterMeshes: (characterModels) => {
-      // TODO: Implement
+      const staleCharacterIds = new Set(Object.keys(uiGame.internal.state.characterMeshes));
+      for (const characterModel of characterModels) {
+        let characterMesh;
+        if (staleCharacterIds.has(characterModel.id.toString())) {
+          characterMesh = uiGame.internal.state.characterMeshes[characterModel.id];
+          staleCharacterIds.delete(characterModel.id.toString());
+        } else {
+          const characterGeometry = new THREE.BoxGeometry(characterModel.width, characterModel.height, 3); // TODO: Character z-length?
+          const characterMaterial = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
+          characterMesh = new THREE.Mesh(characterGeometry, characterMaterial);
+          uiGame.internal.state.scene.add(characterMesh);
+          uiGame.internal.state.characterMeshes[characterModel.id] = characterMesh;
+        }
+        characterMesh.position.x = characterModel.posX + characterModel.width / 2;
+        characterMesh.position.y = -1 * (characterModel.posY + characterModel.height / 2);
+      }
+      for (const staleCharacterId of staleCharacterIds) {
+        uiGame.internal.state.scene.remove(uiGame.internal.state.characterMeshes[staleCharacterId]);
+        delete uiGame.internal.state.characterMeshes[staleCharacterId];
+      }
     },
 
     updateObstacleMeshes: (obstacleModels) => {
       // TODO: Implement
     },
 
-    updateCamera:() => {
+    updateCamera:(space, clientCharacterModel) => {
       // TODO: Implement
     },
 
@@ -300,9 +325,12 @@ const uiGame = {
     handleGameStateChange: () => {
       const snapshot = game.getGameState();
       if (snapshot == null) {
-        // TODO: Remove entities from field
+        // TODO: Remove field, characters, and obstacles; dispose()?
         uiGame.internal.state.characterMeshes = { };
         uiGame.internal.state.obstacleMeshes = { };
+        return;
+      }
+      if (uiGame.internal.state.renderer == null) {
         return;
       }
       const clientCharacter = snapshot.characters[snapshot.clientPlayerId];
@@ -312,7 +340,7 @@ const uiGame = {
       uiGame.internal.updateFieldElement(snapshot.space);
       uiGame.internal.updateCharacterMeshes(Object.values(snapshot.characters));
       uiGame.internal.updateObstacleMeshes(snapshot.obstacles);
-      uiGame.internal.updateCamera();
+      uiGame.internal.updateCamera(snapshot.space, clientCharacter);
     },
 
     handleGameSeatLoss: () => {
