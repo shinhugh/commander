@@ -43,9 +43,14 @@ const uiGame = {
     },
 
     state: {
-      characterZLength: 4,
+      directionalLightIntensity: 0.8,
+      ambientLightIntensity: 0.4,
+      characterZLength: 1.5,
+      chatBubbleCssScaling: 0.005,
       chatBubbleOffset: 0.1,
-      obstacleZLength: 3,
+      chatBubbleDuration: 3000,
+      obstacleZLength: 1,
+      obstacleOpacity: 1,
       keyWPressed: false,
       keyWPressTime: null,
       keyAPressed: false,
@@ -162,13 +167,13 @@ const uiGame = {
     },
 
     createCharacterTexture: (xLength, zLength) => {
-      const imageHeight = 1850;
-      const imageWidth = 512;
+      const imageHeight = 280;
+      const imageWidth = 198;
       const xToYScale = (zLength / xLength) / (imageHeight / imageWidth);
-      const xScale = 0.9; // smaller enlarges
+      const xScale = 0.95; // smaller enlarges
       const offsetX = 0; // smaller moves right
       const offsetY = 0; // smaller moves up
-      const characterTexture = new THREE.TextureLoader().load('assets/eugene.png');
+      const characterTexture = new THREE.TextureLoader().load('assets/paul_bunyan.png');
       characterTexture.wrapS = THREE.ClampToEdgeWrapping;
       characterTexture.wrapT = THREE.ClampToEdgeWrapping;
       characterTexture.repeat.set(xScale, xScale * xToYScale);
@@ -215,10 +220,10 @@ const uiGame = {
       uiGame.internal.state.camera = camera;
       camera.position.set(0, -16, 6);
       camera.lookAt(0, 0, 0);
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, uiGame.internal.state.directionalLightIntensity);
       directionalLight.position.set(0, -40, 40);
       scene.add(directionalLight);
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+      const ambientLight = new THREE.AmbientLight(0xffffff, uiGame.internal.state.ambientLightIntensity);
       scene.add(ambientLight);
       const animate = () => {
         requestAnimationFrame(animate);
@@ -289,12 +294,12 @@ const uiGame = {
           case 'up_right':
           case 'right':
           case 'down_right':
-            characterMesh.scale.x = 1;
+            characterMesh.scale.x = -1;
             break;
           case 'down_left':
           case 'left':
           case 'up_left':
-            characterMesh.scale.x = -1;
+            characterMesh.scale.x = 1;
             break;
         }
       }
@@ -339,11 +344,13 @@ const uiGame = {
           staleObstacleIds.delete(obstacleModel.id.toString());
         } else {
           const obstacleGeometry = new THREE.BoxGeometry(obstacleModel.width, obstacleModel.height, uiGame.internal.state.obstacleZLength);
-          const obstacleMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
-          obstacleMaterial.transparent = true;
-          obstacleMaterial.opacity = 0.8;
+          const obstacleMaterial = new THREE.MeshLambertMaterial({
+            color: 0x7cb06d,
+            transparent: true,
+            opacity: uiGame.internal.state.obstacleOpacity
+          });
           obstacleMesh = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
-          obstacleMesh.position.z = 1.5;
+          obstacleMesh.position.z = uiGame.internal.state.obstacleZLength / 2;
           uiGame.internal.state.scene.add(obstacleMesh);
           uiGame.internal.state.obstacleMeshes[obstacleModel.id] = obstacleMesh;
         }
@@ -374,14 +381,14 @@ const uiGame = {
       textWrapperElement.classList.add('chat_text_wrapper');
       textWrapperElement.appendChild(textElement);
       const textObject = new CSS3DObject(textWrapperElement);
-      textObject.scale.set(0.005, 0.005, 0.005);
+      textObject.scale.set(uiGame.internal.state.chatBubbleCssScaling, uiGame.internal.state.chatBubbleCssScaling, uiGame.internal.state.chatBubbleCssScaling);
       chatBubbleMesh.add(textObject);
       uiGame.internal.state.scene.add(chatBubbleMesh);
       uiGame.internal.state.chatBubbleHideTimeouts[characterId] = setTimeout(() => {
         uiGame.internal.state.chatBubbleHideTimeouts[characterId] = null;
         uiGame.internal.state.scene.remove(chatBubbleMesh);
         uiGame.internal.removeAllChildrenOfMesh(chatBubbleMesh);
-      }, 3000);
+      }, uiGame.internal.state.chatBubbleDuration);
     },
 
     enableGameControls: () => {
