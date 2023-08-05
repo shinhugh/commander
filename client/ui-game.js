@@ -43,8 +43,8 @@ const uiGame = {
     },
 
     state: {
-      characterZLength: 2,
-      chatBubbleOffset: 0.5,
+      characterZLength: 4,
+      chatBubbleOffset: 0.1,
       obstacleZLength: 3,
       keyWPressed: false,
       keyWPressTime: null,
@@ -161,6 +161,21 @@ const uiGame = {
       }
     },
 
+    createCharacterTexture: (xLength, zLength) => {
+      const imageHeight = 1850;
+      const imageWidth = 512;
+      const xToYScale = (zLength / xLength) / (imageHeight / imageWidth);
+      const xScale = 0.9; // smaller enlarges
+      const offsetX = 0; // smaller moves right
+      const offsetY = 0; // smaller moves up
+      const characterTexture = new THREE.TextureLoader().load('assets/eugene.png');
+      characterTexture.wrapS = THREE.ClampToEdgeWrapping;
+      characterTexture.wrapT = THREE.ClampToEdgeWrapping;
+      characterTexture.repeat.set(xScale, xScale * xToYScale);
+      characterTexture.offset.set(offsetX, offsetY);
+      return characterTexture;
+    },
+
     tearDownScene: () => {
       uiGame.internal.elements.scene.innerHTML = null;
       uiGame.internal.state.renderer = null;
@@ -254,15 +269,34 @@ const uiGame = {
           staleCharacterIds.delete(characterModel.id.toString());
         } else {
           const characterGeometry = new THREE.BoxGeometry(characterModel.width, characterModel.height, uiGame.internal.state.characterZLength);
-          const characterMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
-          characterMesh = new THREE.Mesh(characterGeometry, characterMaterial);
-          characterMesh.position.z = 1;
-          characterMesh.castShadow = true;
+          const characterTexture = uiGame.internal.createCharacterTexture(characterModel.width, uiGame.internal.state.characterZLength);
+          const characterMaterial = new THREE.MeshBasicMaterial({
+            map: characterTexture,
+            transparent: true
+          });
+          const transparentMaterial = new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0
+          });
+          characterMesh = new THREE.Mesh(characterGeometry, [transparentMaterial, transparentMaterial, transparentMaterial, characterMaterial, transparentMaterial, transparentMaterial]);
+          characterMesh.position.z = uiGame.internal.state.characterZLength / 2;
           uiGame.internal.state.scene.add(characterMesh);
           uiGame.internal.state.characterMeshes[characterModel.id] = characterMesh;
         }
         characterMesh.position.x = characterModel.posX + characterModel.width / 2;
         characterMesh.position.y = -1 * (characterModel.posY + characterModel.height / 2);
+        switch (characterModel.orientation) {
+          case 'up_right':
+          case 'right':
+          case 'down_right':
+            characterMesh.scale.x = 1;
+            break;
+          case 'down_left':
+          case 'left':
+          case 'up_left':
+            characterMesh.scale.x = -1;
+            break;
+        }
       }
       for (const staleCharacterId of staleCharacterIds) {
         uiGame.internal.state.scene.remove(uiGame.internal.state.characterMeshes[staleCharacterId]);
@@ -310,7 +344,6 @@ const uiGame = {
           obstacleMaterial.opacity = 0.8;
           obstacleMesh = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
           obstacleMesh.position.z = 1.5;
-          obstacleMesh.castShadow = true;
           uiGame.internal.state.scene.add(obstacleMesh);
           uiGame.internal.state.obstacleMeshes[obstacleModel.id] = obstacleMesh;
         }
