@@ -5,8 +5,8 @@ from its original concept and will likely continue to do so.*
 
 A real-time social multiplayer game, designed and built from the ground up.
 
-Screenshot (2023-08-04):
-![Screenshot](dev/screenshot_2023_08_04.png)
+Screenshot (2023-08-07):
+![Screenshot](dev/screenshot_20230807.png)
 
 ## Back-end
 
