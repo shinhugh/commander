@@ -30,6 +30,8 @@ TODO
 
 - client: whenever user input is put into innerHTML, sanitize
 
+- client: replace magic numbers with constant variables
+
 JSON
 
 {

@@ -51,6 +51,9 @@ const uiGame = {
       chatBubbleDuration: 3000,
       obstacleZLength: 1,
       obstacleOpacity: 1,
+      characterNameAspectRatio: 6,
+      characterNameTextVerticalOffset: 1,
+      characterNameMeshWidth: 1,
       keyWPressed: false,
       keyWPressTime: null,
       keyAPressed: false,
@@ -65,6 +68,7 @@ const uiGame = {
       camera: null,
       fieldMesh: null,
       characterMeshes: { },
+      characterNameMeshes: { },
       chatBubbleMeshes: { },
       chatBubbleHideTimeouts: { },
       obstacleMeshes: { }
@@ -189,6 +193,7 @@ const uiGame = {
       uiGame.internal.state.camera = null;
       uiGame.internal.state.fieldMesh = null;
       uiGame.internal.state.characterMeshes = { };
+      uiGame.internal.state.characterNameMeshes = { };
       uiGame.internal.state.chatBubbleMeshes = { };
       for (const timeout of Object.values(uiGame.internal.state.chatBubbleHideTimeouts)) {
         clearTimeout(timeout);
@@ -273,17 +278,14 @@ const uiGame = {
           characterMesh = uiGame.internal.state.characterMeshes[characterModel.id];
           staleCharacterIds.delete(characterModel.id.toString());
         } else {
-          const characterGeometry = new THREE.BoxGeometry(characterModel.width, characterModel.height, uiGame.internal.state.characterZLength);
+          const characterGeometry = new THREE.PlaneGeometry(characterModel.width, uiGame.internal.state.characterZLength);
           const characterTexture = uiGame.internal.createCharacterTexture(characterModel.width, uiGame.internal.state.characterZLength);
           const characterMaterial = new THREE.MeshBasicMaterial({
             map: characterTexture,
             transparent: true
           });
-          const transparentMaterial = new THREE.MeshBasicMaterial({
-            transparent: true,
-            opacity: 0
-          });
-          characterMesh = new THREE.Mesh(characterGeometry, [transparentMaterial, transparentMaterial, transparentMaterial, characterMaterial, transparentMaterial, transparentMaterial]);
+          characterMesh = new THREE.Mesh(characterGeometry, characterMaterial);
+          characterMesh.rotation.x = 1.5708;
           characterMesh.position.z = uiGame.internal.state.characterZLength / 2;
           uiGame.internal.state.scene.add(characterMesh);
           uiGame.internal.state.characterMeshes[characterModel.id] = characterMesh;
@@ -309,6 +311,46 @@ const uiGame = {
       }
     },
 
+    updateCharacterNameMeshes: (characterModels) => {
+      const staleCharacterNameCharacterIds = new Set(Object.keys(uiGame.internal.state.characterNameMeshes));
+      for (const characterModel of characterModels) {
+        let characterNameMesh;
+        if (staleCharacterNameCharacterIds.has(characterModel.id.toString())) {
+          characterNameMesh = uiGame.internal.state.characterNameMeshes[characterModel.id];
+          staleCharacterNameCharacterIds.delete(characterModel.id.toString());
+        } else {
+          const canvasElement = document.createElement('canvas');
+          canvasElement.width = 128 * uiGame.internal.state.characterNameAspectRatio;
+          canvasElement.height = 128;
+          const context = canvasElement.getContext('2d');
+          context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          context.fillRect(0, 0, canvasElement.width, canvasElement.height);
+          context.textAlign = 'center';
+          context.textBaseline = 'middle';
+          context.font = 'normal 100px monospace';
+          context.fillStyle = 'white';
+          context.fillText(characterModel.name, canvasElement.width * 0.5, canvasElement.height * 0.5 + uiGame.internal.state.characterNameTextVerticalOffset);
+          const characterNameGeometry = new THREE.PlaneGeometry(uiGame.internal.state.characterNameMeshWidth, uiGame.internal.state.characterNameMeshWidth / uiGame.internal.state.characterNameAspectRatio);
+          const characterNameTexture = new THREE.CanvasTexture(canvasElement);
+          const characterNameMaterial = new THREE.MeshBasicMaterial({
+            map: characterNameTexture,
+            transparent: true
+          });
+          characterNameMesh = new THREE.Mesh(characterNameGeometry, characterNameMaterial);
+          characterNameMesh.rotation.x = 1.5708;
+          characterNameMesh.position.z = uiGame.internal.state.characterNameMeshWidth / uiGame.internal.state.characterNameAspectRatio / 2;
+          uiGame.internal.state.scene.add(characterNameMesh);
+          uiGame.internal.state.characterNameMeshes[characterModel.id] = characterNameMesh;
+        }
+        characterNameMesh.position.x = characterModel.posX + characterModel.width / 2;
+        characterNameMesh.position.y = -1 * (characterModel.posY + characterModel.height + 0.2);
+      }
+      for (const staleCharacterId of staleCharacterNameCharacterIds) {
+        uiGame.internal.state.scene.remove(uiGame.internal.state.characterNameMeshes[staleCharacterId]);
+        delete uiGame.internal.state.characterNameMeshes[staleCharacterId];
+      }
+    },
+
     updateChatBubbleMeshes: (characterModels) => {
       const staleChatBubbleCharacterIds = new Set(Object.keys(uiGame.internal.state.chatBubbleMeshes));
       for (const characterModel of characterModels) {
@@ -318,9 +360,11 @@ const uiGame = {
           staleChatBubbleCharacterIds.delete(characterModel.id.toString());
         } else {
           const chatBubbleGeometry = new THREE.PlaneGeometry(1, 1);
-          const chatBubbleMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-          chatBubbleMaterial.transparent = true;
-          chatBubbleMaterial.opacity = 0;
+          const chatBubbleMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0
+          });
           chatBubbleMesh = new THREE.Mesh(chatBubbleGeometry, chatBubbleMaterial);
           chatBubbleMesh.rotation.x = 1.5708;
           chatBubbleMesh.position.z = uiGame.internal.state.characterZLength + uiGame.internal.state.chatBubbleOffset;
@@ -569,6 +613,9 @@ const uiGame = {
           for (const characterMesh of Object.values(uiGame.internal.state.characterMeshes)) {
             uiGame.internal.state.scene.remove(characterMesh);
           }
+          for (const characterNameMesh of Object.values(uiGame.internal.state.characterNameMeshes)) {
+            uiGame.internal.state.scene.remove(characterNameMesh);
+          }
           for (const chatBubbleMesh of Object.values(uiGame.internal.state.chatBubbleMeshes)) {
             uiGame.internal.state.scene.remove(chatBubbleMesh);
           }
@@ -578,6 +625,7 @@ const uiGame = {
         }
         uiGame.internal.state.fieldMesh = null;
         uiGame.internal.state.characterMeshes = { };
+        uiGame.internal.state.characterNameMeshes = { };
         uiGame.internal.state.chatBubbleMeshes = { };
         for (const timeout of Object.values(uiGame.internal.state.chatBubbleHideTimeouts)) {
           clearTimeout(timeout);
@@ -595,6 +643,7 @@ const uiGame = {
       }
       uiGame.internal.updateFieldElement(snapshot.space);
       uiGame.internal.updateCharacterMeshes(Object.values(snapshot.characters));
+      uiGame.internal.updateCharacterNameMeshes(Object.values(snapshot.characters));
       uiGame.internal.updateChatBubbleMeshes(Object.values(snapshot.characters));
       uiGame.internal.updateObstacleMeshes(snapshot.obstacles);
       uiGame.internal.updateCamera(snapshot.space, clientCharacter);

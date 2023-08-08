@@ -1,6 +1,7 @@
 package org.dev.pixels.service.internal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.dev.pixels.model.Account;
 import org.dev.pixels.model.IncomingMessage;
 import org.dev.pixels.model.OutgoingMessage;
 import org.dev.pixels.model.game.Character;
@@ -30,16 +31,17 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     private final MessageBroker messageBroker;
     private final IdentificationService identificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final GameEntry game = generateGameEntry();
+    private final GameEntry game;
     private final Map<Long, String> playerIdToSessionTokenMap = new HashMap<>();
     private final Map<String, Long> sessionTokenToPlayerIdMap = new HashMap<>();
     private final Lock playerMapReadLock;
     private final Lock playerMapWriteLock;
 
-    public GameManager(PlayerService playerService, MessageBroker messageBroker, IdentificationService identificationService) {
+    public GameManager(AccountService accountService, PlayerService playerService, MessageBroker messageBroker, IdentificationService identificationService) {
         this.playerService = playerService;
         this.messageBroker = messageBroker;
         this.identificationService = identificationService;
+        game = generateGameEntry(accountService, this.playerService);
         ReadWriteLock playerMapReadWriteLock = new ReentrantReadWriteLock();
         playerMapReadLock = playerMapReadWriteLock.readLock();
         playerMapWriteLock = playerMapReadWriteLock.writeLock();
@@ -261,7 +263,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
     }
 
     // TODO: Read map data from external configuration file
-    private static GameEntry generateGameEntry() {
+    private static GameEntry generateGameEntry(AccountService accountService, PlayerService playerService) {
         Space space = new Space();
         space.setWidth(64);
         space.setHeight(8);
@@ -306,7 +308,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         gameState.setSpace(space);
         gameState.setCharacters(new HashMap<>());
         gameState.setObstacles(obstacles);
-        return new GameEntry(gameState);
+        return new GameEntry(accountService, playerService, gameState);
     }
 
     private static class GameEntry {
@@ -317,6 +319,8 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         private static final double CHARACTER_POSITION_VALIDATION_MARGIN = 0.12;
         private static final long CHARACTER_SILENT_MOVEMENT_DURATION_MAX = 100;
         private static final long CHARACTER_MOVEMENT_TIMEOUT_DURATION = 50;
+        private final AccountService accountService;
+        private final PlayerService playerService;
         private final List<GameInput> inputQueue = new ArrayList<>();
         private final Lock inputQueueLock = new ReentrantLock();
         private final GameState gameState;
@@ -324,7 +328,9 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
         private final Lock gameStateWriteLock;
         private long lastProcessTime;
 
-        public GameEntry(GameState gameState) {
+        public GameEntry(AccountService accountService, PlayerService playerService, GameState gameState) {
+            this.accountService = accountService;
+            this.playerService = playerService;
             this.gameState = cloneGameState(gameState);
             ReadWriteLock gameStateReadWriteLock = new ReentrantReadWriteLock();
             gameStateReadLock = gameStateReadWriteLock.readLock();
@@ -362,7 +368,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             gameStateWriteLock.lock();
             try {
                 for (GameInput input : inputs) {
-                    if (!processInput(gameState, input, currentTime)) {
+                    if (!processInput(accountService, playerService, gameState, input, currentTime)) {
                         offenders.add(input.getPlayerId());
                     }
                 }
@@ -392,13 +398,23 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
             return clone;
         }
 
-        private static boolean processInput(GameState gameState, GameInput input, long currentTime) {
+        private static boolean processInput(AccountService accountService, PlayerService playerService, GameState gameState, GameInput input, long currentTime) {
             long playerId = input.getPlayerId();
             switch (input.getType()) {
                 case JOIN -> {
                     if (gameState.getCharacters().containsKey(playerId)) {
                         return true;
                     }
+                    List<Player> players = playerService.readPlayers(playerId, null);
+                    if (players.isEmpty()) {
+                        return true;
+                    }
+                    long accountId = players.get(0).getAccountId();
+                    List<Account> accounts = accountService.readAccounts(accountId, null);
+                    if (accounts.isEmpty()) {
+                        return true;
+                    }
+                    String name = accounts.get(0).getPublicName();
                     double posX = (gameState.getSpace().getWidth() - CHARACTER_WIDTH) / 2;
                     double posY = 1;
                     Character character = new Character();
@@ -412,6 +428,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                     character.setLastPositionUpdateTime(currentTime);
                     character.setOrientation(Direction.DOWN);
                     character.setMoving(false);
+                    character.setName(name);
                     gameState.getCharacters().put(playerId, character);
                 }
                 case LEAVE -> {
@@ -565,6 +582,7 @@ public class GameManager implements ConnectionEventHandler, IncomingMessageHandl
                 characterClone.setLastPositionUpdateTime(character.getLastPositionUpdateTime());
                 characterClone.setOrientation(character.getOrientation());
                 characterClone.setMoving(character.isMoving());
+                characterClone.setName(character.getName());
                 characters.put(playerId, characterClone);
             }
             Set<Obstacle> obstacles = new HashSet<>();

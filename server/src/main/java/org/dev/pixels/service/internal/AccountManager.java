@@ -88,8 +88,8 @@ public class AccountManager implements AccountService {
         private static final int AUTHORITIES_MAX = 3;
         private static final int USER_AUTHORITY_ORDER = 0;
         private static final int PUBLIC_NAME_LENGTH_MIN = 2;
-        private static final int PUBLIC_NAME_LENGTH_MAX = 16;
-        private static final String PUBLIC_NAME_ALLOWED_CHARS = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+        private static final int PUBLIC_NAME_LENGTH_MAX = 12;
+        private static final String PUBLIC_NAME_ALLOWED_CHARS = "-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
         private final AccountRepository accountRepository;
         private final PasswordEncoder passwordEncoder;
 

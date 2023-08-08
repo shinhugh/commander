@@ -16,6 +16,7 @@ public class Character implements Matter {
     private long lastPositionUpdateTime;
     private Direction orientation;
     private boolean moving;
+    private String name;
 
     public long getId() {
         return id;
@@ -95,5 +96,13 @@ public class Character implements Matter {
 
     public void setMoving(boolean moving) {
         this.moving = moving;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
